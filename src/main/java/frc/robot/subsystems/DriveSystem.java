@@ -6,10 +6,17 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj.XboxController;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
-public class ExampleSubsystem extends SubsystemBase {
+public class DriveSystem extends SubsystemBase {
+  private final WPI_TalonSRX m_leftDrive = new WPI_TalonSRX(3);
+  private final WPI_TalonSRX m_rightDrive = new WPI_TalonSRX(4);
+  private final XboxController m_controller = new XboxController(0);
+
   /** Creates a new ExampleSubsystem. */
-  public ExampleSubsystem() {}
+  public DriveSystem() {
+  }
 
   /**
    * Example command factory method.
@@ -38,6 +45,10 @@ public class ExampleSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
+    double y = m_controller.getLeftY();
+
+    m_leftDrive.set(y);
+    m_rightDrive.set(-y);
   }
 
   @Override
