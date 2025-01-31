@@ -74,6 +74,10 @@ public class RobotContainer {
     new JoystickButton(m_driverController, Button.kRightBumper.value)
         .onTrue(new InstantCommand(() -> m_robotDrive.setMaxOutput(0.5)))
         .onFalse(new InstantCommand(() -> m_robotDrive.setMaxOutput(1)));
+    // Spin Coral Discharge on Hold / Stop on release
+    new JoystickButton(m_driverController, Button.kA.value)
+        .whileTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()))
+        .onFalse(new InstantCommand(() -> m_robotCoral.suspendCoral()));
   }
 
   /**
