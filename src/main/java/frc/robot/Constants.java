@@ -70,6 +70,12 @@ public final class Constants {
     public static final int kDriverControllerPort = 0;
   }
 
+  // Stores CANIDs of Specific Motors
+  public static final class CANIDs {
+    public static final int kCoralSubsystemLeft = 11;
+    public static final int kCoralSubsystemRight = 12;
+  }
+
   public static final class AutoConstants {
     public static final double kMaxSpeedMetersPerSecond = 3;
     public static final double kMaxAccelerationMetersPerSecondSquared = 3;
