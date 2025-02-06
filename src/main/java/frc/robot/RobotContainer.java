@@ -13,18 +13,19 @@ import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.XboxController.Button;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.CoralSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
+import frc.robot.subsystems.AlgaeSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.MecanumControllerCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import java.util.List;
 
@@ -39,9 +40,10 @@ public class RobotContainer {
   private final DriveSubsystem m_robotDrive = new DriveSubsystem();
   private final CoralSubsystem m_robotCoral = new CoralSubsystem();
   private final VisionSubsystem m_robotVision = new VisionSubsystem();
+  private final AlgaeSubsystem m_robotAlgae = new AlgaeSubsystem();
   
   // The driver's controller
-  XboxController m_driverController = new XboxController(OIConstants.kDriverControllerPort);
+  CommandXboxController m_driverController = new CommandXboxController(OIConstants.kDriverControllerPort);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -70,14 +72,119 @@ public class RobotContainer {
    * {@link JoystickButton}.
    */
   private void configureButtonBindings() {
-    // Drive at half speed when the right bumper is held
-    new JoystickButton(m_driverController, Button.kRightBumper.value)
-        .onTrue(new InstantCommand(() -> m_robotDrive.setMaxOutput(0.5)))
-        .onFalse(new InstantCommand(() -> m_robotDrive.setMaxOutput(1)));
     // Spin Coral Discharge on Hold / Stop on release
-    new JoystickButton(m_driverController, Button.kA.value)
+    m_driverController
+        .a()
         .whileTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()))
         .onFalse(new InstantCommand(() -> m_robotCoral.suspendCoral()));
+
+    // Elevator to L2 - Add CMD in Feature Branch
+    m_driverController
+        .b()
+        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+    
+    // Elevator to L3 - Add CMD in Feature Branch
+    m_driverController
+        .x()
+        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+
+    // Elevator to L4 - Add CMD in Feature Branch
+    m_driverController
+        .y()
+        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+
+    // Manually Raise Elevator - Add Function in Feature Branch
+    m_driverController
+        .back()
+        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+    
+    // Manually Lower Elevator - Add Function in Feature Branch
+    m_driverController
+        .start()
+        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+
+    // Go To Dispenser 1 (Left) - Add CMD in Feature Branch
+    m_driverController
+        .leftStick()
+        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+    
+    // Go To Dispenser 2 (Right) - Add CMD in Feature Branch
+    m_driverController 
+        .rightStick()
+        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+
+    // Go To Reef 1
+    m_driverController
+        .leftBumper()
+        .and(m_driverController.a())
+        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+    
+    // Go To Reef 2
+    m_driverController
+        .leftBumper()
+        .and(m_driverController.b())
+        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+    
+    // Go To Reef 3
+    m_driverController
+        .leftBumper()
+        .and(m_driverController.x())
+        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+
+    // Go To Reef 4
+    m_driverController
+        .leftBumper()
+        .and(m_driverController.y())
+        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+    
+    // Go To Reef 5
+    m_driverController
+        .leftBumper()
+        .and(m_driverController.back())
+        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+    
+    // Go To Reef 6
+    m_driverController
+    .leftBumper()
+    .and(m_driverController.start())
+    .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+
+    // Go To Reef 7
+    m_driverController
+        .rightBumper()
+        .and(m_driverController.a())
+        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+    
+    // Go To Reef 8
+    m_driverController
+        .rightBumper()
+        .and(m_driverController.b())
+        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+    
+    // Go To Reef 9
+    m_driverController
+        .rightBumper()
+        .and(m_driverController.x())
+        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+
+    // Go To Reef 10
+    m_driverController
+        .rightBumper()
+        .and(m_driverController.y())
+        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+    
+    // Go To Reef 11
+    m_driverController
+        .rightBumper()
+        .and(m_driverController.back())
+        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+    
+    // Go To Reef 12
+    m_driverController
+    .rightBumper()
+    .and(m_driverController.start())
+    .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+    
   }
 
   /**
