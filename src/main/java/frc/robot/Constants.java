@@ -78,6 +78,11 @@ public final class Constants {
     public static final int kAlgaeSubsystemRight = 14;
   }
 
+  public static final class DigitalInputPorts {
+    public static final int kAlgaeSubsystemLeft = 15;
+    public static final int kAlgaeSubsystemRight = 16;
+  }
+
   public static final class AutoConstants {
     public static final double kMaxSpeedMetersPerSecond = 3;
     public static final double kMaxAccelerationMetersPerSecondSquared = 3;

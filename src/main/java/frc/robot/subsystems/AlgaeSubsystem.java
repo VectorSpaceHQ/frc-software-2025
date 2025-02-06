@@ -6,16 +6,18 @@ import com.revrobotics.spark.SparkMax;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.CANIDs;
+import frc.robot.Constants.DigitalInputPorts;
 
 public class AlgaeSubsystem extends SubsystemBase {
     private final SparkMax motor_left = new SparkMax(CANIDs.kAlgaeSubsystemLeft, MotorType.kBrushless);
     private final SparkMax motor_right = new SparkMax(CANIDs.kAlgaeSubsystemRight, MotorType.kBrushless);
-    private final DigitalInput l_Left = new DigitalInput(0);
-    private final DigitalInput l_Right = new DigitalInput(0);
+    private final DigitalInput l_Left = new DigitalInput(DigitalInputPorts.kAlgaeSubsystemLeft);
+    private final DigitalInput l_Right = new DigitalInput(DigitalInputPorts.kAlgaeSubsystemRight);
     private boolean LimitSwitchLeft;
     private boolean LimitSwitchRight;
-    private double speed = 0.1;
-    private boolean motortoggle;
+    private double speed = 0.0;
+    // Primarily for Debug Purposes
+    private boolean motortoggle = true;
 
     public AlgaeSubsystem() {
 
