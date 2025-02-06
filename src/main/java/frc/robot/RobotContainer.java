@@ -63,6 +63,14 @@ public class RobotContainer {
                     -m_driverController.getLeftX(),
                     false),
             m_robotDrive));
+    m_robotAlgae.setDefaultCommand(
+        // Left + Right Full Pressed = 0
+        // Left Closes Right Opens (this result can be scaled down by a constant multiple if needed)
+        new RunCommand(
+            () -> 
+                m_robotAlgae.motorSetSpeed(
+                    m_driverController.getRightTriggerAxis() - m_driverController.getLeftTriggerAxis()), 
+                m_robotAlgae));
   }
 
   /**
