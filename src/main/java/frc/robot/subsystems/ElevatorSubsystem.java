@@ -95,9 +95,7 @@ public class ElevatorSubsystem extends SubsystemBase{
   }
 
   public void resetElevator() {
-    while (!limitBottom) {
-      motor.set(-0.05);
-    }
+    setElevatorTargetHeight(ElevatorSpecifics.kInitialHeight);
   }
 
   public double getPlatformHeight() {
