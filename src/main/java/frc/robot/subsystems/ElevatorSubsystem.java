@@ -23,7 +23,7 @@ public class ElevatorSubsystem extends SubsystemBase{
   // True when pressed
   private boolean limitTop = !l_top.get();
   // True when pressed
-  private boolean limitBottom = !l_top.get();
+  private boolean limitBottom = !l_bottom.get();
   private double r_rotations = 0;
   private double y_currentHeight = calculateCurrentHeight();
   private double y_targetHeight = calculateCurrentHeight();
