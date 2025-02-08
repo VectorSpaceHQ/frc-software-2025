@@ -7,6 +7,7 @@ import frc.robot.Constants.CANIDs;
 import frc.robot.Constants.ElevatorSpecifics;
 import frc.robot.Constants.PIDTunings;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.lang.Math;
 
@@ -15,47 +16,55 @@ public class ElevatorSubsystem extends SubsystemBase{
   private final SparkMax motor = new SparkMax(CANIDs.kCoralSubsystemLeft, MotorType.kBrushless);
   RelativeEncoder encoder = motor.getEncoder();
   PIDController pid = new PIDController(PIDTunings.kElevatorKP, PIDTunings.kElevatorKI, PIDTunings.kElevatorKD);
+  private final DigitalInput l_top = new DigitalInput(0);
+  private final DigitalInput l_bottom = new DigitalInput(1);
 
   private boolean motortoggle = false;
+  private boolean limitTop = !l_top.get();
+  private boolean limitBottom = !l_top.get();
   private double r_rotations = 0;
-  private double y_currentHeight;
-  private double y_targetHeight;
+  private double y_currentHeight = calculateCurrentHeight();
+  private double y_targetHeight = calculateCurrentHeight();
   private double PIDFeedback;
 
   public ElevatorSubsystem() {
     resetEncoder();
   }
 
-  // Might need to move some of these value assigning lines to their own function if it gets too crowded
+
   @Override
   public void periodic() {
+    update();
+    adjustToSetPoint();
+
+  }
+
+  private void update() {
     r_rotations = encoder.getPosition();
     y_currentHeight = calculateCurrentHeight();
     PIDFeedback = pid.calculate(y_currentHeight, y_targetHeight);
-    if (motortoggle) {
-      adjustToSetPoint();
-    }
-    if (pid.atSetpoint()) {
-      motortoggle = false;
-    }
+    limitTop = !l_top.get();
+    limitBottom = !l_top.get();
+    motortoggle = limitTop && limitBottom;
   }
 
   // y=SquareRootOf(z^2-(z-pr)^2 ) -- per scissor 
   // total h = (n * y) + y0
   private double calculateCurrentHeight() {
-    double result;
     // The following can be consolidated, but I left open for testing later
     double z2 = ElevatorSpecifics.kScissorLength * ElevatorSpecifics.kScissorLength;
     double pr = r_rotations * ElevatorSpecifics.kScrewPitch;
     double z_pr = ElevatorSpecifics.kScissorLength - pr;
     double z_pr2 = z_pr * z_pr;
     double y2 = z2 - z_pr2;
-    result = Math.sqrt(y2) * ElevatorSpecifics.kLinkageCount;
+    double result = Math.sqrt(y2) * ElevatorSpecifics.kLinkageCount;
     return result + ElevatorSpecifics.kInitialHeight;
   }
 
   private void adjustToSetPoint() {
+    if (!pid.atSetpoint() && motortoggle){
     motor.set(SigmoidAdjustment(PIDFeedback));
+    }
   }
 
   // Scaling PIDFeedback -1 to 1 
@@ -78,17 +87,10 @@ public class ElevatorSubsystem extends SubsystemBase{
     y_targetHeight = h - ElevatorSpecifics.kPlatformToInputHeight;
   }
 
-  public void runElevator() {
-    motortoggle = true;
-  }
-
-  public void stopElevator() {
-    motortoggle = false;
-  }
-
   public void resetElevator() {
-    // Add limit switch conditionals
-    // Lower Until Limit Switch is triggered
+    while (!limitBottom) {
+      motor.set(-0.05);
+    }
   }
 
   public double getPlatformHeight() {
