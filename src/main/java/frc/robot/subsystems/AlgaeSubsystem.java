@@ -13,8 +13,8 @@ public class AlgaeSubsystem extends SubsystemBase {
     private final SparkMax motor_right = new SparkMax(CANIDs.kAlgaeSubsystemRight, MotorType.kBrushless);
     private final DigitalInput l_Left = new DigitalInput(DigitalInputPorts.kAlgaeSubsystemLeft);
     private final DigitalInput l_Right = new DigitalInput(DigitalInputPorts.kAlgaeSubsystemRight);
-    private boolean LimitSwitchLeft;
-    private boolean LimitSwitchRight;
+    private boolean limitSwitchLeft = !l_Left.get();
+    private boolean limitSwitchRight = !l_Right.get();
     private double speed = 0.0;
     // Primarily for Debug Purposes
     private boolean motortoggle = true;
@@ -27,22 +27,51 @@ public class AlgaeSubsystem extends SubsystemBase {
     public void periodic() {
         updateSensorStatus();
         if (motortoggle){
-            motor_left.set(speed);
-            motor_right.set(-speed);
+            driveMotors(speed);
         }
+        // Another option is to set rate = 0 -- For Debugging
         if (!motortoggle) {
-            motor_left.stopMotor();
-            motor_right.stopMotor();
+            stopMotors();
         }
     }
 
     private void updateSensorStatus() {
-        LimitSwitchLeft = !l_Left.get();
-        LimitSwitchRight = !l_Right.get();
+        limitSwitchLeft = !l_Left.get();
+        limitSwitchRight = !l_Right.get();
+    }
+
+    private void stopMotors() {
+        motor_left.stopMotor();
+        motor_right.stopMotor();
+    }
+
+    private void driveMotors(double rate) {
+        driveLeftMotor(rate);
+        driveRightMotor(-rate);
+    }
+
+    private void driveLeftMotor(double rate) {
+        if(!limitSwitchLeft) {
+            motor_left.set(rate);
+        }
+        if(limitSwitchLeft && rate >= 0) {
+            motor_left.set(rate);
+        }
+    }
+
+    private void driveRightMotor(double rate) {
+        if(!limitSwitchRight) {
+            motor_right.set(rate);
+        }
+        if(limitSwitchRight && rate <= 0) {
+            motor_right.set(rate);
+        }
     }
 
     public void motorSetSpeed(double rate) {
-        speed = rate;
+        if(1.0 >= rate && rate >= -1.0){
+            speed = rate;
+        }
     }
 
     public void motorStop() {
@@ -53,22 +82,24 @@ public class AlgaeSubsystem extends SubsystemBase {
         motortoggle = true;
     }
 
+    public void homeClaws(){
+        motortoggle = false;
+        homeLeftClaw();
+        homeRightClaw();
+        motortoggle = true;
+    }
+
     private void homeLeftClaw() {
-        while(!LimitSwitchLeft){
-        motor_left.set(-0.05);
+        while(!limitSwitchLeft){
+            motor_left.set(-0.05);
         }
         motor_left.stopMotor();
     }
 
     private void homeRightClaw() {
-        while(!LimitSwitchRight){
+        while(!limitSwitchRight){
             motor_right.set(0.05);
         }
         motor_right.stopMotor();
-    }
-
-    public void homeClaws(){
-        homeLeftClaw();
-        homeRightClaw();
     }
 }
