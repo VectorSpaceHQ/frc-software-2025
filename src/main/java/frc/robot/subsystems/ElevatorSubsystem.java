@@ -20,7 +20,9 @@ public class ElevatorSubsystem extends SubsystemBase{
   private final DigitalInput l_bottom = new DigitalInput(1);
 
   private boolean motortoggle = false;
+  // True when pressed
   private boolean limitTop = !l_top.get();
+  // True when pressed
   private boolean limitBottom = !l_top.get();
   private double r_rotations = 0;
   private double y_currentHeight = calculateCurrentHeight();
@@ -36,7 +38,6 @@ public class ElevatorSubsystem extends SubsystemBase{
   public void periodic() {
     update();
     adjustToSetPoint();
-
   }
 
   private void update() {
@@ -64,6 +65,12 @@ public class ElevatorSubsystem extends SubsystemBase{
   private void adjustToSetPoint() {
     if (!pid.atSetpoint() && motortoggle){
     motor.set(SigmoidAdjustment(PIDFeedback));
+    }
+    else if (!pid.atSetpoint() && limitTop && SigmoidAdjustment(PIDFeedback) < 0) {
+      motor.set(SigmoidAdjustment(PIDFeedback));
+    }
+    else if (!pid.atSetpoint() && limitBottom && SigmoidAdjustment(PIDFeedback) > 0) {
+      motor.set(SigmoidAdjustment(PIDFeedback));
     }
   }
 
