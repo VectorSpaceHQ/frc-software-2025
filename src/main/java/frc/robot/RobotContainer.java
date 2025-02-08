@@ -89,109 +89,109 @@ public class RobotContainer {
     // Elevator to L2 - Add CMD in Feature Branch
     m_driverController
         .b()
-        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+        .onTrue(new InstantCommand(() -> System.out.println("b")));
     
     // Elevator to L3 - Add CMD in Feature Branch
     m_driverController
         .x()
-        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+        .onTrue(new InstantCommand(() -> System.out.println("x")));
 
     // Elevator to L4 - Add CMD in Feature Branch
     m_driverController
         .y()
-        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+        .onTrue(new InstantCommand(() -> System.out.println("y")));
 
     // Manually Raise Elevator - Add Function in Feature Branch
     m_driverController
         .back()
-        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+        .onTrue(new InstantCommand(() -> System.out.println("back")));
     
     // Manually Lower Elevator - Add Function in Feature Branch
     m_driverController
         .start()
-        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+        .onTrue(new InstantCommand(() -> System.out.println("start")));
 
     // Go To Dispenser 1 (Left) - Add CMD in Feature Branch
     m_driverController
         .leftStick()
-        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+        .onTrue(new InstantCommand(() -> System.out.println("ls")));
     
     // Go To Dispenser 2 (Right) - Add CMD in Feature Branch
     m_driverController 
         .rightStick()
-        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+        .onTrue(new InstantCommand(() -> System.out.println("right")));
 
     // Go To Reef 1
     m_driverController
         .leftBumper()
         .and(m_driverController.a())
-        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+        .onTrue(new InstantCommand(() -> System.out.println("lb + a")));
     
     // Go To Reef 2
     m_driverController
         .leftBumper()
         .and(m_driverController.b())
-        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+        .onTrue(new InstantCommand(() -> System.out.println("lb + b")));
     
     // Go To Reef 3
     m_driverController
         .leftBumper()
         .and(m_driverController.x())
-        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+        .onTrue(new InstantCommand(() -> System.out.println("lb + x")));
 
     // Go To Reef 4
     m_driverController
         .leftBumper()
         .and(m_driverController.y())
-        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+        .onTrue(new InstantCommand(() -> System.out.println("lb + y")));
     
     // Go To Reef 5
     m_driverController
         .leftBumper()
         .and(m_driverController.back())
-        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+        .onTrue(new InstantCommand(() -> System.out.println("lb + back")));
     
     // Go To Reef 6
     m_driverController
     .leftBumper()
     .and(m_driverController.start())
-    .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+    .onTrue(new InstantCommand(() -> System.out.println("lb + start")));
 
     // Go To Reef 7
     m_driverController
         .rightBumper()
         .and(m_driverController.a())
-        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+        .onTrue(new InstantCommand(() -> System.out.println("rb + a")));
     
     // Go To Reef 8
     m_driverController
         .rightBumper()
         .and(m_driverController.b())
-        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+        .onTrue(new InstantCommand(() -> System.out.println("rb + b")));
     
     // Go To Reef 9
     m_driverController
         .rightBumper()
         .and(m_driverController.x())
-        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+        .onTrue(new InstantCommand(() -> System.out.println("rb + x")));
 
     // Go To Reef 10
     m_driverController
         .rightBumper()
         .and(m_driverController.y())
-        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+        .onTrue(new InstantCommand(() -> System.out.println("rb + y")));
     
     // Go To Reef 11
     m_driverController
         .rightBumper()
         .and(m_driverController.back())
-        .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+        .onTrue(new InstantCommand(() -> System.out.println("rb + back")));
     
     // Go To Reef 12
     m_driverController
     .rightBumper()
     .and(m_driverController.start())
-    .onTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()));
+    .onTrue(new InstantCommand(() -> System.out.println("rb + start")));
     
   }
 
