@@ -27,7 +27,7 @@ public class ElevatorSubsystem extends SubsystemBase{
   private double r_rotations = 0;
   private double y_currentHeight = calculateCurrentHeight();
   private double y_targetHeight = calculateCurrentHeight();
-  private double PIDFeedback;
+  private double PIDFeedback = 0;
 
   public ElevatorSubsystem() {
     resetEncoder();
