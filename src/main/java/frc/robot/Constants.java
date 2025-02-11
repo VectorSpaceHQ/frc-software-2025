@@ -75,6 +75,8 @@ public final class Constants {
     public static final int kCoralSubsystemLeft = 11;
     public static final int kCoralSubsystemRight = 12;
     public static final int kElevatorSubsystemMain = 13;
+    public static final int kAlgaeSubsystemLeft = 14;
+    public static final int kAlgaeSubsystemRight = 15;
   }
 
   public static final class PIDTunings {
@@ -89,6 +91,11 @@ public final class Constants {
     public static final double kInitialHeight = 15.2; // inches -- from bottom to platform
     public static final double kLinkageCount = 8; // Linkage Counts per Side
     public static final double kPlatformToInputHeight = 14.26; // Distance between Platform and Coral Input
+  }
+
+  public static final class DigitalInputPorts {
+    public static final int kAlgaeSubsystemLeft = 15;
+    public static final int kAlgaeSubsystemRight = 16;
   }
 
   public static final class AutoConstants {
