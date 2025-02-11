@@ -72,9 +72,9 @@ public final class Constants {
 
   // Stores CANIDs of Specific Motors
   public static final class CANIDs {
-    public static final int kCoralSubsystemLeft = 11;
+    public static final int kCoralSubsystemLeft = 16;
     public static final int kCoralSubsystemRight = 12;
-    public static final int kElevatorSubsystemMain = 13;
+    public static final int kElevatorSubsystemMain = 11;
     public static final int kAlgaeSubsystemLeft = 14;
     public static final int kAlgaeSubsystemRight = 15;
   }

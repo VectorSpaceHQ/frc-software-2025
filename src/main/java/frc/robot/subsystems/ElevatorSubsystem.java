@@ -13,7 +13,7 @@ import java.lang.Math;
 
 public class ElevatorSubsystem extends SubsystemBase{
 
-  private final SparkMax motor = new SparkMax(CANIDs.kCoralSubsystemLeft, MotorType.kBrushless);
+  private final SparkMax motor = new SparkMax(CANIDs.kElevatorSubsystemMain, MotorType.kBrushless);
   RelativeEncoder encoder = motor.getEncoder();
   PIDController pid = new PIDController(PIDTunings.kElevatorKP, PIDTunings.kElevatorKI, PIDTunings.kElevatorKD);
   private final DigitalInput l_top = new DigitalInput(0);
