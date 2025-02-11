@@ -19,7 +19,6 @@ public class ElevatorSubsystem extends SubsystemBase{
   private final DigitalInput l_top = new DigitalInput(0);
   private final DigitalInput l_bottom = new DigitalInput(1);
 
-  private boolean motortoggle = false;
   // True when pressed
   private boolean limitTop = !l_top.get();
   // True when pressed
@@ -37,7 +36,6 @@ public class ElevatorSubsystem extends SubsystemBase{
   @Override
   public void periodic() {
     update();
-    adjustToSetPoint();
   }
 
   private void update() {
@@ -46,7 +44,6 @@ public class ElevatorSubsystem extends SubsystemBase{
     PIDFeedback = pid.calculate(y_currentHeight, y_targetHeight);
     limitTop = !l_top.get();
     limitBottom = !l_top.get();
-    motortoggle = limitTop && limitBottom;
   }
 
   // y=SquareRootOf(z^2-(z-pr)^2 ) -- per scissor 
@@ -62,15 +59,18 @@ public class ElevatorSubsystem extends SubsystemBase{
     return result + ElevatorSpecifics.kInitialHeight;
   }
 
-  private void adjustToSetPoint() {
-    if (!pid.atSetpoint() && motortoggle){
+  public void adjustToSetPoint() {
+    if (!limitTop && !limitBottom){
     motor.set(SigmoidAdjustment(PIDFeedback));
     }
-    else if (!pid.atSetpoint() && limitTop && SigmoidAdjustment(PIDFeedback) < 0) {
+    else if (limitTop && SigmoidAdjustment(PIDFeedback) < 0) {
       motor.set(SigmoidAdjustment(PIDFeedback));
     }
-    else if (!pid.atSetpoint() && limitBottom && SigmoidAdjustment(PIDFeedback) > 0) {
+    else if (limitBottom && SigmoidAdjustment(PIDFeedback) > 0) {
       motor.set(SigmoidAdjustment(PIDFeedback));
+    }
+    else {
+      motor.set(0);
     }
   }
 
@@ -102,12 +102,35 @@ public class ElevatorSubsystem extends SubsystemBase{
     return y_currentHeight;
   } 
 
+  public void stopMotor(){
+    motor.stopMotor();
+  }
+
   public double getInputHeight() {
     return y_currentHeight + ElevatorSpecifics.kPlatformToInputHeight;
   }
 
   public double getEncoderposition() {
     return encoder.getPosition();
+  }
+
+  public boolean atSetpoint(){
+    return pid.atSetpoint();
+  }
+
+  public void manualAdjustment(double speed){
+    if (1.0 >= speed && -1.0 <= speed && !limitBottom && !limitTop){
+      motor.set(speed);
+    }
+    else if (limitBottom && speed >= 0){
+      motor.set(speed);
+    }
+    else if (limitTop && speed <= 1){
+      motor.set(speed);
+    }
+    else{
+      motor.stopMotor();
+    }
   }
 }
 
