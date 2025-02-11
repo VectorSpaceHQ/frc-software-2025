@@ -23,6 +23,12 @@ import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.AlgaeSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.commands.ElevatorL2Command;
+import frc.robot.commands.ElevatorL3Command;
+import frc.robot.commands.ElevatorL4Command;
+import frc.robot.commands.ElevatorLowerCommand;
+import frc.robot.commands.ElevatorRaiseCommand;
+import frc.robot.commands.ElevatorDispenserCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.MecanumControllerCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
@@ -91,27 +97,27 @@ public class RobotContainer {
     // Elevator to L2 - Add CMD in Feature Branch
     m_driverController
         .b()
-        .onTrue(new InstantCommand(() -> System.out.println("b")));
+        .onTrue(new ElevatorL2Command(m_robotElevator));
     
     // Elevator to L3 - Add CMD in Feature Branch
     m_driverController
         .x()
-        .onTrue(new InstantCommand(() -> System.out.println("x")));
+        .onTrue(new ElevatorL3Command(m_robotElevator));
 
     // Elevator to L4 - Add CMD in Feature Branch
     m_driverController
         .y()
-        .onTrue(new InstantCommand(() -> System.out.println("y")));
+        .onTrue(new ElevatorL4Command(m_robotElevator));
 
     // Manually Raise Elevator - Add Function in Feature Branch
     m_driverController
         .back()
-        .onTrue(new InstantCommand(() -> System.out.println("back")));
+        .whileTrue(new ElevatorRaiseCommand(m_robotElevator));
     
     // Manually Lower Elevator - Add Function in Feature Branch
     m_driverController
         .start()
-        .onTrue(new InstantCommand(() -> System.out.println("start")));
+        .whileTrue(new ElevatorLowerCommand(m_robotElevator));
 
     // Go To Dispenser 1 (Left) - Add CMD in Feature Branch
     m_driverController
