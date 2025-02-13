@@ -8,6 +8,7 @@ import frc.robot.Constants.ElevatorSpecifics;
 import frc.robot.Constants.PIDTunings;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.lang.Math;
 
@@ -139,6 +140,84 @@ public class ElevatorSubsystem extends SubsystemBase{
     else{
       motor.stopMotor();
     }
+  }
+
+  // Constructs a command that runs an action once and then runs another action every iteration until interrupted. Requires this subsystem.
+  // Sets target height then adjusts while scheduled
+  public Command ElevatorDispenserCommand() {
+    return startRun(
+      () -> {
+        this.setInputTargetHeight(37.5);
+      },
+      () -> {
+        this.adjustToSetPoint();
+      }
+    );
+  }
+
+  // Constructs a command that runs an action once and then runs another action every iteration until interrupted. Requires this subsystem.
+  // Sets target height then adjusts while scheduled
+  public Command ElevatorL2Command() {
+    return startRun(
+      () -> {
+        this.setElevatorTargetHeight(31.875);
+      },
+      () -> {
+        this.adjustToSetPoint();
+      }
+    );
+  }
+
+  // Constructs a command that runs an action once and then runs another action every iteration until interrupted. Requires this subsystem.
+  // Sets target height then adjusts while scheduled
+  public Command ElevatorL3Command() {
+    return startRun(
+      () -> {
+        this.setElevatorTargetHeight(47.65);
+      },
+      () -> {
+        this.adjustToSetPoint();
+      }
+    );
+  }
+
+  // Constructs a command that runs an action once and then runs another action every iteration until interrupted. Requires this subsystem.
+  // Sets target height then adjusts while scheduled
+  public Command ElevatorL4Command() {
+    return startRun(
+      () -> {
+        this.setElevatorTargetHeight(72);
+      },
+      () -> {
+        this.adjustToSetPoint();
+      }
+    );
+  }
+
+  // runEnd adds a runnable on iteration and a runnable on termination
+  // lower on iteration stop on termination
+  public Command ElevatorLowerCommand() {
+    return runEnd(
+      () -> {
+        this.manualAdjustment(-0.05);
+      },
+      () -> {
+        this.stopMotor();
+      }
+    );
+  }
+
+  // runEnd adds a runnable on iteration and a runnable on termination
+  // raise on iteration stop on termination
+  public Command ElevatorRaiseCommand() {
+    return runEnd(
+      () -> {
+        this.manualAdjustment(0.05);
+      },
+      () -> {
+        this.stopMotor();
+      }
+    );
   }
 }
 
