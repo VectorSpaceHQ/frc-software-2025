@@ -30,6 +30,8 @@ public class ElevatorSubsystem extends SubsystemBase{
   private double PIDFeedback = 0;
 
   public ElevatorSubsystem() {
+    // Registers the subsystem with the command scheduler
+    register();
   }
 
 
