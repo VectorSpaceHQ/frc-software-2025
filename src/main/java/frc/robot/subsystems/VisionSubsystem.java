@@ -3,9 +3,14 @@
 // Import statements for Java file operations, PhotonVision libraries, and WPILib classes
 package frc.robot.subsystems;
 
+
+import frc.robot.Constants.OIConstants;
+import frc.robot.Constants.AutoConstants;
+import edu.wpi.first.wpilibj.XboxController;
+
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -20,14 +25,14 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.util.sendable.Sendable;
+
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.networktables.GenericEntry;
-import edu.wpi.first.networktables.NetworkTableEntry;
+
 
 // Trash Subsystem for Vision (Not done yet, might need to add more code idk)
 public class VisionSubsystem extends SubsystemBase {
@@ -63,9 +68,9 @@ public class VisionSubsystem extends SubsystemBase {
     private GenericEntry yEntry;
     private GenericEntry zEntry;
     private GenericEntry poseEntry;
-    
 
-    
+    // Xbox controller for driver input
+    XboxController m_driverController = new XboxController(OIConstants.kDriverControllerPort);
 
     // Vision Subsystem constructor
     public VisionSubsystem() {
@@ -130,14 +135,13 @@ public class VisionSubsystem extends SubsystemBase {
                 double id = target.getFiducialId(); // AprilTag ID
                 double ambiguity = target.getPoseAmbiguity(); // Ambiguity of the pose
                 Transform3d transform = target.getBestCameraToTarget(); // Maps camera space to target (april tag) space
-                double x = transform.getTranslation().getX(); // X position translation
-                double y = transform.getTranslation().getY(); // Y position translation
-                double z = transform.getTranslation().getZ(); // Z position translation
-                   // displayed on SmartDashboard
+                // double x = transform.getTranslation().getX(); // X position translation
+                // double y = transform.getTranslation().getY(); // Y position translation
+                // double z = transform.getTranslation().getZ(); // Z position translation
+                // displayed on SmartDashboard
                 ShuffleboardTab visionTab = Shuffleboard.getTab(prefix);
                 yawEntry = visionTab.add("Yaw", yaw).getEntry();
-                                                                    
-                
+
                 pitchEntry = visionTab.add("Pitch", pitch).getEntry();
                 skewEntry = visionTab.add("Skew", skew).getEntry();
                 areaEntry = visionTab.add("Area", area).getEntry();
@@ -155,9 +159,8 @@ public class VisionSubsystem extends SubsystemBase {
                     Pose3d robotPose = PhotonUtils.estimateFieldToRobotAprilTag(
                             target.getBestCameraToTarget(),
                             layout.getTagPose(target.getFiducialId()).get(),
-
                             cameraToRobot);
-                            poseEntry = visionTab.add("RobotPose", robotPose).getEntry();
+                    poseEntry = visionTab.add("RobotPose", robotPose).getEntry();
                 }
 
                 // Not sure if it is cameraToRobot or robotToCamera
@@ -168,13 +171,46 @@ public class VisionSubsystem extends SubsystemBase {
 
     }
 
+    public void teleopPeriodic() {
+        double forward = -m_driverController.getLeftY() * AutoConstants.kMaxSpeedMetersPerSecond;
+        double strafe = -m_driverController.getRightX() * AutoConstants.kMaxSpeedMetersPerSecond;
+        double turn = -m_driverController.getLeftX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond;
+
+        boolean targetVisible = false;
+        double targetYaw = 0.0;
+        var results = camera.getAllUnreadResults();
+        if (results.size() > 0) {
+            var result = results.get(results.size() - 1);
+
+            if (result.hasTargets()) {
+                for (var target : result.getTargets()) {
+                    if (target.getFiducialId() == 1) {
+                        targetVisible = true;
+                        targetYaw = target.getYaw();
+                    }
+                }
+
+            }
+
+        }
+        if (m_driverController.getAButton() && targetVisible) {
+            // If the A button is pressed and a target is visible, drive towards the target
+            turn = -1.0 * targetYaw * 0.1 * AutoConstants.kMaxAngularSpeedRadiansPerSecond; // Adjust the turn speed as
+                                                                                            // needed
+        }
+        
+
+        SmartDashboard.putBoolean("Target Visible", targetVisible); // SmartDashboard Target Visibility
+    }
+    
+    
     @Override
     public void periodic() {
         // This method will be called once per scheduler run
         if (cameraConnected) {
             var results = camera.getLatestResult();
             if (results.hasTargets()) {
-            
+                
                 var target = results.getBestTarget();
                 double yaw = target.getYaw();
                 double pitch = target.getPitch();
@@ -189,13 +225,13 @@ public class VisionSubsystem extends SubsystemBase {
 
                 yawEntry.setDouble(yaw);
                 Optional<Pose3d> tagPose = layout.getTagPose(target.getFiducialId());
-                // if (tagPose.isPresent()) {
-                //     Pose3d robotPose = PhotonUtils.estimateFieldToRobotAprilTag(
-                //             target.getBestCameraToTarget(),
-                //             tagPose.get(),
-                //             cameraToRobot);
-                //     poseEntry.setDouble(robotPose.getTranslation().getX()); // Example: setting X value of robotPose
-                //}
+                if (tagPose.isPresent()) {
+                Pose3d robotPose = PhotonUtils.estimateFieldToRobotAprilTag(
+                target.getBestCameraToTarget(),
+                tagPose.get(),
+                cameraToRobot);
+                poseEntry.setDouble(robotPose.getTranslation().getX()); // Example: setting X
+                }
                 pitchEntry.setDouble(pitch);
                 areaEntry.setDouble(area);
                 skewEntry.setDouble(skew);
@@ -204,8 +240,6 @@ public class VisionSubsystem extends SubsystemBase {
                 xEntry.setDouble(x);
                 yEntry.setDouble(y);
                 zEntry.setDouble(z);
-
-                
 
             }
 
@@ -236,6 +270,7 @@ public class VisionSubsystem extends SubsystemBase {
         // SmartDashboard.putNumber(prefix + "Tag Z", z); // Sends tag Z position to
         // SmartDashboard
 
-       // cameraConnected = false;
+        // cameraConnected = false;
     }
+
 }
