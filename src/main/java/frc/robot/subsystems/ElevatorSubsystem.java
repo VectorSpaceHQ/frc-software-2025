@@ -3,93 +3,124 @@ package frc.robot.subsystems;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.SparkMaxConfig;
+
 import frc.robot.Constants.CANIDs;
 import frc.robot.Constants.ElevatorSpecifics;
 import frc.robot.Constants.PIDTunings;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.lang.Math;
 
 public class ElevatorSubsystem extends SubsystemBase{
 
+  public enum Level {
+    Bottom(ElevatorSpecifics.kInitialHeight),
+    L2(31.875),
+    L3(47.65),
+    L4(72.0),
+    ;
+
+    private double value;
+
+    private Level(double height) {
+      this.value = height;
+    }
+
+    public double getLevel() {
+      return this.value;
+    }
+  };
+
   private final SparkMax motor = new SparkMax(CANIDs.kElevatorSubsystemMain, MotorType.kBrushless);
+  private SparkMaxConfig config = new SparkMaxConfig();
   RelativeEncoder encoder = motor.getEncoder();
   PIDController pid = new PIDController(PIDTunings.kElevatorKP, PIDTunings.kElevatorKI, PIDTunings.kElevatorKD);
-  private final DigitalInput l_top = new DigitalInput(0);
-  private final DigitalInput l_bottom = new DigitalInput(1);
+  private DigitalInput l_top = new DigitalInput(0);
+  private DigitalInput l_bottom = new DigitalInput(1);
 
   // True when pressed
-  private boolean limitTop = !l_top.get();
+  private boolean limitTop = l_top.get();
   // True when pressed
-  private boolean limitBottom = !l_bottom.get();
-  private double r_rotations = 0;
-  private double y_currentHeight = calculateCurrentHeight();
+  private boolean limitBottom = l_bottom.get();
+  private double y_currentHeight = ElevatorSpecifics.kInitialHeight;
   private double y_targetHeight = calculateCurrentHeight();
   private double PIDFeedback = 0;
 
   public ElevatorSubsystem() {
     // Registers the subsystem with the command scheduler
     register();
+    // Invert the SparkMax
+    config.inverted(true);
+    // Apply the Inversion
+    motor.configure(config, null, null);
   }
 
 
   @Override
   public void periodic() {
-    update();
+    // update();
   }
 
   // Internal Function for updating constants
   private void update() {
-    r_rotations = encoder.getPosition();
     y_currentHeight = calculateCurrentHeight();
     PIDFeedback = pid.calculate(y_currentHeight, y_targetHeight);
-    limitTop = !l_top.get();
-    limitBottom = !l_top.get();
+    // DataLogManager.log("PID Feeback" + PIDFeedback);
+    // DataLogManager.log("Current Height" + y_currentHeight);
+    // DataLogManager.log("Target Height" + y_targetHeight);
+    // DataLogManager.log("Adjusted Speed" + SigmoidAdjustment(PIDFeedback));
+    // DataLogManager.log("At Setpoint " + pid.atSetpoint());
+    limitTop = l_top.get();
+    limitBottom = l_bottom.get();
+    if (limitBottom) {
+      encoder.setPosition(0);
+    }
   }
 
   // y=SquareRootOf(z^2-(z-pr)^2 ) -- per scissor 
+  // z is scissor length
+  // p is pitch
+  // r is rotations
   // total h = (n * y) + y0
-  // Needs to be revamped when Rohan gives us the formula :/
   private double calculateCurrentHeight() {
     // The following can be consolidated, but I left open for testing later
-    double z2 = ElevatorSpecifics.kScissorLength * ElevatorSpecifics.kScissorLength;
-    double pr = r_rotations * ElevatorSpecifics.kScrewPitch;
-    double z_pr = ElevatorSpecifics.kScissorLength - pr;
-    double z_pr2 = z_pr * z_pr;
-    double y2 = z2 - z_pr2;
-    double result = Math.sqrt(y2) * ElevatorSpecifics.kLinkageCount;
+    double ScissorLengthSquared = ElevatorSpecifics.kScissorLength * ElevatorSpecifics.kScissorLength;
+    double PitchTimesRotations = encoder.getPosition() * ElevatorSpecifics.kScrewPitch;
+    double ScissorLengthMinusPitchTimesRotations = ElevatorSpecifics.kScissorLength - PitchTimesRotations;
+    double ScissorLengthMinusPitchTimesRotationsSquared = ScissorLengthMinusPitchTimesRotations * ScissorLengthMinusPitchTimesRotations;
+    double HeightSquared = ScissorLengthSquared - ScissorLengthMinusPitchTimesRotationsSquared;
+    double result = Math.sqrt(HeightSquared) * ElevatorSpecifics.kLinkageCount;
     return result + ElevatorSpecifics.kInitialHeight;
   }
 
-  public void adjustToSetPoint() {
-    if (!limitTop && !limitBottom){
-    motor.set(SigmoidAdjustment(PIDFeedback));
-    }
-    else if (limitTop && SigmoidAdjustment(PIDFeedback) < 0) {
-      motor.set(SigmoidAdjustment(PIDFeedback));
-    }
-    else if (limitBottom && SigmoidAdjustment(PIDFeedback) > 0) {
-      motor.set(SigmoidAdjustment(PIDFeedback));
-    }
-    else {
-      motor.set(0);
-    }
+  // (-sqrt(z^2 - (yf - y0)^2) + z) / p = R
+  // R is the rotations to go from y0 to yf
+  // z is scissor length
+  // yf is target height
+  // y0 is current height
+  // p is screw pitch
+  private double calculateRotationsToY(double targetHeight, double currentHeight) {
+    double Zsquared = Math.pow(ElevatorSpecifics.kScissorLength, 2);
+    double deltaY = targetHeight - currentHeight;
+    double deltaYsquared = Math.pow(deltaY, 2);
+    double ZsquaredMinusDY2 = Zsquared - deltaYsquared;
+    double num = ElevatorSpecifics.kScissorLength - Math.sqrt(ZsquaredMinusDY2);
+    double denom = ElevatorSpecifics.kScrewPitch * ElevatorSpecifics.kLinkageCount;
+    return num / denom;
   }
 
   // Scaling PIDFeedback -0.3 to 0.3
   private double SigmoidAdjustment(double value) {
-    // Keep this first term negative 
-    double num = value * -0.3; // Adjust this second value to change maximum / minimum output of this function (-0.3 = {-0.3 to 0.3})
+    double num = -value * 0.1; // Adjust this second value to change maximum / minimum output of this function (-0.3 = {-0.3 to 0.3})
     double denom = 1 + Math.abs(value);
     return num / denom;
   }
 
-  // Not used can most likely be removed
-  public void resetEncoder() {
-    encoder.setPosition(0);
-  }
   // Used by commands to designate a target height of the platform
   public void setElevatorTargetHeight(double h) {
     y_targetHeight = h;
@@ -101,6 +132,15 @@ public class ElevatorSubsystem extends SubsystemBase{
 
   public void resetElevator() {
     setElevatorTargetHeight(ElevatorSpecifics.kInitialHeight);
+  }
+
+  // Can most likely be removed
+  public boolean getTopLimitSwitch() {
+    return limitTop;
+  }
+  // Can most likely be removed
+  public boolean getBottomLimitSwitch() {
+    return limitBottom;
   }
 
   // Not used can most likely be removed
@@ -123,77 +163,28 @@ public class ElevatorSubsystem extends SubsystemBase{
     return encoder.getPosition();
   }
 
-  // for isfinished() command behaviors
-  public boolean atSetpoint(){
-    return pid.atSetpoint();
-  }
-
   // for manually raising / lowering elevator -> contains logic for limit switches
-  public void manualAdjustment(double speed){
-    if (1.0 >= speed && -1.0 <= speed && !limitBottom && !limitTop){
+  private void manualAdjustment(double speed){
+    // If speed is within -1 to 1 and neither limit switch is triggered
+    if (!limitBottom && !limitTop){
       motor.set(speed);
+      System.out.println("First Logic");
     }
-    else if (limitBottom && speed >= 0){
+    // If speed is positive and bottom limit switch is triggered
+    else if (limitBottom && !limitTop && (speed < 0)){
       motor.set(speed);
+      System.out.println("Second Logic");
     }
-    else if (limitTop && speed <= 1){
+    // If speed is negative and top limit switch is triggered
+    else if (limitTop && !limitBottom && (speed > 0)){
       motor.set(speed);
+      System.out.println("Third Logic");
     }
+    // 
     else{
+      System.out.println("Stop Logic");
       motor.stopMotor();
     }
-  }
-
-  // Constructs a command that runs an action once and then runs another action every iteration until interrupted. Requires this subsystem.
-  // Sets target height then adjusts while scheduled
-  public Command ElevatorDispenserCommand() {
-    return startRun(
-      () -> {
-        this.setInputTargetHeight(37.5);
-      },
-      () -> {
-        this.adjustToSetPoint();
-      }
-    );
-  }
-
-  // Constructs a command that runs an action once and then runs another action every iteration until interrupted. Requires this subsystem.
-  // Sets target height then adjusts while scheduled
-  public Command ElevatorL2Command() {
-    return startRun(
-      () -> {
-        this.setElevatorTargetHeight(31.875);
-      },
-      () -> {
-        this.adjustToSetPoint();
-      }
-    );
-  }
-
-  // Constructs a command that runs an action once and then runs another action every iteration until interrupted. Requires this subsystem.
-  // Sets target height then adjusts while scheduled
-  public Command ElevatorL3Command() {
-    return startRun(
-      () -> {
-        this.setElevatorTargetHeight(47.65);
-      },
-      () -> {
-        this.adjustToSetPoint();
-      }
-    );
-  }
-
-  // Constructs a command that runs an action once and then runs another action every iteration until interrupted. Requires this subsystem.
-  // Sets target height then adjusts while scheduled
-  public Command ElevatorL4Command() {
-    return startRun(
-      () -> {
-        this.setElevatorTargetHeight(72);
-      },
-      () -> {
-        this.adjustToSetPoint();
-      }
-    );
   }
 
   // runEnd adds a runnable on iteration and a runnable on termination
@@ -201,6 +192,7 @@ public class ElevatorSubsystem extends SubsystemBase{
   public Command ElevatorLowerCommand() {
     return runEnd(
       () -> {
+        update();
         this.manualAdjustment(-0.05);
       },
       () -> {
@@ -214,12 +206,71 @@ public class ElevatorSubsystem extends SubsystemBase{
   public Command ElevatorRaiseCommand() {
     return runEnd(
       () -> {
+        update();
         this.manualAdjustment(0.05);
       },
       () -> {
         this.stopMotor();
       }
     );
+  }
+
+  public Command GoTo(Level target) {
+    y_targetHeight = target.getLevel();
+    if (y_targetHeight >= y_currentHeight) {
+      return new FunctionalCommand(
+      // onInit: Initialize our values
+      () -> {},
+      // onExecute: Update our calculations and drive the motor
+      () -> {
+        update();
+        double x = SigmoidAdjustment(PIDFeedback);
+        if (!limitTop) {motor.set(x);}
+      },
+      // onEnd: Stop the motor
+      interrupted -> {
+        motor.stopMotor(); 
+      },
+      // isFinished: End the command when the target is reached or we hit our limit switch
+      () -> ( limitTop || y_currentHeight >= y_targetHeight),
+      // Require this subsystem
+      this
+    );
+    }
+    else{
+    return new FunctionalCommand(
+      // onInit: Initialize our values
+      () -> {},
+      // onExecute: Update our calculations and drive the motor
+      () -> {
+        update();
+        double x = SigmoidAdjustment(PIDFeedback);
+        if (!limitBottom) {motor.set(x);}
+      },
+      // onEnd: Stop the motor
+      interrupted -> {
+        motor.stopMotor(); 
+      },
+      // isFinished: End the command when the target is reached or we hit our limit switch
+      () -> ( limitBottom || y_currentHeight <= y_targetHeight),
+      // Require this subsystem
+      this
+    );
+  }
+}
+  public Command Homing() {
+    return new FunctionalCommand(
+      () -> {}, 
+      () -> {
+        manualAdjustment(-0.05);
+      }, 
+      interrupted -> {
+        motor.stopMotor();
+        encoder.setPosition(0);
+        y_currentHeight = ElevatorSpecifics.kInitialHeight;
+      }, 
+      () -> (limitBottom), 
+      this);
   }
 }
 
