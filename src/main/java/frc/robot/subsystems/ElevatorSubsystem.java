@@ -98,7 +98,7 @@ public class ElevatorSubsystem extends SubsystemBase{
     double XSquared = Math.pow(y_targetHeight / ElevatorSpecifics.kLinkageCount,2);
     double LS_XS = LSquared - XSquared;
     double sqrt = Math.sqrt(LS_XS);
-    double num = sqrt - 24.38;
+    double num = sqrt - ElevatorSpecifics.kScissorLength;
     double denom = ElevatorSpecifics.kScrewPitch;
     r_targetRotations = num / denom;
   }
