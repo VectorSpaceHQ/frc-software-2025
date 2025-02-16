@@ -47,8 +47,9 @@ public class ElevatorSubsystem extends SubsystemBase{
   private boolean limitTop = l_top.get();
   // True when pressed
   private boolean limitBottom = l_bottom.get();
-  private double y_currentHeight = ElevatorSpecifics.kInitialHeight;
-  private double y_targetHeight = calculateCurrentHeight();
+  private double y_targetHeight = ElevatorSpecifics.kInitialHeight;
+  private double r_currentRotations = 0;
+  private double r_targetRotations = 0;
   private double PIDFeedback = 0;
 
   public ElevatorSubsystem() {
@@ -56,6 +57,7 @@ public class ElevatorSubsystem extends SubsystemBase{
     register();
     // Invert the SparkMax
     config.inverted(true);
+    config.smartCurrentLimit(1,1);
     // Apply the Inversion
     motor.configure(config, null, null);
   }
@@ -68,13 +70,15 @@ public class ElevatorSubsystem extends SubsystemBase{
 
   // Internal Function for updating constants
   private void update() {
-    y_currentHeight = calculateCurrentHeight();
-    PIDFeedback = pid.calculate(y_currentHeight, y_targetHeight);
-    // DataLogManager.log("PID Feeback" + PIDFeedback);
-    // DataLogManager.log("Current Height" + y_currentHeight);
+    calculateTargetRotations();
+    r_currentRotations = encoder.getPosition();
+    // y_currentHeight = calculateCurrentHeight();
+    PIDFeedback = pid.calculate(r_currentRotations, r_targetRotations);
+    // DataLogManager.log("PID Feedback" + PIDFeedback);
     // DataLogManager.log("Target Height" + y_targetHeight);
     // DataLogManager.log("Adjusted Speed" + SigmoidAdjustment(PIDFeedback));
     // DataLogManager.log("At Setpoint " + pid.atSetpoint());
+    DataLogManager.log("Target Rotational Value: " + r_targetRotations);
     limitTop = l_top.get();
     limitBottom = l_bottom.get();
     if (limitBottom) {
@@ -82,36 +86,21 @@ public class ElevatorSubsystem extends SubsystemBase{
     }
   }
 
-  // y=SquareRootOf(z^2-(z-pr)^2 ) -- per scissor 
-  // z is scissor length
-  // p is pitch
-  // r is rotations
-  // total h = (n * y) + y0
-  private double calculateCurrentHeight() {
-    // The following can be consolidated, but I left open for testing later
-    double ScissorLengthSquared = ElevatorSpecifics.kScissorLength * ElevatorSpecifics.kScissorLength;
-    double PitchTimesRotations = encoder.getPosition() * ElevatorSpecifics.kScrewPitch;
-    double ScissorLengthMinusPitchTimesRotations = ElevatorSpecifics.kScissorLength - PitchTimesRotations;
-    double ScissorLengthMinusPitchTimesRotationsSquared = ScissorLengthMinusPitchTimesRotations * ScissorLengthMinusPitchTimesRotations;
-    double HeightSquared = ScissorLengthSquared - ScissorLengthMinusPitchTimesRotationsSquared;
-    double result = Math.sqrt(HeightSquared) * ElevatorSpecifics.kLinkageCount;
-    return result + ElevatorSpecifics.kInitialHeight;
-  }
 
-  // (-sqrt(z^2 - (yf - y0)^2) + z) / p = R
-  // R is the rotations to go from y0 to yf
-  // z is scissor length
-  // yf is target height
-  // y0 is current height
-  // p is screw pitch
-  private double calculateRotationsToY(double targetHeight, double currentHeight) {
-    double Zsquared = Math.pow(ElevatorSpecifics.kScissorLength, 2);
-    double deltaY = targetHeight - currentHeight;
-    double deltaYsquared = Math.pow(deltaY, 2);
-    double ZsquaredMinusDY2 = Zsquared - deltaYsquared;
-    double num = ElevatorSpecifics.kScissorLength - Math.sqrt(ZsquaredMinusDY2);
-    double denom = ElevatorSpecifics.kScrewPitch * ElevatorSpecifics.kLinkageCount;
-    return num / denom;
+  // R = (sqrt(L^2 - X^2) - C) / P
+  // R is rotations
+  // L is scissor length
+  // X is target height
+  // C is fixed length between farthest linkage connection and point of lead screw rotation (24.38 inches or 24 inches)
+  // P is screw pitch
+  private void calculateTargetRotations() {
+    double LSquared = Math.pow(ElevatorSpecifics.kScissorLength,2);
+    double XSquared = Math.pow(y_targetHeight / ElevatorSpecifics.kLinkageCount,2);
+    double LS_XS = LSquared - XSquared;
+    double sqrt = Math.sqrt(LS_XS);
+    double num = sqrt - 24.38;
+    double denom = ElevatorSpecifics.kScrewPitch;
+    r_targetRotations = num / denom;
   }
 
   // Scaling PIDFeedback -0.3 to 0.3
@@ -143,19 +132,9 @@ public class ElevatorSubsystem extends SubsystemBase{
     return limitBottom;
   }
 
-  // Not used can most likely be removed
-  public double getPlatformHeight() {
-    return y_currentHeight;
-  } 
-
   // Added for interupt behaviors on manual adjustments (might be removable I just wanted to avoid weird edge cases)
   public void stopMotor(){
     motor.stopMotor();
-  }
-
-  // Getter for debugging
-  public double getInputHeight() {
-    return y_currentHeight + ElevatorSpecifics.kPlatformToInputHeight;
   }
 
   // yet another getter
@@ -217,7 +196,7 @@ public class ElevatorSubsystem extends SubsystemBase{
 
   public Command GoTo(Level target) {
     y_targetHeight = target.getLevel();
-    if (y_targetHeight >= y_currentHeight) {
+    if (r_targetRotations >= r_currentRotations) {
       return new FunctionalCommand(
       // onInit: Initialize our values
       () -> {},
@@ -225,6 +204,7 @@ public class ElevatorSubsystem extends SubsystemBase{
       () -> {
         update();
         double x = SigmoidAdjustment(PIDFeedback);
+        DataLogManager.log("" + x);
         if (!limitTop) {motor.set(x);}
       },
       // onEnd: Stop the motor
@@ -232,7 +212,7 @@ public class ElevatorSubsystem extends SubsystemBase{
         motor.stopMotor(); 
       },
       // isFinished: End the command when the target is reached or we hit our limit switch
-      () -> ( limitTop || y_currentHeight >= y_targetHeight),
+      () -> ( limitTop || r_currentRotations >= r_targetRotations) || pid.atSetpoint(),
       // Require this subsystem
       this
     );
@@ -252,7 +232,7 @@ public class ElevatorSubsystem extends SubsystemBase{
         motor.stopMotor(); 
       },
       // isFinished: End the command when the target is reached or we hit our limit switch
-      () -> ( limitBottom || y_currentHeight <= y_targetHeight),
+      () -> ( limitBottom || r_currentRotations <= r_targetRotations || pid.atSetpoint()),
       // Require this subsystem
       this
     );
@@ -267,7 +247,6 @@ public class ElevatorSubsystem extends SubsystemBase{
       interrupted -> {
         motor.stopMotor();
         encoder.setPosition(0);
-        y_currentHeight = ElevatorSpecifics.kInitialHeight;
       }, 
       () -> (limitBottom), 
       this);

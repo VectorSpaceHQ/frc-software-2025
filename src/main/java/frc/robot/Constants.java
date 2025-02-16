@@ -80,7 +80,7 @@ public final class Constants {
   }
 
   public static final class PIDTunings {
-    public static final double kElevatorKP = 0;
+    public static final double kElevatorKP = 1.2;
     public static final double kElevatorKI = 0;
     public static final double kElevatorKD = 0;
   }
