@@ -60,6 +60,8 @@ public class ElevatorSubsystem extends SubsystemBase{
     config.smartCurrentLimit(1,1);
     // Apply the Inversion
     motor.configure(config, null, null);
+    // Reduce PID error tolerance from 0.05 to 0.02
+    pid.setTolerance(0.02);
   }
 
 
