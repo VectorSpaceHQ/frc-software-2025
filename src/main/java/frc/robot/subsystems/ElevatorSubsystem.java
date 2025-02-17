@@ -80,7 +80,7 @@ public class ElevatorSubsystem extends SubsystemBase{
     // DataLogManager.log("Target Height" + y_targetHeight);
     // DataLogManager.log("Adjusted Speed" + SigmoidAdjustment(PIDFeedback));
     // DataLogManager.log("At Setpoint " + pid.atSetpoint());
-    DataLogManager.log("Target Rotational Value: " + r_targetRotations);
+    // DataLogManager.log("Target Rotational Value: " + r_targetRotations);
     limitTop = l_top.get();
     limitBottom = l_bottom.get();
     if (limitBottom) {
@@ -95,6 +95,8 @@ public class ElevatorSubsystem extends SubsystemBase{
   // X is target height
   // C is fixed length between farthest linkage connection and point of lead screw rotation (24.38 inches or 24 inches)
   // P is screw pitch
+  // https://erobtic.wixsite.com/erobtic/post/scissor-lifting-elevator-mechanism
+  // https://vectorspace.slack.com/archives/C07H5JJBLCX/p1739492047940889
   private void calculateTargetRotations() {
     double LSquared = Math.pow(ElevatorSpecifics.kScissorLength,2);
     double XSquared = Math.pow(y_targetHeight / ElevatorSpecifics.kLinkageCount,2);
@@ -110,38 +112,6 @@ public class ElevatorSubsystem extends SubsystemBase{
     double num = -value * 0.1; // Adjust this second value to change maximum / minimum output of this function (-0.3 = {-0.3 to 0.3})
     double denom = 1 + Math.abs(value);
     return num / denom;
-  }
-
-  // Used by commands to designate a target height of the platform
-  public void setElevatorTargetHeight(double h) {
-    y_targetHeight = h;
-  }
-  // Used by commands to designate a target height of the input
-  public void setInputTargetHeight(double h) {
-    y_targetHeight = h - ElevatorSpecifics.kPlatformToInputHeight;
-  }
-
-  public void resetElevator() {
-    setElevatorTargetHeight(ElevatorSpecifics.kInitialHeight);
-  }
-
-  // Can most likely be removed
-  public boolean getTopLimitSwitch() {
-    return limitTop;
-  }
-  // Can most likely be removed
-  public boolean getBottomLimitSwitch() {
-    return limitBottom;
-  }
-
-  // Added for interupt behaviors on manual adjustments (might be removable I just wanted to avoid weird edge cases)
-  public void stopMotor(){
-    motor.stopMotor();
-  }
-
-  // yet another getter
-  public double getEncoderposition() {
-    return encoder.getPosition();
   }
 
   // for manually raising / lowering elevator -> contains logic for limit switches
