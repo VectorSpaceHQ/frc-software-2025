@@ -67,7 +67,7 @@ public class ElevatorSubsystem extends SubsystemBase{
 
   @Override
   public void periodic() {
-    // update();
+    
   }
 
   // Internal Function for updating constants
