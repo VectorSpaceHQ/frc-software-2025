@@ -19,6 +19,8 @@ import frc.robot.Constants.OIConstants;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.CoralSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
+import frc.robot.subsystems.ElevatorSubsystem.Level;
+import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.AlgaeSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -40,6 +42,7 @@ public class RobotContainer {
   private final DriveSubsystem m_robotDrive = new DriveSubsystem();
   private final CoralSubsystem m_robotCoral = new CoralSubsystem();
   private final VisionSubsystem m_robotVision = new VisionSubsystem();
+  private final ElevatorSubsystem m_robotElevator = new ElevatorSubsystem();
   private final AlgaeSubsystem m_robotAlgae = new AlgaeSubsystem();
   
   // The driver's controller
@@ -83,42 +86,58 @@ public class RobotContainer {
     // Spin Coral Discharge on Hold / Stop on release
     m_driverController
         .a()
+        .and(m_driverController.leftBumper().negate())
+        .and(m_driverController.rightBumper().negate())
         .whileTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()))
         .onFalse(new InstantCommand(() -> m_robotCoral.suspendCoral()));
 
     // Elevator to L2 - Add CMD in Feature Branch
     m_driverController
         .b()
-        .onTrue(new InstantCommand(() -> System.out.println("b")));
+        .and(m_driverController.leftBumper().negate())
+        .and(m_driverController.rightBumper().negate())
+        .onTrue(m_robotElevator.GoTo(Level.L2));
     
     // Elevator to L3 - Add CMD in Feature Branch
     m_driverController
         .x()
-        .onTrue(new InstantCommand(() -> System.out.println("x")));
+        .and(m_driverController.leftBumper().negate())
+        .and(m_driverController.rightBumper().negate())
+        .onTrue(m_robotElevator.GoTo(Level.L3));
 
     // Elevator to L4 - Add CMD in Feature Branch
     m_driverController
         .y()
-        .onTrue(new InstantCommand(() -> System.out.println("y")));
+        .and(m_driverController.leftBumper().negate())
+        .and(m_driverController.rightBumper().negate())
+        .onTrue(m_robotElevator.GoTo(Level.L4));
 
     // Manually Raise Elevator - Add Function in Feature Branch
     m_driverController
         .back()
-        .onTrue(new InstantCommand(() -> System.out.println("back")));
+        .and(m_driverController.leftBumper().negate())
+        .and(m_driverController.rightBumper().negate())
+        .whileTrue(m_robotElevator.ElevatorRaiseCommand());
     
     // Manually Lower Elevator - Add Function in Feature Branch
     m_driverController
         .start()
-        .onTrue(new InstantCommand(() -> System.out.println("start")));
+        .and(m_driverController.leftBumper().negate())
+        .and(m_driverController.rightBumper().negate())
+        .whileTrue(m_robotElevator.ElevatorLowerCommand());
 
     // Go To Dispenser 1 (Left) - Add CMD in Feature Branch
     m_driverController
         .leftStick()
+        .and(m_driverController.leftBumper().negate())
+        .and(m_driverController.rightBumper().negate())
         .onTrue(new InstantCommand(() -> System.out.println("ls")));
     
     // Go To Dispenser 2 (Right) - Add CMD in Feature Branch
     m_driverController 
         .rightStick()
+        .and(m_driverController.leftBumper().negate())
+        .and(m_driverController.rightBumper().negate())
         .onTrue(new InstantCommand(() -> System.out.println("right")));
 
     // Go To Reef 1
@@ -192,6 +211,14 @@ public class RobotContainer {
     .rightBumper()
     .and(m_driverController.start())
     .onTrue(new InstantCommand(() -> System.out.println("rb + start")));
+
+    // Homing Routines
+    m_driverController
+    .rightBumper()
+    .and(m_driverController.leftBumper())
+    .and(m_driverController.a())
+    .onTrue(m_robotElevator.Homing())
+    .onTrue(new InstantCommand(() -> System.out.println("Homing Process B")));
     
   }
 
