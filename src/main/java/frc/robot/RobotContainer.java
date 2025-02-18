@@ -216,6 +216,7 @@ public class RobotContainer {
     .and(m_driverController.leftBumper())
     .and(m_driverController.a())
     .onTrue(m_robotElevator.Homing())
+    .onTrue(m_robotAlgae.homeClaws())
     .onTrue(new InstantCommand(() -> System.out.println("Homing Process B")));
     
   }

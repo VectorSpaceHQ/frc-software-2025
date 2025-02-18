@@ -59,6 +59,7 @@ public class AlgaeSubsystem extends SubsystemBase {
         return new FunctionalCommand(
             () -> {},
             () -> {
+                update();
                 if (!limitSwitchLeft) {
                     motor_left.set(-0.05);
                 }
