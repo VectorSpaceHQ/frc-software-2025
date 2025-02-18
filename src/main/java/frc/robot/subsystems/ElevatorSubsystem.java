@@ -88,6 +88,9 @@ public class ElevatorSubsystem extends SubsystemBase{
     }
   }
 
+  private void stopMotor(){
+    motor.stopMotor();
+  }
 
   // R = (sqrt(L^2 - X^2) - C) / P
   // R is rotations
