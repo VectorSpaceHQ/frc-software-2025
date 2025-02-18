@@ -15,6 +15,7 @@ public class AlgaeSubsystem extends SubsystemBase {
     private final SparkMax motor_left = new SparkMax(CANIDs.kAlgaeSubsystemLeft, MotorType.kBrushless);
     private final SparkMax motor_right = new SparkMax(CANIDs.kAlgaeSubsystemRight, MotorType.kBrushless);
     private SparkMaxConfig config = new SparkMaxConfig();
+    private SparkMaxConfig defaultconfig = new SparkMaxConfig();
     private final DigitalInput l_Left = new DigitalInput(DigitalInputPorts.kAlgaeSubsystemLeft);
     private final DigitalInput l_Right = new DigitalInput(DigitalInputPorts.kAlgaeSubsystemRight);
     private boolean limitSwitchLeft = l_Left.get();
@@ -49,7 +50,7 @@ public class AlgaeSubsystem extends SubsystemBase {
             interrupted -> {
                 motor_left.stopMotor();
             },
-            () -> (limitSwitchLeft || limitSwitchRight),
+            () -> ((limitSwitchLeft || limitSwitchRight) && (speed >= 0)),
             this);
     }
 
@@ -57,15 +58,15 @@ public class AlgaeSubsystem extends SubsystemBase {
     // Returns both motors to their respective limit switches
     public Command homeClaws() {
         return new FunctionalCommand(
-            () -> {},
+            () -> {motor_right.configure(defaultconfig, null, null);},
             () -> {
                 update();
                 if (!limitSwitchLeft) {
-                    motor_left.set(-0.05);
+                    motor_left.set(0.05);
                 }
                 else { motor_left.stopMotor();}
                 if (!limitSwitchRight) {
-                    motor_right.set(0.05);
+                    motor_right.set(-0.05);
                 }
                 else {
                     motor_right.stopMotor();
