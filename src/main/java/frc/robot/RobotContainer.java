@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj.XboxController.Button;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
+import frc.robot.commands.DriveTargetCommand;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.CoralSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
@@ -50,18 +51,23 @@ public class RobotContainer {
 
     // Configure default commands
     // Set the default drive command to split-stick arcade drive
-    m_robotDrive.setDefaultCommand(
-        // A split-stick arcade command, with forward/backward controlled by the left
-        // hand, and turning controlled by the right.
-        new RunCommand(
-            () ->
-                m_robotDrive.drive(
-                    -m_driverController.getLeftY(),
-                    -m_driverController.getRightX(),
-                    -m_driverController.getLeftX(),
-                    false),
-            m_robotDrive));
-  }
+    // m_robotDrive.setDefaultCommand(
+    //     // A split-stick arcade command, with forward/backward controlled by the left
+    //     // hand, and turning controlled by the right.
+    //     new RunCommand(
+    //         () ->
+    //             m_robotDrive.drive(
+    //                 -m_driverController.getLeftY(),
+    //                 -m_driverController.getRightX(),
+    //                 -m_driverController.getLeftX(),
+    //                 false),
+    //         m_robotDrive));
+         
+    DriveTargetCommand aimTarget = new DriveTargetCommand(m_robotDrive, m_robotVision, m_driverController);
+    m_robotDrive.setDefaultCommand(aimTarget);
+
+
+ }
 
   /**
    * Use this method to define your button->command mappings. Buttons can be created by
@@ -74,6 +80,7 @@ public class RobotContainer {
     new JoystickButton(m_driverController, Button.kRightBumper.value)
         .onTrue(new InstantCommand(() -> m_robotDrive.setMaxOutput(0.5)))
         .onFalse(new InstantCommand(() -> m_robotDrive.setMaxOutput(1)));
+ 
   }
 
   /**
