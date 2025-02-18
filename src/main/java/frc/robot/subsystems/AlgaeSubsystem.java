@@ -23,6 +23,7 @@ public class AlgaeSubsystem extends SubsystemBase {
 
     public AlgaeSubsystem() {
         // Sets right motor to an inverted follower of the left
+        defaultconfig.smartCurrentLimit(1, 1);
         config.inverted(true);
         config.follow(CANIDs.kAlgaeSubsystemLeft);
         config.smartCurrentLimit(1, 1);
