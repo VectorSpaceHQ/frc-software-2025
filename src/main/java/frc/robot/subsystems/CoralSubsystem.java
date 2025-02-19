@@ -30,14 +30,15 @@ public class CoralSubsystem extends SubsystemBase{
     public CoralSubsystem() {
       // Left config
       config_left.smartCurrentLimit(1,1);
+
       motor_left.configure(config_left, null, null);
 
       // Right Config
       config_right.smartCurrentLimit(1,1);
       config_right.inverted(true);
       config_right.follow(CANIDs.kCoralSubsystemLeft);
+
       motor_right.configure(config_right, null, null);
-      
     }
 
     @Override
