@@ -69,11 +69,9 @@ public class RobotContainer {
     m_robotAlgae.setDefaultCommand(
         // Left + Right Full Pressed = 0
         // Left Closes Right Opens (this result can be scaled down by a constant multiple if needed)
-        new RunCommand(
-            () -> 
-                m_robotAlgae.motorSetSpeed(
-                    m_driverController.getRightTriggerAxis() - m_driverController.getLeftTriggerAxis()), 
-                m_robotAlgae));
+    
+                m_robotAlgae.runClaws(
+                    m_driverController.getLeftTriggerAxis() - m_driverController.getRightTriggerAxis()));
   }
 
   /**
@@ -217,6 +215,7 @@ public class RobotContainer {
     .and(m_driverController.leftBumper())
     .and(m_driverController.a())
     .onTrue(m_robotElevator.Homing())
+    .onTrue(m_robotAlgae.homeClaws())
     .onTrue(new InstantCommand(() -> System.out.println("Homing Process B")));
     
   }
