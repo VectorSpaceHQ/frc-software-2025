@@ -88,8 +88,7 @@ public class RobotContainer {
         .a()
         .and(m_driverController.leftBumper().negate())
         .and(m_driverController.rightBumper().negate())
-        .whileTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()))
-        .onFalse(new InstantCommand(() -> m_robotCoral.suspendCoral()));
+        .whileTrue(new InstantCommand(() -> m_robotCoral.runCoralDispenser()));
 
     // Elevator to L2 - Add CMD in Feature Branch
     m_driverController
