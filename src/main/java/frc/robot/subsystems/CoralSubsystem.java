@@ -15,19 +15,29 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class CoralSubsystem extends SubsystemBase{
 
     // Creates two instances of SparkMax Motor Controlled Brushless Motors on provided CANIDs
+    // Main
     private final SparkMax motor_left = new SparkMax(CANIDs.kCoralSubsystemLeft, MotorType.kBrushless);
+    // Follower
     private final SparkMax motor_right = new SparkMax(CANIDs.kCoralSubsystemRight, MotorType.kBrushless);
-    private final SparkMaxConfig config = new SparkMaxConfig();
+    // Config to be passed to right (inverted, follower, currentlimits)
+    private final SparkMaxConfig config_right = new SparkMaxConfig();
+    // Config to be passed to left (currentlimits)
+    private final SparkMaxConfig config_left = new SparkMaxConfig();
 
     // Motors are Synchronized so setspeed is controlled via common input 0.1 = 10% of max output
     private final double motorspeed = 0.1;
 
     public CoralSubsystem() {
-      config.smartCurrentLimit(1,1);
-      motor_left.configure(config, null, null);
-      config.inverted(true);
-      config.follow(CANIDs.kCoralSubsystemLeft);
-      motor_right.configure(config, null, null);
+      // Left config
+      config_left.smartCurrentLimit(1,1);
+      motor_left.configure(config_left, null, null);
+
+      // Right Config
+      config_right.smartCurrentLimit(1,1);
+      config_right.inverted(true);
+      config_right.follow(CANIDs.kCoralSubsystemLeft);
+      motor_right.configure(config_right, null, null);
+      
     }
 
     @Override
