@@ -28,6 +28,7 @@ public class CoralSubsystem extends SubsystemBase{
     private final double motorspeed = 0.1;
 
     public CoralSubsystem() {
+      register();
       // Left config
       config_left.smartCurrentLimit(1,1);
 
