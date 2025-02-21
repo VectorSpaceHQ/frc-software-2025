@@ -2,6 +2,7 @@ package frc.robot.commands;
 
 // Imports for the drivetarget command
 import edu.wpi.first.wpilibj2.command.Command;
+
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.AutoConstants;
@@ -9,9 +10,12 @@ import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 
 public class DriveTargetCommand extends Command {
+    private final double visionThingy = 1.25;
+    
     private DriveSubsystem driveSubsystem;
     private VisionSubsystem visionSubsystem;
     private XboxController driverController;
+    
 
     // Sets the drivetarget constructor
     public DriveTargetCommand(
@@ -38,7 +42,8 @@ public class DriveTargetCommand extends Command {
             // Check if the A button is pressed
             if (driverController.getAButton()) {
                 // If the camera is connected, get the target yaw and drive towards it
-                double targetYaw = visionSubsystem.getTargetYaw(1);
+                double targetYaw = visionSubsystem.getTargetYaw(7);
+                double targetRange = visionSubsystem.getTargetRange(7);
 
                 // Check if the target yaw is valid and displays the aiming status and yaw
                 if (!Double.isNaN(targetYaw)) {
@@ -47,8 +52,14 @@ public class DriveTargetCommand extends Command {
                     SmartDashboard.putNumber("Target Yaw", targetYaw);
                     // Reset the odometry if the estimated pose has targets
                 }
+
+                if (!Double.isNaN(targetRange)) {
+                    forward = (visionThingy-targetRange * 0.01 * AutoConstants.kMaxSpeedMetersPerSecond);
+                    SmartDashboard.putString("Aiming Status", "Aiming");
+                    SmartDashboard.putNumber("Target Yaw", targetYaw);
+                }
             }
-        }
+        } 
         else {
             SmartDashboard.putString("Aiming Status", "Camera Not Connected");
         }

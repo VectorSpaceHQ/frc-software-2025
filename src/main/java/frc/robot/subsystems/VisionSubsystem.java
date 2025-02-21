@@ -18,6 +18,7 @@ import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonUtils;
 import org.photonvision.targeting.PhotonTrackedTarget;
+import org.photonvision.timesync.*;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
@@ -28,6 +29,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 
 import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -185,6 +187,30 @@ public class VisionSubsystem extends SubsystemBase {
         return returnYaw;
     }
 
+    public double getTargetRange(int id) {
+        var results = camera.getAllUnreadResults();
+        double returnRange = 0.0;
+        
+        
+        if (!results.isEmpty()) {
+            var latestResult = results.get(results.size() - 1);
+            if (latestResult.hasTargets()) {
+            
+                for (var target : latestResult.getTargets()) {
+                    if (target.getFiducialId() == 7) {
+                        returnRange = PhotonUtils.calculateDistanceToTargetMeters(0.5, // Measured with a tape measure, or in CAD.
+                        1.435, // From 2024 game manual for ID 7
+                        Units.degreesToRadians(-30.0), // Measured with a protractor, or in CAD.
+                        Units.degreesToRadians(target.getPitch()));
+                        
+                        break;
+                    }   
+                }
+            }
+        }
+        return returnRange;
+    }
+
     // Converts 3d pose to 2d pose
     public Optional<Pose2d> getRobotPose() {
         var result = camera.getLatestResult();
@@ -195,10 +221,14 @@ public class VisionSubsystem extends SubsystemBase {
 
             if (tagPose.isPresent()) {
 
-                Optional<EstimatedRobotPose> estimatedRobotPose = poseEstimator.update(result);
+                Optional<EstimatedRobotPose> optionalPose = poseEstimator.update(result);
+                if (optionalPose.isPresent()) {
 
-                if (estimatedRobotPose.isPresent()) {
-                    Pose3d estimatedRobotPose3d = estimatedRobotPose.get().estimatedPose;
+                EstimatedRobotPose estimatedRobotPose = optionalPose.get();
+
+                double timestamp = estimatedRobotPose.timestampSeconds;
+                   
+                    Pose3d estimatedRobotPose3d = estimatedRobotPose.estimatedPose;
                     Pose2d estimatedRobotPose2d = new Pose2d(estimatedRobotPose3d.getTranslation().toTranslation2d(),
                             estimatedRobotPose3d.getRotation().toRotation2d());
                     // pose3dEntry = visionTab.add("EstimatedRobotPose",
@@ -208,6 +238,8 @@ public class VisionSubsystem extends SubsystemBase {
 
             }
         }
+        
+    
 
         return Optional.empty();
     }
@@ -217,6 +249,7 @@ public class VisionSubsystem extends SubsystemBase {
         // This method will be called once per scheduler run
         if (cameraConnected) {
             var results = camera.getLatestResult();
+
             if (results.hasTargets()) {
 
                 var target = results.getBestTarget();

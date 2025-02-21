@@ -16,6 +16,8 @@ import frc.robot.Constants.DriveConstants;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+
+
 public class DriveSubsystem extends SubsystemBase {
 
   private final TalonFX m_frontLeft = new TalonFX(CANIDs.kDriveSubsystemFrontLeft);
@@ -23,12 +25,13 @@ public class DriveSubsystem extends SubsystemBase {
   private final TalonFX m_frontRight = new TalonFX(CANIDs.kDriveSubsystemFrontRight);
   private final TalonFX m_rearRight = new TalonFX(CANIDs.kDriveSubsystemRearRight);
 
+
   private double m_frontLeftEncoder = 0;
   private double m_rearLeftEncoder = 0;
   private double m_frontRightEncoder = 0;
   private double m_rearRightEncoder = 0;
   private final MecanumDrive m_drive =
-      new MecanumDrive(m_frontLeft::set, m_rearLeft::set, m_frontRight::set, m_rearRight::set);
+     new MecanumDrive(m_frontLeft::set, m_rearLeft::set, m_frontRight::set, m_rearRight::set);
 
   // The gyro sensor
   private final ADXRS450_Gyro m_gyro = new ADXRS450_Gyro();
@@ -65,9 +68,9 @@ public class DriveSubsystem extends SubsystemBase {
   public void periodic() {
     // Update the odometry in the periodic block
     m_frontLeftEncoder = m_frontLeft.getPosition().getValue().magnitude();
-    m_rearLeftEncoder = m_rearLeft.getPosition().getValue().magnitude();
+    // m_rearLeftEncoder = m_rearLeft.getPosition().getValue().magnitude();
     m_frontRightEncoder = m_frontRight.getPosition().getValue().magnitude();
-    m_rearRightEncoder = m_rearRight.getPosition().getValue().magnitude();
+    // m_rearRightEncoder = m_rearRight.getPosition().getValue().magnitude();
     m_odometry.update(m_gyro.getRotation2d(), getCurrentWheelDistances());
   }
 
@@ -106,25 +109,7 @@ public class DriveSubsystem extends SubsystemBase {
     }
   }
 
-  /** Sets the front left drive MotorController to a voltage. */
-  public void setDriveMotorControllersVolts(
-      double frontLeftVoltage,
-      double frontRightVoltage,
-      double rearLeftVoltage,
-      double rearRightVoltage) {
-    m_frontLeft.setVoltage(frontLeftVoltage);
-    m_rearLeft.setVoltage(rearLeftVoltage);
-    m_frontRight.setVoltage(frontRightVoltage);
-    m_rearRight.setVoltage(rearRightVoltage);
-  }
-
-  /** Resets the drive encoders to currently read a position of 0. */
-  public void resetEncoders() {
-    m_frontLeft.setPosition(0);
-    m_frontLeft.setPosition(0);
-    m_frontLeft.setPosition(0);
-    m_frontLeft.setPosition(0);
-  }
+  
 
   
   public double getFrontLeftEncoder() {
