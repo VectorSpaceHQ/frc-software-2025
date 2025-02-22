@@ -18,7 +18,6 @@ import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonUtils;
 import org.photonvision.targeting.PhotonTrackedTarget;
-import org.photonvision.timesync.*;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
