@@ -9,19 +9,35 @@ import edu.wpi.first.math.kinematics.MecanumDriveOdometry;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelPositions;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds;
 import edu.wpi.first.util.sendable.SendableRegistry;
-import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import frc.robot.Constants.CANIDs;
 import frc.robot.Constants.DriveConstants;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.TalonFXConfigurator;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
+
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import com.studica.frc.AHRS;
 
 public class DriveSubsystem extends SubsystemBase {
 
+  
   private final TalonFX m_frontLeft = new TalonFX(CANIDs.kDriveSubsystemFrontLeft);
   private final TalonFX m_rearLeft = new TalonFX(CANIDs.kDriveSubsystemRearLeft);
   private final TalonFX m_frontRight = new TalonFX(CANIDs.kDriveSubsystemFrontRight);
   private final TalonFX m_rearRight = new TalonFX(CANIDs.kDriveSubsystemRearRight);
+
+  //using default frontR rearR inverted right now
+  private final TalonFXConfigurator frontRightConfigurator = m_frontRight.getConfigurator();
+  private final TalonFXConfigurator rearRightConfigurator = m_rearRight.getConfigurator();
+  private final TalonFXConfigurator frontLeftConfigurator = m_frontLeft.getConfigurator();
+  private final TalonFXConfigurator rearLeftConfigurator = m_rearLeft.getConfigurator();
+
+  private final MotorOutputConfigs frontRightConfigs = new MotorOutputConfigs();
+  private final MotorOutputConfigs rearRightConfigs = new MotorOutputConfigs();
+  private final MotorOutputConfigs frontLeftConfigs = new MotorOutputConfigs();
+  private final MotorOutputConfigs rearLeftConfigs = new MotorOutputConfigs();
 
   private double m_frontLeftEncoder = 0;
   private double m_rearLeftEncoder = 0;
@@ -31,7 +47,7 @@ public class DriveSubsystem extends SubsystemBase {
       new MecanumDrive(m_frontLeft::set, m_rearLeft::set, m_frontRight::set, m_rearRight::set);
 
   // The gyro sensor
-  private final ADXRS450_Gyro m_gyro = new ADXRS450_Gyro();
+  private final AHRS m_gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
 
   // Odometry class for tracking robot pose
   MecanumDriveOdometry m_odometry =
@@ -56,9 +72,16 @@ public class DriveSubsystem extends SubsystemBase {
     // result in both sides moving forward. Depending on how your robot's
     // gearbox is constructed, you might have to invert the left side instead.
 
-    // Set These Two Configs in Phoenix X Tuner When Robot is Built
-    // m_frontRight.setInverted(true);
-    // m_rearRight.setInverted(true);
+    // Inversion of two motors
+    frontRightConfigs.Inverted = InvertedValue.Clockwise_Positive;
+    rearRightConfigs.Inverted = InvertedValue.Clockwise_Positive;
+    
+    // Current Limit
+
+    frontRightConfigurator.apply(frontRightConfigs);
+    rearRightConfigurator.apply(rearRightConfigs);
+    frontLeftConfigurator.apply(frontLeftConfigs);
+    rearLeftConfigurator.apply(rearLeftConfigs);
   }
 
   @Override
