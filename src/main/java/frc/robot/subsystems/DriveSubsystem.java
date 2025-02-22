@@ -9,11 +9,17 @@ import edu.wpi.first.math.kinematics.MecanumDriveOdometry;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelPositions;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds;
 import edu.wpi.first.util.sendable.SendableRegistry;
-import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import frc.robot.Constants.CANIDs;
 import frc.robot.Constants.DriveConstants;
+
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.TalonFXConfigurator;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.studica.frc.AHRS;
+
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 
@@ -34,7 +40,25 @@ public class DriveSubsystem extends SubsystemBase {
      new MecanumDrive(m_frontLeft::set, m_rearLeft::set, m_frontRight::set, m_rearRight::set);
 
   // The gyro sensor
-  private final ADXRS450_Gyro m_gyro = new ADXRS450_Gyro();
+  private final AHRS m_gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
+
+   //using default frontR rearR inverted right now
+  private final TalonFXConfigurator frontRightConfigurator = m_frontRight.getConfigurator();
+  private final TalonFXConfigurator rearRightConfigurator = m_rearRight.getConfigurator();
+  private final TalonFXConfigurator frontLeftConfigurator = m_frontLeft.getConfigurator();
+  private final TalonFXConfigurator rearLeftConfigurator = m_rearLeft.getConfigurator();
+
+  private final MotorOutputConfigs frontRightMotorConfigs = new MotorOutputConfigs();
+  private final MotorOutputConfigs rearRightMotorConfigs = new MotorOutputConfigs();
+  private final MotorOutputConfigs frontLeftMotorConfigs = new MotorOutputConfigs();
+  private final MotorOutputConfigs rearLeftMotorConfigs = new MotorOutputConfigs();
+
+  private final CurrentLimitsConfigs frontRightCurrentConfigs = new CurrentLimitsConfigs();
+  private final CurrentLimitsConfigs rearRightCurrentConfigs = new CurrentLimitsConfigs();
+  private final CurrentLimitsConfigs frontLeftCurrentConfigs = new CurrentLimitsConfigs();
+  private final CurrentLimitsConfigs rearLeftCurrentConfigs = new CurrentLimitsConfigs();
+
+  
 
   // Odometry class for tracking robot pose
   MecanumDriveOdometry m_odometry =
@@ -59,18 +83,44 @@ public class DriveSubsystem extends SubsystemBase {
     // result in both sides moving forward. Depending on how your robot's
     // gearbox is constructed, you might have to invert the left side instead.
 
-    // Set These Two Configs in Phoenix X Tuner When Robot is Built
-    // m_frontRight.setInverted(true);
-    // m_rearRight.setInverted(true);
+    
+    // Inversion of two motors
+    frontRightMotorConfigs.Inverted = InvertedValue.Clockwise_Positive;
+    rearRightMotorConfigs.Inverted = InvertedValue.Clockwise_Positive;
+    
+    // Current Limits
+    frontRightCurrentConfigs.withSupplyCurrentLimit(10);
+    frontRightCurrentConfigs.withStatorCurrentLimit(10);
+
+    rearRightCurrentConfigs.withSupplyCurrentLimit(10);
+    rearRightCurrentConfigs.withStatorCurrentLimit(10);
+
+    frontLeftCurrentConfigs.withSupplyCurrentLimit(10);
+    frontLeftCurrentConfigs.withStatorCurrentLimit(10);
+
+    rearLeftCurrentConfigs.withSupplyCurrentLimit(10);
+    rearLeftCurrentConfigs.withStatorCurrentLimit(10);
+
+    frontRightConfigurator.apply(frontRightMotorConfigs);
+    rearRightConfigurator.apply(rearRightMotorConfigs);
+    frontLeftConfigurator.apply(frontLeftMotorConfigs);
+    rearLeftConfigurator.apply(rearLeftMotorConfigs);
+
+    frontRightConfigurator.apply(frontRightCurrentConfigs);
+    rearRightConfigurator.apply(rearRightCurrentConfigs);
+    frontLeftConfigurator.apply(frontLeftCurrentConfigs);
+    rearLeftConfigurator.apply(rearLeftCurrentConfigs);
+
+    m_drive.setMaxOutput(0.3);
   }
 
   @Override
   public void periodic() {
     // Update the odometry in the periodic block
     m_frontLeftEncoder = m_frontLeft.getPosition().getValue().magnitude();
-    // m_rearLeftEncoder = m_rearLeft.getPosition().getValue().magnitude();
+    m_rearLeftEncoder = m_rearLeft.getPosition().getValue().magnitude();
     m_frontRightEncoder = m_frontRight.getPosition().getValue().magnitude();
-    // m_rearRightEncoder = m_rearRight.getPosition().getValue().magnitude();
+    m_rearRightEncoder = m_rearRight.getPosition().getValue().magnitude();
     m_odometry.update(m_gyro.getRotation2d(), getCurrentWheelDistances());
   }
 
