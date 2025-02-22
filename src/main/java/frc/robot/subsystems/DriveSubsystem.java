@@ -105,6 +105,8 @@ public class DriveSubsystem extends SubsystemBase {
     rearRightConfigurator.apply(rearRightCurrentConfigs);
     frontLeftConfigurator.apply(frontLeftCurrentConfigs);
     rearLeftConfigurator.apply(rearLeftCurrentConfigs);
+
+    m_drive.setMaxOutput(0.3);
   }
 
   @Override

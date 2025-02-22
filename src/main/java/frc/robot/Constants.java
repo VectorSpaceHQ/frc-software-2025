@@ -74,10 +74,10 @@ public final class Constants {
   public static final class CANIDs {
     public static final int kCoralSubsystemLeft = 11;
     public static final int kCoralSubsystemRight = 12;
-    public static final int kDriveSubsystemFrontRight = 13;
-    public static final int kDriveSubsystemFrontLeft = 14;
-    public static final int kDriveSubsystemRearRight = 15;
-    public static final int kDriveSubsystemRearLeft = 16;
+    public static final int kDriveSubsystemFrontRight = 7;
+    public static final int kDriveSubsystemFrontLeft = 6;
+    public static final int kDriveSubsystemRearRight = 8;
+    public static final int kDriveSubsystemRearLeft = 9;
   }
 
   public static final class AutoConstants {
