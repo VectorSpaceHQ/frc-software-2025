@@ -37,8 +37,8 @@ import java.util.List;
 public class RobotContainer {
   // The robot's subsystems
   private final DriveSubsystem m_robotDrive = new DriveSubsystem();
-  private final CoralSubsystem m_robotCoral = new CoralSubsystem();
-  private final VisionSubsystem m_robotVision = new VisionSubsystem();
+//   private final CoralSubsystem m_robotCoral = new CoralSubsystem();
+//   private final VisionSubsystem m_robotVision = new VisionSubsystem();
   
   // The driver's controller
   XboxController m_driverController = new XboxController(OIConstants.kDriverControllerPort);
@@ -56,9 +56,9 @@ public class RobotContainer {
         new RunCommand(
             () ->
                 m_robotDrive.drive(
-                    -m_driverController.getLeftY(),
-                    -m_driverController.getLeftX(),
-                    -m_driverController.getRightX(),
+                    0.5 * m_driverController.getLeftY(),
+                    0.5 * -m_driverController.getLeftX(),
+                    0.5 * -m_driverController.getRightX(),
                     false),
             m_robotDrive));
   }
@@ -71,13 +71,13 @@ public class RobotContainer {
    */
   private void configureButtonBindings() {
     // Drive at half speed when the right bumper is held
-    new JoystickButton(m_driverController, Button.kRightBumper.value)
-        .onTrue(new InstantCommand(() -> m_robotDrive.setMaxOutput(0.5)))
-        .onFalse(new InstantCommand(() -> m_robotDrive.setMaxOutput(1)));
+    // new JoystickButton(m_driverController, Button.kRightBumper.value)
+    //     .onTrue(new InstantCommand(() -> m_robotDrive.setMaxOutput(0.5)))
+    //     .onFalse(new InstantCommand(() -> m_robotDrive.setMaxOutput(1)));
     // Spin Coral Discharge on Hold / Stop on release
-    new JoystickButton(m_driverController, Button.kA.value)
-        .whileTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()))
-        .onFalse(new InstantCommand(() -> m_robotCoral.suspendCoral()));
+    // new JoystickButton(m_driverController, Button.kA.value)
+    //     .whileTrue(new InstantCommand(() -> m_robotCoral.releaseCoral()))
+    //     .onFalse(new InstantCommand(() -> m_robotCoral.suspendCoral()));
   }
 
   /**
