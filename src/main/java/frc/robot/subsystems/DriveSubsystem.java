@@ -12,6 +12,8 @@ import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import frc.robot.Constants.CANIDs;
 import frc.robot.Constants.DriveConstants;
+
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfigurator;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -34,11 +36,16 @@ public class DriveSubsystem extends SubsystemBase {
   private final TalonFXConfigurator frontLeftConfigurator = m_frontLeft.getConfigurator();
   private final TalonFXConfigurator rearLeftConfigurator = m_rearLeft.getConfigurator();
 
-  private final MotorOutputConfigs frontRightConfigs = new MotorOutputConfigs();
-  private final MotorOutputConfigs rearRightConfigs = new MotorOutputConfigs();
-  private final MotorOutputConfigs frontLeftConfigs = new MotorOutputConfigs();
-  private final MotorOutputConfigs rearLeftConfigs = new MotorOutputConfigs();
+  private final MotorOutputConfigs frontRightMotorConfigs = new MotorOutputConfigs();
+  private final MotorOutputConfigs rearRightMotorConfigs = new MotorOutputConfigs();
+  private final MotorOutputConfigs frontLeftMotorConfigs = new MotorOutputConfigs();
+  private final MotorOutputConfigs rearLeftMotorConfigs = new MotorOutputConfigs();
 
+  private final CurrentLimitsConfigs frontRightCurrentConfigs = new CurrentLimitsConfigs();
+  private final CurrentLimitsConfigs rearRightCurrentConfigs = new CurrentLimitsConfigs();
+  private final CurrentLimitsConfigs frontLeftCurrentConfigs = new CurrentLimitsConfigs();
+  private final CurrentLimitsConfigs rearLeftCurrentConfigs = new CurrentLimitsConfigs();
+  
   private double m_frontLeftEncoder = 0;
   private double m_rearLeftEncoder = 0;
   private double m_frontRightEncoder = 0;
@@ -73,15 +80,31 @@ public class DriveSubsystem extends SubsystemBase {
     // gearbox is constructed, you might have to invert the left side instead.
 
     // Inversion of two motors
-    frontRightConfigs.Inverted = InvertedValue.Clockwise_Positive;
-    rearRightConfigs.Inverted = InvertedValue.Clockwise_Positive;
+    frontRightMotorConfigs.Inverted = InvertedValue.Clockwise_Positive;
+    rearRightMotorConfigs.Inverted = InvertedValue.Clockwise_Positive;
     
     // Current Limit
+    frontRightCurrentConfigs.withSupplyCurrentLimit(10);
+    frontRightCurrentConfigs.withStatorCurrentLimit(10);
 
-    frontRightConfigurator.apply(frontRightConfigs);
-    rearRightConfigurator.apply(rearRightConfigs);
-    frontLeftConfigurator.apply(frontLeftConfigs);
-    rearLeftConfigurator.apply(rearLeftConfigs);
+    rearRightCurrentConfigs.withSupplyCurrentLimit(10);
+    rearRightCurrentConfigs.withStatorCurrentLimit(10);
+
+    frontLeftCurrentConfigs.withSupplyCurrentLimit(10);
+    frontLeftCurrentConfigs.withStatorCurrentLimit(10);
+
+    rearLeftCurrentConfigs.withSupplyCurrentLimit(10);
+    rearLeftCurrentConfigs.withStatorCurrentLimit(10);
+
+    frontRightConfigurator.apply(frontRightMotorConfigs);
+    rearRightConfigurator.apply(rearRightMotorConfigs);
+    frontLeftConfigurator.apply(frontLeftMotorConfigs);
+    rearLeftConfigurator.apply(rearLeftMotorConfigs);
+
+    frontRightConfigurator.apply(frontRightCurrentConfigs);
+    rearRightConfigurator.apply(rearRightCurrentConfigs);
+    frontLeftConfigurator.apply(frontLeftCurrentConfigs);
+    rearLeftConfigurator.apply(rearLeftCurrentConfigs);
   }
 
   @Override
