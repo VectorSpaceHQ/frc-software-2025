@@ -3,9 +3,6 @@
 // Import statements for Java file operations, PhotonVision libraries, and WPILib classes
 package frc.robot.subsystems;
 
-import frc.robot.Constants.OIConstants;
-import edu.wpi.first.wpilibj.XboxController;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -60,6 +57,7 @@ public class VisionSubsystem extends SubsystemBase {
     private boolean cameraConnected = false;
 
     // Shuffleboard entries
+    private ShuffleboardTab visionTab;
     private GenericEntry yawEntry;
     private GenericEntry pitchEntry;
     private GenericEntry skewEntry;
@@ -70,16 +68,21 @@ public class VisionSubsystem extends SubsystemBase {
     private GenericEntry yEntry;
     private GenericEntry zEntry;
     private GenericEntry poseEntry;
-    // private GenericEntry pose3dEntry;
+    private GenericEntry pose3dEntry;
     private GenericEntry pose2dEntry;
 
     // Xbox controller for driver input
-    XboxController m_driverController = new XboxController(OIConstants.kDriverControllerPort);
-
     // Vision Subsystem constructor
     public VisionSubsystem() {
         // Initialize camera with name matching PhotonVision GUI (HAS TO MATCH)
         camera = new PhotonCamera(camera_name);
+        initializeSubsystem();
+        initializeShuffleboard();
+        try {
+            initializeAprilTagFieldLayout();
+        } catch (IOException e) {
+            System.err.println("Error initializing AprilTag field layout: " + e.getMessage());
+        }
     }
 
     // Try-catch block to catch any exceptions that may occur (such as a
@@ -121,65 +124,35 @@ public class VisionSubsystem extends SubsystemBase {
 
     }
 
-    private void initializeShuffleBoard() {
-        // Create a new Shuffleboard tab for the vision subsystem
-
-        var results = camera.getAllUnreadResults();
-
-        var frame = results.get(0);
-
-        List<PhotonTrackedTarget> targets = frame.getTargets();
-
-        if (results.size() > 0) {
-            for (PhotonTrackedTarget target : targets) {
-                String prefix = "Tag " + target.getFiducialId() + " ";
-                double yaw = target.getYaw(); // Horizontal angle
-                double pitch = target.getPitch(); // Vertical angle
-                double area = target.getArea(); // Size in image (percentage)
-                double skew = target.getSkew(); // Rotation
-                double id = target.getFiducialId(); // AprilTag ID
-                double ambiguity = target.getPoseAmbiguity(); // Ambiguity of the pose
-                Transform3d transform = target.getBestCameraToTarget(); // Maps camera space to target (april tag) space
-                // double x = transform.getTranslation().getX(); // X position translation
-                // double y = transform.getTranslation().getY(); // Y position translation
-                // double z = transform.getTranslation().getZ(); // Z position translation
-
-                // displayed on SmartDashboard
-                ShuffleboardTab visionTab = Shuffleboard.getTab(prefix);
-
-                yawEntry = visionTab.add("Yaw", yaw).getEntry();
-                pitchEntry = visionTab.add("Pitch", pitch).getEntry();
-                skewEntry = visionTab.add("Skew", skew).getEntry();
-                areaEntry = visionTab.add("Area", area).getEntry();
-                idEntry = visionTab.add("ID", id).getEntry();
-                ambiguityEntry = visionTab.add("Ambiguity", ambiguity).getEntry();
-                xEntry = visionTab.add("X", transform.getTranslation().getX()).getEntry();
-                yEntry = visionTab.add("Y", transform.getTranslation().getY()).getEntry();
-                zEntry = visionTab.add("Z", transform.getTranslation().getZ()).getEntry();
-                // Gets tag pose and measurements
-                Optional<Pose3d> tagPose = layout.getTagPose(target.getFiducialId());
-
-                // Calculates robot pose if tag position is known
-
-            }
-        }
-
+    private void initializeShuffleboard() {
+        visionTab = Shuffleboard.getTab("Vision Results");
+        yawEntry = visionTab.add("Yaw", 0.0).getEntry();
+        pitchEntry = visionTab.add("Pitch", 0.0).getEntry();
+        pitchEntry = visionTab.add("Pitch", 0.0).getEntry();
+        pitchEntry = visionTab.add("Pitch", 0.0).getEntry();
+        areaEntry = visionTab.add("Area", 0.0).getEntry();
+        skewEntry = visionTab.add("Skew", 0.0).getEntry();
+        idEntry = visionTab.add("ID", 0.0).getEntry();
+        ambiguityEntry = visionTab.add("Ambiguity", 0.0).getEntry();
+        xEntry = visionTab.add("X", 0.0).getEntry();
+        yEntry = visionTab.add("Y", 0.0).getEntry();
+        zEntry = visionTab.add("Z", 0.0).getEntry();
+        poseEntry = visionTab.add("Pose", 0.0).getEntry();
     }
 
     public double getTargetYaw(int id) {
         var results = camera.getAllUnreadResults();
         double returnYaw = 0.0;
-        
-        
+
         if (!results.isEmpty()) {
             var latestResult = results.get(results.size() - 1);
             if (latestResult.hasTargets()) {
-            
+
                 for (var target : latestResult.getTargets()) {
                     if (target.getFiducialId() == id) {
                         returnYaw = target.getYaw();
                         break;
-                    }   
+                    }
                 }
             }
         }
@@ -189,21 +162,22 @@ public class VisionSubsystem extends SubsystemBase {
     public double getTargetRange(int id) {
         var results = camera.getAllUnreadResults();
         double returnRange = 0.0;
-        
-        
+
         if (!results.isEmpty()) {
             var latestResult = results.get(results.size() - 1);
             if (latestResult.hasTargets()) {
-            
+
                 for (var target : latestResult.getTargets()) {
-                    if (target.getFiducialId() == 7) {
-                        returnRange = PhotonUtils.calculateDistanceToTargetMeters(0.5, // Measured with a tape measure, or in CAD.
-                        1.435, // From 2024 game manual for ID 7
-                        Units.degreesToRadians(-30.0), // Measured with a protractor, or in CAD.
-                        Units.degreesToRadians(target.getPitch()));
-                        
+                    if (target.getFiducialId() == id) {
+                        var tagPose = layout.getTagPose(target.getFiducialId());
+                        returnRange = PhotonUtils.calculateDistanceToTargetMeters(0.5, // Measured with a tape measure,
+                                                                                       // or in CAD.
+                                tagPose.get().getTranslation().getZ(),
+                                Units.degreesToRadians(-30.0), // Measured with a protractor, or in CAD.
+                                Units.degreesToRadians(target.getPitch()));
+
                         break;
-                    }   
+                    }
                 }
             }
         }
@@ -223,22 +197,15 @@ public class VisionSubsystem extends SubsystemBase {
                 Optional<EstimatedRobotPose> optionalPose = poseEstimator.update(result);
                 if (optionalPose.isPresent()) {
 
-                EstimatedRobotPose estimatedRobotPose = optionalPose.get();
-
-                double timestamp = estimatedRobotPose.timestampSeconds;
-                   
+                    EstimatedRobotPose estimatedRobotPose = optionalPose.get();
                     Pose3d estimatedRobotPose3d = estimatedRobotPose.estimatedPose;
-                    Pose2d estimatedRobotPose2d = new Pose2d(estimatedRobotPose3d.getTranslation().toTranslation2d(),
-                            estimatedRobotPose3d.getRotation().toRotation2d());
-                    // pose3dEntry = visionTab.add("EstimatedRobotPose",
-                    // estimatedRobotPose3d).getEntry();
+                    Pose2d estimatedRobotPose2d = estimatedRobotPose3d.toPose2d();
+                    // Use this 2d pose as the added vision measurement for the pose estimator
 
                 }
 
             }
         }
-        
-    
 
         return Optional.empty();
     }
@@ -248,48 +215,52 @@ public class VisionSubsystem extends SubsystemBase {
         // This method will be called once per scheduler run
         if (cameraConnected) {
             var results = camera.getLatestResult();
+            List<PhotonTrackedTarget> targets = results.getTargets();
 
             if (results.hasTargets()) {
+                for (PhotonTrackedTarget target : targets) {
 
-                var target = results.getBestTarget();
-                double yaw = target.getYaw();
-                double pitch = target.getPitch();
-                double area = target.getArea();
-                double skew = target.getSkew();
-                double id = target.getFiducialId();
-                double ambiguity = target.getPoseAmbiguity();
-                Transform3d transform = target.getBestCameraToTarget();
-                double x = transform.getTranslation().getX();
-                double y = transform.getTranslation().getY();
-                double z = transform.getTranslation().getZ();
+                    if (results.hasTargets()) {
+                        double yaw = target.getYaw();
+                        double pitch = target.getPitch();
+                        double area = target.getArea();
+                        double skew = target.getSkew();
+                        double id = target.getFiducialId();
+                        double ambiguity = target.getPoseAmbiguity();
+                        Transform3d transform = target.getBestCameraToTarget();
+                        double x = transform.getTranslation().getX();
+                        double y = transform.getTranslation().getY();
+                        double z = transform.getTranslation().getZ();
 
-                yawEntry.setDouble(yaw);
-                Optional<Pose3d> tagPose = layout.getTagPose(target.getFiducialId());
-                if (tagPose.isPresent()) {
-                    Optional<EstimatedRobotPose> estimatedRobotPose = poseEstimator.update(results);
+                        yawEntry.setDouble(yaw);
+                        Optional<Pose3d> tagPose = layout.getTagPose(target.getFiducialId());
+                        if (tagPose.isPresent()) {
+                            Optional<EstimatedRobotPose> estimatedRobotPose = poseEstimator.update(results);
 
-                    if (estimatedRobotPose.isPresent()) {
-                        Pose3d estimatedRobotPose3d = estimatedRobotPose.get().estimatedPose;
-                        Pose2d estimatedRobotPose2d = new Pose2d(
-                                estimatedRobotPose3d.getTranslation().toTranslation2d(),
-                                estimatedRobotPose3d.getRotation().toRotation2d());
-                        // pose3dEntry = visionTab.add("EstimatedRobotPose",
-                        // estimatedRobotPose3d).getEntry();
+                            if (estimatedRobotPose.isPresent()) {
 
-                        pitchEntry.setDouble(pitch);
-                        areaEntry.setDouble(area);
-                        skewEntry.setDouble(skew);
-                        idEntry.setDouble(id);
-                        ambiguityEntry.setDouble(ambiguity);
-                        xEntry.setDouble(x);
-                        yEntry.setDouble(y);
-                        zEntry.setDouble(z);
-                        pose2dEntry.setDouble(estimatedRobotPose2d.getRotation().getDegrees());
+                                Pose3d estimatedRobotPose3d = estimatedRobotPose.get().estimatedPose;
+                                Pose2d estimatedRobotPose2d = estimatedRobotPose3d.toPose2d();
+
+                                yawEntry.setDouble(yaw);
+                                pitchEntry.setDouble(pitch);
+                                areaEntry.setDouble(area);
+                                skewEntry.setDouble(skew);
+                                idEntry.setDouble(id);
+                                ambiguityEntry.setDouble(ambiguity);
+                                xEntry.setDouble(x);
+                                yEntry.setDouble(y);
+                                zEntry.setDouble(z);
+                                poseEntry.setDouble(estimatedRobotPose.get().timestampSeconds);
+                                pose3dEntry.setValue(estimatedRobotPose3d);
+                                pose2dEntry.setValue(estimatedRobotPose2d);
+
+                            }
+
+                        }
 
                     }
-
                 }
-
             }
         }
     }

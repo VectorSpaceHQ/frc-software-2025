@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
+import frc.robot.AprilTags;
 
 public class DriveTargetCommand extends Command {
     private final double visionThingy = 1.25;
@@ -15,7 +16,8 @@ public class DriveTargetCommand extends Command {
     private DriveSubsystem driveSubsystem;
     private VisionSubsystem visionSubsystem;
     private XboxController driverController;
-    
+    private double targetID = 0;
+
 
     // Sets the drivetarget constructor
     public DriveTargetCommand(
@@ -26,8 +28,12 @@ public class DriveTargetCommand extends Command {
         this.driveSubsystem = driveSubsystem;
         this.driverController = driverController;
         addRequirements(visionSubsystem, driveSubsystem);
+        setTargetID(AprilTags.None);
     }
 
+    public void setTargetID(AprilTags tagId){
+        targetID = tagId.getId();
+    }
     // Executes the drivetarget command (periodic)
     @Override
     public void execute() {
@@ -39,11 +45,11 @@ public class DriveTargetCommand extends Command {
         if (visionSubsystem.isCameraConnected()) {
             SmartDashboard.putString("Aiming Status", "Camera Connected");
 
-            // Check if the A button is pressed
-            if (driverController.getAButton()) {
+            // Check if target has been specified
+            if (targetID != AprilTags.None.getId()) {
                 // If the camera is connected, get the target yaw and drive towards it
-                double targetYaw = visionSubsystem.getTargetYaw(7);
-                double targetRange = visionSubsystem.getTargetRange(7);
+                double targetYaw = visionSubsystem.getTargetYaw((int)targetID);
+                double targetRange = visionSubsystem.getTargetRange((int)targetID);
 
                 // Check if the target yaw is valid and displays the aiming status and yaw
                 if (!Double.isNaN(targetYaw)) {
