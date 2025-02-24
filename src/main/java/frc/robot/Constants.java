@@ -72,12 +72,34 @@ public final class Constants {
 
   // Stores CANIDs of Specific Motors
   public static final class CANIDs {
-    public static final int kCoralSubsystemLeft = 11;
+    public static final int kCoralSubsystemLeft = 16;
     public static final int kCoralSubsystemRight = 12;
     public static final int kDriveSubsystemFrontRight = 7;
     public static final int kDriveSubsystemFrontLeft = 6;
     public static final int kDriveSubsystemRearRight = 8;
     public static final int kDriveSubsystemRearLeft = 9;
+    public static final int kElevatorSubsystemMain = 11;
+    public static final int kAlgaeSubsystemLeft = 14;
+    public static final int kAlgaeSubsystemRight = 15;
+  }
+
+  public static final class PIDTunings {
+    public static final double kElevatorKP = 1.2;
+    public static final double kElevatorKI = 0;
+    public static final double kElevatorKD = 0;
+  }
+
+  public static final class ElevatorSpecifics {
+    public static final double kScissorLength = 24.75; // inches -- Length of Each Rod
+    public static final double kScrewPitch = 10; // threads / inch -- of lead screw
+    public static final double kInitialHeight = 15.2; // inches -- from bottom to platform
+    public static final double kLinkageCount = 8; // Linkage Counts per Side
+    public static final double kPlatformToInputHeight = 14.26; // Distance between Platform and Coral Input
+  }
+
+  public static final class DigitalInputPorts {
+    public static final int kAlgaeSubsystemLeft = 15;
+    public static final int kAlgaeSubsystemRight = 16;
   }
 
   public static final class AutoConstants {

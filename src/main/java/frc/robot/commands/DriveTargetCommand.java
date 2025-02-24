@@ -3,7 +3,7 @@ package frc.robot.commands;
 // Imports for the drivetarget command
 import edu.wpi.first.wpilibj2.command.Command;
 
-import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.subsystems.DriveSubsystem;
@@ -15,14 +15,14 @@ public class DriveTargetCommand extends Command {
 
   private DriveSubsystem driveSubsystem;
   private VisionSubsystem visionSubsystem;
-  private XboxController driverController;
+  private CommandXboxController driverController;
   private double targetID = 0;
 
   // Sets the drivetarget constructor
   public DriveTargetCommand(
       DriveSubsystem driveSubsystem,
       VisionSubsystem visionSubsystem,
-      XboxController driverController) {
+      CommandXboxController driverController) {
     this.visionSubsystem = visionSubsystem;
     this.driveSubsystem = driveSubsystem;
     this.driverController = driverController;

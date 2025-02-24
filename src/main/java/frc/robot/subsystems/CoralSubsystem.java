@@ -2,7 +2,11 @@ package frc.robot.subsystems;
 
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.SparkMaxConfig;
+
 import frc.robot.Constants.CANIDs;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 /** 
@@ -11,36 +15,48 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class CoralSubsystem extends SubsystemBase{
 
     // Creates two instances of SparkMax Motor Controlled Brushless Motors on provided CANIDs
+    // Main
     private final SparkMax motor_left = new SparkMax(CANIDs.kCoralSubsystemLeft, MotorType.kBrushless);
+    // Follower
     private final SparkMax motor_right = new SparkMax(CANIDs.kCoralSubsystemRight, MotorType.kBrushless);
+    // Config to be passed to right (inverted, follower, currentlimits)
+    private final SparkMaxConfig config_right = new SparkMaxConfig();
+    // Config to be passed to left (currentlimits)
+    private final SparkMaxConfig config_left = new SparkMaxConfig();
 
     // Motors are Synchronized so setspeed is controlled via common input 0.1 = 10% of max output
     private final double motorspeed = 0.1;
-    // Simple On/Off Toggle for Both Motors
-    private boolean motortoggle = false;
 
     public CoralSubsystem() {
+      register();
+      // Left config
+      config_left.smartCurrentLimit(1,1);
 
+      motor_left.configure(config_left, null, null);
+
+      // Right Config
+      config_right.smartCurrentLimit(1,1);
+      config_right.inverted(true);
+      config_right.follow(CANIDs.kCoralSubsystemLeft);
+
+      motor_right.configure(config_right, null, null);
     }
 
     @Override
     public void periodic() {
-        if (motortoggle == true) {
-          motor_left.set(motorspeed);
-          motor_right.set(motorspeed);
-        }
-        else {
-          motor_left.stopMotor();
-          motor_right.stopMotor();
-        }
     }
 
-    public void releaseCoral() {
-      motortoggle = true;
-    }
-
-    public void suspendCoral() {
-      motortoggle = false;
+    public Command runCoralDispenser() {
+      return new FunctionalCommand
+      (() -> {}, 
+      () -> {
+        motor_left.set(motorspeed);
+      }, 
+      interrupted -> {
+        motor_left.stopMotor();
+      }, 
+      () -> (false),
+       this);
     }
 }
 
