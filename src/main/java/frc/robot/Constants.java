@@ -34,6 +34,7 @@ public final class Constants {
     public static final boolean kFrontRightEncoderReversed = false;
     public static final boolean kRearRightEncoderReversed = true;
 
+    // TO-DO Reconfigure
     public static final double kTrackWidth = 0.5;
     // Distance between centers of right and left wheels on robot
     public static final double kWheelBase = 0.7;
@@ -79,8 +80,8 @@ public final class Constants {
     public static final int kDriveSubsystemRearRight = 8;
     public static final int kDriveSubsystemRearLeft = 9;
     public static final int kElevatorSubsystemMain = 11;
-    public static final int kAlgaeSubsystemLeft = 14;
-    public static final int kAlgaeSubsystemRight = 15;
+    public static final int kAlgaeSubsystemLeft = 3;
+    public static final int kAlgaeSubsystemRight = 2;
   }
 
   public static final class PIDTunings {
@@ -98,8 +99,8 @@ public final class Constants {
   }
 
   public static final class DigitalInputPorts {
-    public static final int kAlgaeSubsystemLeft = 15;
-    public static final int kAlgaeSubsystemRight = 16;
+    public static final int kAlgaeSubsystemLeft = 0;
+    public static final int kAlgaeSubsystemRight = 1;
   }
 
   public static final class AutoConstants {
