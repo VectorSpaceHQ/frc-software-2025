@@ -62,7 +62,7 @@ public class DriveTargetCommand extends Command {
         if (!Double.isNaN(targetRange)) {
           forward = (visionThingy - targetRange * 0.01 * AutoConstants.kMaxSpeedMetersPerSecond);
           SmartDashboard.putString("Aiming Status", "Aiming");
-          SmartDashboard.putNumber("Target Yaw", targetYaw);
+          SmartDashboard.putNumber("Target Range", targetRange);
         }
       }
     } else {
