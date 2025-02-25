@@ -12,10 +12,14 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
+import frc.robot.AprilTags;
+import frc.robot.FieldTagMap;
+import frc.robot.commands.DriveTargetCommand;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.CoralSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
@@ -30,6 +34,7 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import java.util.List;
+import java.util.Map;
 
 /*
  * This class is where the bulk of the robot should be declared.  Since Command-based is a
@@ -44,35 +49,27 @@ public class RobotContainer {
   private final VisionSubsystem m_robotVision = new VisionSubsystem();
   private final ElevatorSubsystem m_robotElevator = new ElevatorSubsystem();
   private final AlgaeSubsystem m_robotAlgae = new AlgaeSubsystem();
-  
+  private final FieldTagMap fieldTagMap = new FieldTagMap();
   // The driver's controller
   CommandXboxController m_driverController = new CommandXboxController(OIConstants.kDriverControllerPort);
 
+  private final DriveTargetCommand aimTarget = new DriveTargetCommand(m_robotDrive, m_robotVision, m_driverController);
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     // Configure the button bindings
     configureButtonBindings();
 
-    // Configure default commands
-    // Set the default drive command to split-stick arcade drive
-    m_robotDrive.setDefaultCommand(
-        // A split-stick arcade command, with forward/backward controlled by the left
-        // hand, and turning controlled by the right.
-        new RunCommand(
-            () ->
-                m_robotDrive.drive(
-                    -m_driverController.getLeftY(),
-                    -m_driverController.getRightX(),
-                    -m_driverController.getLeftX(),
-                    false),
-            m_robotDrive));
+    m_robotDrive.setDefaultCommand(aimTarget);
+
     m_robotAlgae.setDefaultCommand(
         // Left + Right Full Pressed = 0
         // Left Closes Right Opens (this result can be scaled down by a constant multiple if needed)
-    
+        new RunCommand(
+            () -> 
                 m_robotAlgae.runClaws(
-                    m_driverController.getLeftTriggerAxis() - m_driverController.getRightTriggerAxis()));
-  }
+                   m_driverController), 
+                m_robotAlgae));
+ }
 
   /**
    * Use this method to define your button->command mappings. Buttons can be created by
@@ -81,6 +78,8 @@ public class RobotContainer {
    * {@link JoystickButton}.
    */
   private void configureButtonBindings() {
+    Map<String, AprilTags> fieldMap = fieldTagMap.getRedMap();
+
     // Spin Coral Discharge on Hold / Stop on release
     m_driverController
         .a()
@@ -128,50 +127,50 @@ public class RobotContainer {
         .leftStick()
         .and(m_driverController.leftBumper().negate())
         .and(m_driverController.rightBumper().negate())
-        .onTrue(new InstantCommand(() -> System.out.println("ls")));
+        .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("coral1"))));
     
     // Go To Dispenser 2 (Right) - Add CMD in Feature Branch
     m_driverController 
         .rightStick()
         .and(m_driverController.leftBumper().negate())
         .and(m_driverController.rightBumper().negate())
-        .onTrue(new InstantCommand(() -> System.out.println("right")));
+        .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("coral2"))));
 
     // Go To Reef 1
     m_driverController
         .leftBumper()
         .and(m_driverController.a())
-        .onTrue(new InstantCommand(() -> System.out.println("lb + a")));
+        .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef1"))));
     
     // Go To Reef 2
     m_driverController
         .leftBumper()
         .and(m_driverController.b())
-        .onTrue(new InstantCommand(() -> System.out.println("lb + b")));
+        .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef2"))));
     
     // Go To Reef 3
     m_driverController
         .leftBumper()
         .and(m_driverController.x())
-        .onTrue(new InstantCommand(() -> System.out.println("lb + x")));
+        .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef3"))));
 
     // Go To Reef 4
     m_driverController
         .leftBumper()
         .and(m_driverController.y())
-        .onTrue(new InstantCommand(() -> System.out.println("lb + y")));
+        .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef4"))));
     
     // Go To Reef 5
     m_driverController
         .leftBumper()
         .and(m_driverController.back())
-        .onTrue(new InstantCommand(() -> System.out.println("lb + back")));
+        .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef5"))));
     
     // Go To Reef 6
     m_driverController
     .leftBumper()
     .and(m_driverController.start())
-    .onTrue(new InstantCommand(() -> System.out.println("lb + start")));
+    .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef6"))));
 
     // Go To Reef 7
     m_driverController
@@ -226,55 +225,56 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    // Create config for trajectory
-    TrajectoryConfig config =
-        new TrajectoryConfig(
-                AutoConstants.kMaxSpeedMetersPerSecond,
-                AutoConstants.kMaxAccelerationMetersPerSecondSquared)
-            // Add kinematics to ensure max speed is actually obeyed
-            .setKinematics(DriveConstants.kDriveKinematics);
+    return null;
+    // // Create config for trajectory
+    // TrajectoryConfig config =
+    //     new TrajectoryConfig(
+    //             AutoConstants.kMaxSpeedMetersPerSecond,
+    //             AutoConstants.kMaxAccelerationMetersPerSecondSquared)
+    //         // Add kinematics to ensure max speed is actually obeyed
+    //         .setKinematics(DriveConstants.kDriveKinematics);
 
-    // An example trajectory to follow. All units in meters.
-    Trajectory exampleTrajectory =
-        TrajectoryGenerator.generateTrajectory(
-            // Start at the origin facing the +X direction
-            Pose2d.kZero,
-            // Pass through these two interior waypoints, making an 's' curve path
-            List.of(new Translation2d(1, 1), new Translation2d(2, -1)),
-            // End 3 meters straight ahead of where we started, facing forward
-            new Pose2d(3, 0, Rotation2d.kZero),
-            config);
+    // // An example trajectory to follow. All units in meters.
+    // Trajectory exampleTrajectory =
+    //     TrajectoryGenerator.generateTrajectory(
+    //         // Start at the origin facing the +X direction
+    //         Pose2d.kZero,
+    //         // Pass through these two interior waypoints, making an 's' curve path
+    //         List.of(new Translation2d(1, 1), new Translation2d(2, -1)),
+    //         // End 3 meters straight ahead of where we started, facing forward
+    //         new Pose2d(3, 0, Rotation2d.kZero),
+    //         config);
 
-    MecanumControllerCommand mecanumControllerCommand =
-        new MecanumControllerCommand(
-            exampleTrajectory,
-            m_robotDrive::getPose,
-            DriveConstants.kFeedforward,
-            DriveConstants.kDriveKinematics,
+    // MecanumControllerCommand mecanumControllerCommand =
+    //     new MecanumControllerCommand(
+    //         exampleTrajectory,
+    //         m_robotDrive::getPose,
+    //         DriveConstants.kFeedforward,
+    //         DriveConstants.kDriveKinematics,
 
-            // Position controllers
-            new PIDController(AutoConstants.kPXController, 0, 0),
-            new PIDController(AutoConstants.kPYController, 0, 0),
-            new ProfiledPIDController(
-                AutoConstants.kPThetaController, 0, 0, AutoConstants.kThetaControllerConstraints),
+    //         // Position controllers
+    //         new PIDController(AutoConstants.kPXController, 0, 0),
+    //         new PIDController(AutoConstants.kPYController, 0, 0),
+    //         new ProfiledPIDController(
+    //             AutoConstants.kPThetaController, 0, 0, AutoConstants.kThetaControllerConstraints),
 
-            // Needed for normalizing wheel speeds
-            AutoConstants.kMaxSpeedMetersPerSecond,
+    //         // Needed for normalizing wheel speeds
+    //         AutoConstants.kMaxSpeedMetersPerSecond,
 
-            // Velocity PID's
-            new PIDController(DriveConstants.kPFrontLeftVel, 0, 0),
-            new PIDController(DriveConstants.kPRearLeftVel, 0, 0),
-            new PIDController(DriveConstants.kPFrontRightVel, 0, 0),
-            new PIDController(DriveConstants.kPRearRightVel, 0, 0),
-            m_robotDrive::getCurrentWheelSpeeds,
-            m_robotDrive::setDriveMotorControllersVolts, // Consumer for the output motor voltages
-            m_robotDrive);
+    //         // Velocity PID's
+    //         new PIDController(DriveConstants.kPFrontLeftVel, 0, 0),
+    //         new PIDController(DriveConstants.kPRearLeftVel, 0, 0),
+    //         new PIDController(DriveConstants.kPFrontRightVel, 0, 0),
+    //         new PIDController(DriveConstants.kPRearRightVel, 0, 0),
+    //         m_robotDrive::getCurrentWheelSpeeds,
+    //         m_robotDrive::setDriveMotorControllersVolts, // Consumer for the output motor voltages
+    //         m_robotDrive);
 
     // Reset odometry to the initial pose of the trajectory, run path following
     // command, then stop at the end.
-    return Commands.sequence(
-        new InstantCommand(() -> m_robotDrive.resetOdometry(exampleTrajectory.getInitialPose())),
-        mecanumControllerCommand,
-        new InstantCommand(() -> m_robotDrive.drive(0, 0, 0, false)));
+    // return Commands.sequence(
+    //     new InstantCommand(() -> m_robotDrive.resetOdometry(exampleTrajectory.getInitialPose())),
+    //     mecanumControllerCommand,
+    //     new InstantCommand(() -> m_robotDrive.drive(0, 0, 0, false)));
   }
 }
