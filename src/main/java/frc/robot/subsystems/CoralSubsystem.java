@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import frc.robot.Constants.CANIDs;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -24,20 +25,21 @@ public class CoralSubsystem extends SubsystemBase{
     // Config to be passed to left (currentlimits)
     private final SparkMaxConfig config_left = new SparkMaxConfig();
 
+
     // Motors are Synchronized so setspeed is controlled via common input 0.1 = 10% of max output
-    private final double motorspeed = 0.1;
+    private final double motorspeed = 0.2;
 
     public CoralSubsystem() {
-      register();
+
       // Left config
-      config_left.smartCurrentLimit(1,1);
-
+      config_left.smartCurrentLimit(20,20);
+      config_left.idleMode(IdleMode.kBrake);
       motor_left.configure(config_left, null, null);
-
+      
       // Right Config
-      config_right.smartCurrentLimit(1,1);
-      config_right.inverted(true);
-      config_right.follow(CANIDs.kCoralSubsystemLeft);
+      config_right.smartCurrentLimit(20,20);
+      config_right.idleMode(IdleMode.kBrake);
+      config_right.follow(CANIDs.kCoralSubsystemLeft, true);
 
       motor_right.configure(config_right, null, null);
     }

@@ -66,8 +66,8 @@ public class RobotContainer {
         // Left Closes Right Opens (this result can be scaled down by a constant multiple if needed)
         new RunCommand(
             () -> 
-                m_robotAlgae.motorSetSpeed(
-                    m_driverController.getRightTriggerAxis() - m_driverController.getLeftTriggerAxis()), 
+                m_robotAlgae.runClaws(
+                   m_driverController), 
                 m_robotAlgae));
  }
 
