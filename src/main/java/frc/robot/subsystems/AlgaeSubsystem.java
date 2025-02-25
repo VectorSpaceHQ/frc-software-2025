@@ -40,8 +40,8 @@ public class AlgaeSubsystem extends SubsystemBase {
         limitSwitchLeft = !l_Left.get();
         limitSwitchRight = !l_Right.get();
     }
-    // motor_right.configure(config, null, null);
-    // Sets both motors (only left if homing is not run prior)
+    
+    // Sets both motors
     // Stops on either limit switch pressed
     public Command runClaws(CommandXboxController m_drivercontroller) {
         return new FunctionalCommand(
