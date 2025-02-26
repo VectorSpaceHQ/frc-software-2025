@@ -9,7 +9,7 @@ import frc.robot.Constants.AutoConstants;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.AprilTags;
-
+    
 public class DriveTargetCommand extends Command {
   private final double visionThingy = 1.25;
 
@@ -32,6 +32,11 @@ public class DriveTargetCommand extends Command {
 
   public void setTargetID(AprilTags tagId) {
     targetID = tagId.getId();
+    if (tagId == AprilTags.None) {
+      SmartDashboard.putString("Target", "None");
+    } else {
+      SmartDashboard.putString("Target", tagId.toString());
+    }
   }
 
   // Executes the drivetarget command (periodic)
@@ -76,6 +81,6 @@ public class DriveTargetCommand extends Command {
   @Override
   public void end(boolean interrupted) {
     driveSubsystem.drive(0, 0, 0, true);
-    SmartDashboard.putString("Aiming Status", "Command Ended");
+    SmartDashboard.putString("Aiming Status", "DriveTargetCommand Ended");
   }
 }

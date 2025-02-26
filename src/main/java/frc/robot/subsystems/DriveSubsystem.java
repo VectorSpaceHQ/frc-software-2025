@@ -5,11 +5,14 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.kinematics.MecanumDriveOdometry;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelPositions;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds;
+import edu.wpi.first.math.kinematics.MecanumDriveKinematics;
+import edu.wpi.first.math.estimator.MecanumDrivePoseEstimator;
 import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Constants.CANIDs;
 import frc.robot.Constants.DriveConstants;
 
@@ -23,28 +26,30 @@ import com.studica.frc.AHRS;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-
+// Can I do this? And where do I put this? Also saying that it is unused when I literally used in in the vision update as the robot pose (vision) method for the mecanum pose estimator 
+import frc.robot.subsystems.VisionSubsystem;
 
 public class DriveSubsystem extends SubsystemBase {
 
-  
   private final TalonFX m_frontLeft = new TalonFX(CANIDs.kDriveSubsystemFrontLeft);
   private final TalonFX m_rearLeft = new TalonFX(CANIDs.kDriveSubsystemRearLeft);
   private final TalonFX m_frontRight = new TalonFX(CANIDs.kDriveSubsystemFrontRight);
   private final TalonFX m_rearRight = new TalonFX(CANIDs.kDriveSubsystemRearRight);
 
+  //This too
+  private VisionSubsystem visionSubsystem;
 
   private double m_frontLeftEncoder = 0;
   private double m_rearLeftEncoder = 0;
   private double m_frontRightEncoder = 0;
   private double m_rearRightEncoder = 0;
-  private final MecanumDrive m_drive =
-     new MecanumDrive(m_frontLeft::set, m_rearLeft::set, m_frontRight::set, m_rearRight::set);
+  private final MecanumDrive m_drive = new MecanumDrive(m_frontLeft::set, m_rearLeft::set, m_frontRight::set,
+      m_rearRight::set);
 
   // The gyro sensor
   private final AHRS m_gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
 
-   //using default frontR rearR inverted right now
+  // using default frontR rearR inverted right now
   private final TalonFXConfigurator frontRightConfigurator = m_frontRight.getConfigurator();
   private final TalonFXConfigurator rearRightConfigurator = m_rearRight.getConfigurator();
   private final TalonFXConfigurator frontLeftConfigurator = m_frontLeft.getConfigurator();
@@ -60,14 +65,14 @@ public class DriveSubsystem extends SubsystemBase {
   private final CurrentLimitsConfigs frontLeftCurrentConfigs = new CurrentLimitsConfigs();
   private final CurrentLimitsConfigs rearLeftCurrentConfigs = new CurrentLimitsConfigs();
 
-  
-
   // Odometry class for tracking robot pose
-  MecanumDriveOdometry m_odometry =
-      new MecanumDriveOdometry(
-          DriveConstants.kDriveKinematics,
-          m_gyro.getRotation2d(),
-          new MecanumDriveWheelPositions());
+  MecanumDrivePoseEstimator m_poseEstimator = new MecanumDrivePoseEstimator(
+      DriveConstants.kDriveKinematics,
+      m_gyro.getRotation2d(),
+      new MecanumDriveWheelPositions(),
+      new Pose2d(),
+      VecBuilder.fill(0.1, 0.1, 0.1), // Standard deviations for state measurements?
+      VecBuilder.fill(0.45, 0.45, 0.45)); // Standard deviations for vision measurements?
 
   /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
@@ -76,7 +81,8 @@ public class DriveSubsystem extends SubsystemBase {
     SendableRegistry.addChild(m_drive, m_frontRight);
     SendableRegistry.addChild(m_drive, m_rearRight);
 
-    // Sets the distance per pulse for the encoders (most likely won't be used but was in original template)
+    // Sets the distance per pulse for the encoders (most likely won't be used but
+    // was in original template)
     // m_frontLeftEncoder.setDistancePerPulse(DriveConstants.kEncoderDistancePerPulse);
     // m_rearLeftEncoder.setDistancePerPulse(DriveConstants.kEncoderDistancePerPulse);
     // m_frontRightEncoder.setDistancePerPulse(DriveConstants.kEncoderDistancePerPulse);
@@ -85,11 +91,10 @@ public class DriveSubsystem extends SubsystemBase {
     // result in both sides moving forward. Depending on how your robot's
     // gearbox is constructed, you might have to invert the left side instead.
 
-    
     // Inversion of two motors
     frontRightMotorConfigs.Inverted = InvertedValue.Clockwise_Positive;
     rearRightMotorConfigs.Inverted = InvertedValue.Clockwise_Positive;
-    
+
     // Current Limits
     frontRightCurrentConfigs.withSupplyCurrentLimit(10);
     frontRightCurrentConfigs.withStatorCurrentLimit(10);
@@ -113,7 +118,7 @@ public class DriveSubsystem extends SubsystemBase {
     frontLeftConfigurator.apply(frontLeftCurrentConfigs);
     rearLeftConfigurator.apply(rearLeftCurrentConfigs);
 
-    m_drive.setMaxOutput(0.3);
+    m_drive.setMaxOutput(0.25); // Conservative for now
   }
 
   @Override
@@ -123,7 +128,9 @@ public class DriveSubsystem extends SubsystemBase {
     m_rearLeftEncoder = m_rearLeft.getPosition().getValue().magnitude();
     m_frontRightEncoder = m_frontRight.getPosition().getValue().magnitude();
     m_rearRightEncoder = m_rearRight.getPosition().getValue().magnitude();
-    m_odometry.update(m_gyro.getRotation2d(), getCurrentWheelDistances());
+    m_poseEstimator.update(m_gyro.getRotation2d(), getCurrentWheelDistances());
+    visionSubsystem.getRobotPose()
+        .ifPresent(pose -> m_poseEstimator.addVisionMeasurement(pose, Timer.getFPGATimestamp()));
   }
 
   /**
@@ -132,7 +139,7 @@ public class DriveSubsystem extends SubsystemBase {
    * @return The pose.
    */
   public Pose2d getPose() {
-    return m_odometry.getPoseMeters();
+    return m_poseEstimator.getEstimatedPosition();
   }
 
   /**
@@ -141,17 +148,20 @@ public class DriveSubsystem extends SubsystemBase {
    * @param pose The pose to which to set the odometry.
    */
   public void resetOdometry(Pose2d pose) {
-    m_odometry.resetPosition(m_gyro.getRotation2d(), getCurrentWheelDistances(), pose);
+    m_poseEstimator.resetPosition(m_gyro.getRotation2d(), getCurrentWheelDistances(), pose);
   }
 
   /**
-   * Drives the robot at given x, y and theta speeds. Speeds range from [-1, 1] and the linear
+   * Drives the robot at given x, y and theta speeds. Speeds range from [-1, 1]
+   * and the linear
    * speeds have no effect on the angular speed.
    *
-   * @param xSpeed Speed of the robot in the x direction (forward/backwards).
-   * @param ySpeed Speed of the robot in the y direction (sideways).
-   * @param rot Angular rate of the robot.
-   * @param fieldRelative Whether the provided x and y speeds are relative to the field.
+   * @param xSpeed        Speed of the robot in the x direction
+   *                      (forward/backwards).
+   * @param ySpeed        Speed of the robot in the y direction (sideways).
+   * @param rot           Angular rate of the robot.
+   * @param fieldRelative Whether the provided x and y speeds are relative to the
+   *                      field.
    */
   public void drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative) {
     if (fieldRelative) {
@@ -161,9 +171,10 @@ public class DriveSubsystem extends SubsystemBase {
     }
   }
 
-  
+  public void strafe(double speed) {
+    m_drive.driveCartesian(0, speed, m_gyro.getRotation2d().getDegrees());
+  }
 
-  
   public double getFrontLeftEncoder() {
     return m_frontLeftEncoder;
   }
@@ -211,7 +222,8 @@ public class DriveSubsystem extends SubsystemBase {
   /**
    * Gets the current wheel distance measurements.
    *
-   * @return the current wheel distance measurements in a MecanumDriveWheelPositions object.
+   * @return the current wheel distance measurements in a
+   *         MecanumDriveWheelPositions object.
    */
   public MecanumDriveWheelPositions getCurrentWheelDistances() {
     return new MecanumDriveWheelPositions(
@@ -222,7 +234,8 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   /**
-   * Sets the max output of the drive. Useful for scaling the drive to drive more slowly.
+   * Sets the max output of the drive. Useful for scaling the drive to drive more
+   * slowly.
    *
    * @param maxOutput the maximum output to which the drive will be constrained
    */

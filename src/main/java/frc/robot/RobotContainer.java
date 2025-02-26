@@ -19,7 +19,6 @@ import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.AprilTags;
 import frc.robot.FieldTagMap;
-import frc.robot.commands.DriveTargetCommand;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.CoralSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
@@ -30,6 +29,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.MecanumControllerCommand;
+import frc.robot.commands.DriveTargetCommand;
+import frc.robot.commands.ShiftCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
@@ -184,29 +185,29 @@ public class RobotContainer {
         .and(m_driverController.b())
         .onTrue(new InstantCommand(() -> System.out.println("rb + b")));
     
-    // Go To Reef 9
+    // Placeholder for left strafe command*
     m_driverController
         .rightBumper()
         .and(m_driverController.x())
-        .onTrue(new InstantCommand(() -> System.out.println("rb + x")));
+        .onTrue(new ShiftCommand(m_robotDrive, -0.5, 0));
 
-    // Go To Reef 10
+    // Placeholder for right strafe command*
     m_driverController
         .rightBumper()
         .and(m_driverController.y())
-        .onTrue(new InstantCommand(() -> System.out.println("rb + y")));
+        .onTrue(new ShiftCommand(m_robotDrive, 0.5, 0));
     
-    // Go To Reef 11
+    // Placeholder for (something? Maybe the alliance switch?)
     m_driverController
         .rightBumper()
         .and(m_driverController.back())
-        .onTrue(new InstantCommand(() -> System.out.println("rb + back")));
+        .onTrue(new InstantCommand(() -> System.out.println("Alliance Switch (not done...)")));
     
-    // Go To Reef 12
+    // Placeholder for the reset april tag target ID*
     m_driverController
     .rightBumper()
     .and(m_driverController.start())
-    .onTrue(new InstantCommand(() -> System.out.println("rb + start")));
+    .onTrue(new InstantCommand(() -> aimTarget.setTargetID(AprilTags.None)));
 
     // Homing Routines
     m_driverController

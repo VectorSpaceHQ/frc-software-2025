@@ -186,20 +186,23 @@ public class VisionSubsystem extends SubsystemBase {
 
   // Converts 3d pose to 2d pose
   public Optional<Pose2d> getRobotPose() {
-    var result = camera.getLatestResult();
+    var result = camera.getAllUnreadResults();
 
-    if (result.hasTargets()) {
-      var target = result.getBestTarget();
+    Optional<Pose2d> estimatedRobotPose2d = Optional.empty();
+  
+    if (result.size() > 0) {
+      var target = result.get(result.size() - 1).getBestTarget();
       var tagPose = layout.getTagPose(target.getFiducialId());
 
       if (tagPose.isPresent()) {
 
-        Optional<EstimatedRobotPose> optionalPose = poseEstimator.update(result);
+        Optional<EstimatedRobotPose> optionalPose = poseEstimator.update(result.get(result.size() - 1));
         if (optionalPose.isPresent()) {
 
           EstimatedRobotPose estimatedRobotPose = optionalPose.get();
           Pose3d estimatedRobotPose3d = estimatedRobotPose.estimatedPose;
-          Pose2d estimatedRobotPose2d = estimatedRobotPose3d.toPose2d();
+          estimatedRobotPose2d = Optional.of(estimatedRobotPose3d.toPose2d());
+
           // Use this 2d pose as the added vision measurement for the pose estimator
 
         }
@@ -207,20 +210,20 @@ public class VisionSubsystem extends SubsystemBase {
       }
     }
 
-    return Optional.empty();
+    return estimatedRobotPose2d;
   }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
     if (cameraConnected) {
-      var results = camera.getLatestResult();
-      List<PhotonTrackedTarget> targets = results.getTargets();
+      var results = camera.getAllUnreadResults();
+      List<PhotonTrackedTarget> targets = results.get(results.size() - 1).getTargets();
 
-      if (results.hasTargets()) {
+      if (results.size() > 0) {
         for (PhotonTrackedTarget target : targets) {
 
-          if (results.hasTargets()) {
+          if (results.get(results.size() - 1).hasTargets()) { //For self reference, (results.get(results.size() - 1).hasTargets()) checks for the latest target. This is to remove the deprecated method warning
             double yaw = target.getYaw();
             double pitch = target.getPitch();
             double area = target.getArea();
@@ -235,7 +238,7 @@ public class VisionSubsystem extends SubsystemBase {
             yawEntry.setDouble(yaw);
             Optional<Pose3d> tagPose = layout.getTagPose(target.getFiducialId());
             if (tagPose.isPresent()) {
-              Optional<EstimatedRobotPose> estimatedRobotPose = poseEstimator.update(results);
+              Optional<EstimatedRobotPose> estimatedRobotPose = poseEstimator.update(results.get(results.size() - 1));
 
               if (estimatedRobotPose.isPresent()) {
 
