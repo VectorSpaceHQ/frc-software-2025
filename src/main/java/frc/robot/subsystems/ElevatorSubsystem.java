@@ -36,8 +36,10 @@ public class ElevatorSubsystem extends SubsystemBase{
     }
   };
 
-  private final SparkMax motor = new SparkMax(CANIDs.kElevatorSubsystemMain, MotorType.kBrushless);
+  private final SparkMax motor = new SparkMax(CANIDs.kElevatorMain, MotorType.kBrushless);
+  private final SparkMax motor_secondary = new SparkMax(CANIDs.kElevatorSecondary, MotorType.kBrushless);
   private SparkMaxConfig config = new SparkMaxConfig();
+  private SparkMaxConfig config_secondary = new SparkMaxConfig();
   RelativeEncoder encoder = motor.getEncoder();
   PIDController pid = new PIDController(PIDTunings.kElevatorKP, PIDTunings.kElevatorKI, PIDTunings.kElevatorKD);
   private DigitalInput l_top = new DigitalInput(0);
@@ -52,22 +54,34 @@ public class ElevatorSubsystem extends SubsystemBase{
   private double r_targetRotations = 0;
   private double PIDFeedback = 0;
 
+  // Current limits set here.
+  private int stall_limit = 5;
+  private int free_limit = 5;
+
+
   public ElevatorSubsystem() {
     // Registers the subsystem with the command scheduler
     register();
+
     // Invert the SparkMax
     config.inverted(true);
-    config.smartCurrentLimit(1,1);
+    config.smartCurrentLimit(stall_limit, free_limit);
     // Apply the Inversion
     motor.configure(config, null, null);
     // Reduce PID error tolerance from 0.05 to 0.02
     pid.setTolerance(0.02);
+
+    // Configure second elevator motor.
+    // Follow the Main motor, same direction.
+    config_secondary.smartCurrentLimit(stall_limit, free_limit);
+    config_secondary.follow(CANIDs.kElevatorMain, true);
+    motor_secondary.configure(config_secondary, null, null);
   }
 
 
   @Override
   public void periodic() {
-    
+
   }
 
   // Internal Function for updating constants
@@ -131,7 +145,7 @@ public class ElevatorSubsystem extends SubsystemBase{
       motor.set(speed);
       System.out.println("Third Logic");
     }
-    // 
+    //
     else{
       System.out.println("Stop Logic");
       motor.stopMotor();
@@ -147,7 +161,7 @@ public class ElevatorSubsystem extends SubsystemBase{
         this.manualAdjustment(-0.05);
       },
       () -> {
-        this.stopMotor();
+        motor.stopMotor();
       }
     );
   }
@@ -161,7 +175,7 @@ public class ElevatorSubsystem extends SubsystemBase{
         this.manualAdjustment(0.05);
       },
       () -> {
-        this.stopMotor();
+        motor.stopMotor();
       }
     );
   }
@@ -181,7 +195,7 @@ public class ElevatorSubsystem extends SubsystemBase{
       },
       // onEnd: Stop the motor
       interrupted -> {
-        motor.stopMotor(); 
+        motor.stopMotor();
       },
       // isFinished: End the command when the target is reached or we hit our limit switch
       () -> ( limitTop || r_currentRotations >= r_targetRotations) || pid.atSetpoint(),
@@ -201,7 +215,7 @@ public class ElevatorSubsystem extends SubsystemBase{
       },
       // onEnd: Stop the motor
       interrupted -> {
-        motor.stopMotor(); 
+        motor.stopMotor();
       },
       // isFinished: End the command when the target is reached or we hit our limit switch
       () -> ( limitBottom || r_currentRotations <= r_targetRotations || pid.atSetpoint()),
@@ -212,17 +226,15 @@ public class ElevatorSubsystem extends SubsystemBase{
 }
   public Command Homing() {
     return new FunctionalCommand(
-      () -> {}, 
+      () -> {},
       () -> {
         manualAdjustment(-0.05);
-      }, 
+      },
       interrupted -> {
         motor.stopMotor();
         encoder.setPosition(0);
-      }, 
-      () -> (limitBottom), 
+      },
+      () -> (limitBottom),
       this);
   }
 }
-
-

@@ -74,7 +74,8 @@ public final class Constants {
   public static final class CANIDs {
     public static final int kCoralSubsystemLeft = 16;
     public static final int kCoralSubsystemRight = 12;
-    public static final int kElevatorSubsystemMain = 11;
+    public static final int kElevatorMain = 10;
+    public static final int kElevatorSecondary = 11;
     public static final int kAlgaeSubsystemLeft = 14;
     public static final int kAlgaeSubsystemRight = 15;
   }
