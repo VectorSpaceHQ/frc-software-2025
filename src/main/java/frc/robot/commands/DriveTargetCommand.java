@@ -4,6 +4,7 @@ package frc.robot.commands;
 import edu.wpi.first.wpilibj2.command.Command;
 
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.subsystems.DriveSubsystem;
@@ -17,6 +18,10 @@ public class DriveTargetCommand extends Command {
   private VisionSubsystem visionSubsystem;
   private CommandXboxController driverController;
   private double targetID = 0;
+
+  private SlewRateLimiter x_rate = new SlewRateLimiter(AutoConstants.kMaxAccelerationMetersPerSecondSquared);
+  private SlewRateLimiter y_rate = new SlewRateLimiter(AutoConstants.kMaxAccelerationMetersPerSecondSquared);
+  private SlewRateLimiter theta_rate = new SlewRateLimiter(AutoConstants.kMaxAngularSpeedRadiansPerSecondSquared);
 
   // Sets the drivetarget constructor
   public DriveTargetCommand(
@@ -37,9 +42,10 @@ public class DriveTargetCommand extends Command {
   // Executes the drivetarget command (periodic)
   @Override
   public void execute() {
-    double forward = -driverController.getLeftY() * AutoConstants.kMaxSpeedMetersPerSecond;
-    double strafe = -driverController.getRightX() * AutoConstants.kMaxSpeedMetersPerSecond;
-    double turn = -driverController.getLeftX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond;
+   
+    double forward =  x_rate.calculate(driverController.getLeftY() * AutoConstants.kMaxSpeedMetersPerSecond);
+    double strafe =  y_rate.calculate(-driverController.getLeftX() * AutoConstants.kMaxSpeedMetersPerSecond);
+    double turn = theta_rate.calculate(-driverController.getRightX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
 
     // Check if the camera is connected and displays the aiming and camera status
     if (visionSubsystem.isCameraConnected()) {
@@ -69,7 +75,7 @@ public class DriveTargetCommand extends Command {
       SmartDashboard.putString("Aiming Status", "Camera Not Connected");
     }
 
-    driveSubsystem.drive(forward, strafe, turn, true);
+    driveSubsystem.drive(forward, strafe, turn, false);
   }
 
   // Ends the drivetarget command
