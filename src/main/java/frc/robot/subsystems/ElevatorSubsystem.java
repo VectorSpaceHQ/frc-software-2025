@@ -42,8 +42,8 @@ public class ElevatorSubsystem extends SubsystemBase{
   private SparkMaxConfig config_secondary = new SparkMaxConfig();
   RelativeEncoder encoder = motor.getEncoder();
   PIDController pid = new PIDController(PIDTunings.kElevatorKP, PIDTunings.kElevatorKI, PIDTunings.kElevatorKD);
-  private DigitalInput l_top = new DigitalInput(0);
-  private DigitalInput l_bottom = new DigitalInput(1);
+  private DigitalInput l_top = new DigitalInput(2);
+  private DigitalInput l_bottom = new DigitalInput(3);
 
   // True when pressed
   private boolean limitTop = l_top.get();
