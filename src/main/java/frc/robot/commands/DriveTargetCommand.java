@@ -10,6 +10,7 @@ import frc.robot.Constants.AutoConstants;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.AprilTags;
+import frc.robot.Constants;
 
 public class DriveTargetCommand extends Command {
   private final double visionThingy = 1.25;
@@ -43,9 +44,9 @@ public class DriveTargetCommand extends Command {
   @Override
   public void execute() {
    
-    double forward =  x_rate.calculate(driverController.getLeftY() * AutoConstants.kMaxSpeedMetersPerSecond);
-    double strafe =  y_rate.calculate(-driverController.getLeftX() * AutoConstants.kMaxSpeedMetersPerSecond);
-    double turn = theta_rate.calculate(-driverController.getRightX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
+    double forward =  x_rate.calculate(driverController.getLeftY() * Constants.AutoConstants.kMaxSpeedMetersPerSecond);
+    double strafe =  y_rate.calculate(-driverController.getLeftX() * Constants.AutoConstants.kMaxSpeedMetersPerSecond);
+    double turn = theta_rate.calculate(-0.3 * driverController.getRightX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
 
     // Check if the camera is connected and displays the aiming and camera status
     if (visionSubsystem.isCameraConnected()) {

@@ -9,6 +9,8 @@ import edu.wpi.first.math.kinematics.MecanumDriveOdometry;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelPositions;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds;
 import edu.wpi.first.util.sendable.SendableRegistry;
+import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import frc.robot.Constants.CANIDs;
 import frc.robot.Constants.DriveConstants;
@@ -91,17 +93,18 @@ public class DriveSubsystem extends SubsystemBase {
     rearRightMotorConfigs.Inverted = InvertedValue.Clockwise_Positive;
     
     // Current Limits
-    frontRightCurrentConfigs.withSupplyCurrentLimit(10);
-    frontRightCurrentConfigs.withStatorCurrentLimit(10);
+    frontRightCurrentConfigs.withSupplyCurrentLimit(20);
+    frontRightCurrentConfigs.withStatorCurrentLimit(60);
+    
 
-    rearRightCurrentConfigs.withSupplyCurrentLimit(10);
-    rearRightCurrentConfigs.withStatorCurrentLimit(10);
+    rearRightCurrentConfigs.withSupplyCurrentLimit(20);
+    rearRightCurrentConfigs.withStatorCurrentLimit(60);
 
-    frontLeftCurrentConfigs.withSupplyCurrentLimit(10);
-    frontLeftCurrentConfigs.withStatorCurrentLimit(10);
+    frontLeftCurrentConfigs.withSupplyCurrentLimit(20);
+    frontLeftCurrentConfigs.withStatorCurrentLimit(60);
 
-    rearLeftCurrentConfigs.withSupplyCurrentLimit(10);
-    rearLeftCurrentConfigs.withStatorCurrentLimit(10);
+    rearLeftCurrentConfigs.withSupplyCurrentLimit(20);
+    rearLeftCurrentConfigs.withStatorCurrentLimit(60);
 
     frontRightConfigurator.apply(frontRightMotorConfigs);
     rearRightConfigurator.apply(rearRightMotorConfigs);
@@ -113,7 +116,7 @@ public class DriveSubsystem extends SubsystemBase {
     frontLeftConfigurator.apply(frontLeftCurrentConfigs);
     rearLeftConfigurator.apply(rearLeftCurrentConfigs);
 
-    m_drive.setMaxOutput(0.3);
+    // m_drive.setMaxOutput(0.3);
   }
 
   @Override
@@ -124,6 +127,40 @@ public class DriveSubsystem extends SubsystemBase {
     m_frontRightEncoder = m_frontRight.getPosition().getValue().magnitude();
     m_rearRightEncoder = m_rearRight.getPosition().getValue().magnitude();
     m_odometry.update(m_gyro.getRotation2d(), getCurrentWheelDistances());
+    FaultChecks();
+  }
+  private void FaultChecks() {
+    if(m_frontLeft.getFault_StatorCurrLimit().getValue()) {
+      DataLogManager.log("Front Left Stator Current Limit Hit");
+    };
+
+    if(m_rearLeft.getFault_StatorCurrLimit().getValue()) {
+      DataLogManager.log("Rear Left Stator Current Limit Hit");
+    };
+
+    if(m_frontRight.getFault_StatorCurrLimit().getValue()) {
+      DataLogManager.log("Front Right Stator Current Limit Hit");
+    };
+
+    if(m_rearRight.getFault_StatorCurrLimit().getValue()) {
+      DataLogManager.log("Rear Right Stator Current Limit Hit");
+    };
+    // Supply Limit Hit
+    if(m_frontLeft.getFault_SupplyCurrLimit().getValue()) {
+      DataLogManager.log("Front Left Supply Current Limit Hit");
+    };
+
+    if(m_rearLeft.getFault_SupplyCurrLimit().getValue()) {
+      DataLogManager.log("Rear Left Supply Current Limit Hit");
+    };
+
+    if(m_frontRight.getFault_SupplyCurrLimit().getValue()) {
+      DataLogManager.log("Front Right Supply Current Limit Hit");
+    };
+
+    if(m_rearRight.getFault_SupplyCurrLimit().getValue()) {
+      DataLogManager.log("Rear Right Supply Current Limit Hit");
+    };
   }
 
   /**
