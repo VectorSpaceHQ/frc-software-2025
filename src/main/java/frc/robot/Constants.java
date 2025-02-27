@@ -99,8 +99,10 @@ public final class Constants {
   }
 
   public static final class DigitalInputPorts {
-    public static final int kAlgaeSubsystemLeft = 1;
     public static final int kAlgaeSubsystemRight = 0;
+    public static final int kAlgaeSubsystemLeft = 1;
+    public static final int kElevatorSubsystemUp = 2;
+    public static final int kElevatorSubsystemDown = 3;
   }
 
   public static final class AutoConstants {

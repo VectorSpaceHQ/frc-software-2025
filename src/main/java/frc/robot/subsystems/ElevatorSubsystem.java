@@ -6,6 +6,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import frc.robot.Constants.CANIDs;
+import frc.robot.Constants.DigitalInputPorts;
 import frc.robot.Constants.ElevatorSpecifics;
 import frc.robot.Constants.PIDTunings;
 import edu.wpi.first.math.controller.PIDController;
@@ -40,8 +41,8 @@ public class ElevatorSubsystem extends SubsystemBase{
   private SparkMaxConfig config = new SparkMaxConfig();
   RelativeEncoder encoder = motor.getEncoder();
   PIDController pid = new PIDController(PIDTunings.kElevatorKP, PIDTunings.kElevatorKI, PIDTunings.kElevatorKD);
-  private DigitalInput l_top = new DigitalInput(0);
-  private DigitalInput l_bottom = new DigitalInput(1);
+  private DigitalInput l_top = new DigitalInput(DigitalInputPorts.kElevatorSubsystemUp);
+  private DigitalInput l_bottom = new DigitalInput(DigitalInputPorts.kElevatorSubsystemDown);
 
   // True when pressed
   private boolean limitTop = l_top.get();
@@ -53,11 +54,9 @@ public class ElevatorSubsystem extends SubsystemBase{
   private double PIDFeedback = 0;
 
   public ElevatorSubsystem() {
-    // Registers the subsystem with the command scheduler
-    register();
     // Invert the SparkMax
     config.inverted(true);
-    config.smartCurrentLimit(1,1);
+    config.smartCurrentLimit(20);
     // Apply the Inversion
     motor.configure(config, null, null);
     // Reduce PID error tolerance from 0.05 to 0.02
