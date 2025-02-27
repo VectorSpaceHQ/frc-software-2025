@@ -127,42 +127,46 @@ public class DriveSubsystem extends SubsystemBase {
     m_frontRightEncoder = m_frontRight.getPosition().getValue().magnitude();
     m_rearRightEncoder = m_rearRight.getPosition().getValue().magnitude();
     m_odometry.update(m_gyro.getRotation2d(), getCurrentWheelDistances());
-    FaultChecks();
+    faultChecks();
   }
-  private void FaultChecks() {
-    if(m_frontLeft.getFault_StatorCurrLimit().getValue()) {
-      DataLogManager.log("Front Left Stator Current Limit Hit");
-    };
 
-    if(m_rearLeft.getFault_StatorCurrLimit().getValue()) {
-      DataLogManager.log("Rear Left Stator Current Limit Hit");
-    };
-
-    if(m_frontRight.getFault_StatorCurrLimit().getValue()) {
-      DataLogManager.log("Front Right Stator Current Limit Hit");
-    };
-
-    if(m_rearRight.getFault_StatorCurrLimit().getValue()) {
-      DataLogManager.log("Rear Right Stator Current Limit Hit");
-    };
-    // Supply Limit Hit
+  // Runs motor fault checks for logging purposes
+  private void faultChecks() {
+    // Supply Limit Checks
     if(m_frontLeft.getFault_SupplyCurrLimit().getValue()) {
       DataLogManager.log("Front Left Supply Current Limit Hit");
-    };
+    }
 
     if(m_rearLeft.getFault_SupplyCurrLimit().getValue()) {
       DataLogManager.log("Rear Left Supply Current Limit Hit");
-    };
+    }
 
     if(m_frontRight.getFault_SupplyCurrLimit().getValue()) {
       DataLogManager.log("Front Right Supply Current Limit Hit");
-    };
+    }
 
     if(m_rearRight.getFault_SupplyCurrLimit().getValue()) {
       DataLogManager.log("Rear Right Supply Current Limit Hit");
-    };
-  }
+    }
 
+    // Stator Limit Checks
+    if(m_frontLeft.getFault_StatorCurrLimit().getValue()) {
+      DataLogManager.log("Front Left Stator Current Limit Hit");
+    }
+
+    if(m_rearLeft.getFault_StatorCurrLimit().getValue()) {
+      DataLogManager.log("Rear Left Stator Current Limit Hit");
+    }
+
+    if(m_frontRight.getFault_StatorCurrLimit().getValue()) {
+      DataLogManager.log("Front Right Stator Current Limit Hit");
+    }
+
+    if(m_rearRight.getFault_StatorCurrLimit().getValue()) {
+      DataLogManager.log("Rear Right Stator Current Limit Hit");
+    }
+  
+  }
   /**
    * Returns the currently-estimated pose of the robot.
    *
