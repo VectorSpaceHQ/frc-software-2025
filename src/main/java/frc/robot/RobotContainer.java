@@ -14,6 +14,7 @@ import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
@@ -35,6 +36,10 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import java.util.List;
 import java.util.Map;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
+
+
 
 /*
  * This class is where the bulk of the robot should be declared.  Since Command-based is a
@@ -45,10 +50,10 @@ import java.util.Map;
 public class RobotContainer {
   // The robot's subsystems
   private final DriveSubsystem m_robotDrive = new DriveSubsystem();
-  // private final CoralSubsystem m_robotCoral = new CoralSubsystem();
+  private final CoralSubsystem m_robotCoral = new CoralSubsystem();
   private final VisionSubsystem m_robotVision = new VisionSubsystem();
   // private final ElevatorSubsystem m_robotElevator = new ElevatorSubsystem();
-  // private final AlgaeSubsystem m_robotAlgae = new AlgaeSubsystem();
+  private final AlgaeSubsystem m_robotAlgae = new AlgaeSubsystem();
   private final FieldTagMap fieldTagMap = new FieldTagMap();
   // The driver's controller
   CommandXboxController m_driverController = new CommandXboxController(OIConstants.kDriverControllerPort);
@@ -61,14 +66,14 @@ public class RobotContainer {
 
     m_robotDrive.setDefaultCommand(aimTarget);
 
-    // m_robotAlgae.setDefaultCommand(
-    //     // Left + Right Full Pressed = 0
-    //     // Left Closes Right Opens (this result can be scaled down by a constant multiple if needed)
-    //     new RunCommand(
-    //         () -> 
-    //             m_robotAlgae.runClaws(
-    //                m_driverController), 
-    //             m_robotAlgae));
+    m_robotAlgae.setDefaultCommand(
+        // Left + Right Full Pressed = 0
+        // Left Closes Right Opens (this result can be scaled down by a constant multiple if needed)
+        new RunCommand(
+            () -> 
+                m_robotAlgae.runClaws(
+                m_driverController), 
+                m_robotAlgae));
  }
 
   /**
@@ -81,11 +86,13 @@ public class RobotContainer {
     Map<String, AprilTags> fieldMap = fieldTagMap.getRedMap();
 
     // Spin Coral Discharge on Hold / Stop on release
-    // m_driverController
-    //     .a()
-    //     .and(m_driverController.leftBumper().negate())
-    //     .and(m_driverController.rightBumper().negate())
-    //     .whileTrue(new InstantCommand(() -> m_robotCoral.runCoralDispenser()));
+
+    SmartDashboard.putNumber("coralRegister", 99);
+    m_driverController
+        .a()
+        .and(m_driverController.leftBumper().negate())
+        .and(m_driverController.rightBumper().negate())
+        .whileTrue(new InstantCommand(() -> m_robotCoral.runCoralDispenser()));
 
     // Elevator to L2 - Add CMD in Feature Branch
     // m_driverController

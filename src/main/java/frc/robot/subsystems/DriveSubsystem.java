@@ -93,17 +93,17 @@ public class DriveSubsystem extends SubsystemBase {
     rearRightMotorConfigs.Inverted = InvertedValue.Clockwise_Positive;
     
     // Current Limits
-    frontRightCurrentConfigs.withSupplyCurrentLimit(20);
+    frontRightCurrentConfigs.withSupplyCurrentLimit(40);
     frontRightCurrentConfigs.withStatorCurrentLimit(60);
     
 
-    rearRightCurrentConfigs.withSupplyCurrentLimit(20);
+    rearRightCurrentConfigs.withSupplyCurrentLimit(40);
     rearRightCurrentConfigs.withStatorCurrentLimit(60);
 
-    frontLeftCurrentConfigs.withSupplyCurrentLimit(20);
+    frontLeftCurrentConfigs.withSupplyCurrentLimit(40);
     frontLeftCurrentConfigs.withStatorCurrentLimit(60);
 
-    rearLeftCurrentConfigs.withSupplyCurrentLimit(20);
+    rearLeftCurrentConfigs.withSupplyCurrentLimit(40);
     rearLeftCurrentConfigs.withStatorCurrentLimit(60);
 
     frontRightConfigurator.apply(frontRightMotorConfigs);

@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.subsystems.DriveSubsystem;
@@ -44,9 +45,15 @@ public class DriveTargetCommand extends Command {
   @Override
   public void execute() {
    
-    double forward =  x_rate.calculate(driverController.getLeftY() * Constants.AutoConstants.kMaxSpeedMetersPerSecond);
-    double strafe =  y_rate.calculate(-driverController.getLeftX() * Constants.AutoConstants.kMaxSpeedMetersPerSecond);
+    //double forward =  x_rate.calculate(driverController.getLeftY() * Constants.AutoConstants.kMaxSpeedMetersPerSecond);
+    //double strafe =  y_rate.calculate(-driverController.getLeftX() * Constants.AutoConstants.kMaxSpeedMetersPerSecond);
+    double forward =  x_rate.calculate(driverController.getLeftY());
+    double strafe =  y_rate.calculate(-driverController.getLeftX());
     double turn = theta_rate.calculate(-0.3 * driverController.getRightX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
+
+    SmartDashboard.putNumber("forward", forward);
+    SmartDashboard.putNumber("strafe", strafe);
+    SmartDashboard.putNumber("turn", turn);
 
     // Check if the camera is connected and displays the aiming and camera status
     if (visionSubsystem.isCameraConnected()) {
