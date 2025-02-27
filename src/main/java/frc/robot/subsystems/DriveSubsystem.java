@@ -5,6 +5,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelPositions;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds;
 import edu.wpi.first.math.kinematics.MecanumDriveKinematics;
@@ -47,7 +48,7 @@ public class DriveSubsystem extends SubsystemBase {
       m_rearRight::set);
 
   // The gyro sensor
-  private final AHRS m_gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
+   private final AHRS m_gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
 
   // using default frontR rearR inverted right now
   private final TalonFXConfigurator frontRightConfigurator = m_frontRight.getConfigurator();
@@ -141,7 +142,9 @@ public class DriveSubsystem extends SubsystemBase {
   public Pose2d getPose() {
     return m_poseEstimator.getEstimatedPosition();
   }
-
+  public double gyroAngle() {
+      return m_gyro.getRotation2d().getDegrees();
+  }
   /**
    * Resets the odometry to the specified pose.
    *
@@ -171,8 +174,12 @@ public class DriveSubsystem extends SubsystemBase {
     }
   }
 
-  public void strafe(double speed) {
-    m_drive.driveCartesian(0, speed, m_gyro.getRotation2d().getDegrees());
+  public void strafe(double ySpeed) {
+    m_drive.driveCartesian(0, ySpeed, 0, m_gyro.getRotation2d());
+  }
+  
+  public void turn(double rot) {
+    m_drive.driveCartesian(0, 0, rot, m_gyro.getRotation2d());
   }
 
   public double getFrontLeftEncoder() {

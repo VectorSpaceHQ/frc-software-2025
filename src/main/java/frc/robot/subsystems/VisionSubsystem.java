@@ -189,7 +189,7 @@ public class VisionSubsystem extends SubsystemBase {
     var result = camera.getAllUnreadResults();
 
     Optional<Pose2d> estimatedRobotPose2d = Optional.empty();
-  
+
     if (result.size() > 0) {
       var target = result.get(result.size() - 1).getBestTarget();
       var tagPose = layout.getTagPose(target.getFiducialId());
@@ -223,7 +223,9 @@ public class VisionSubsystem extends SubsystemBase {
       if (results.size() > 0) {
         for (PhotonTrackedTarget target : targets) {
 
-          if (results.get(results.size() - 1).hasTargets()) { //For self reference, (results.get(results.size() - 1).hasTargets()) checks for the latest target. This is to remove the deprecated method warning
+          if (results.get(results.size() - 1).hasTargets()) { // For self reference, (results.get(results.size() -
+                                                              // 1).hasTargets()) checks for the latest target. This is
+                                                              // to remove the deprecated method warning
             double yaw = target.getYaw();
             double pitch = target.getPitch();
             double area = target.getArea();
@@ -241,10 +243,9 @@ public class VisionSubsystem extends SubsystemBase {
               Optional<EstimatedRobotPose> estimatedRobotPose = poseEstimator.update(results.get(results.size() - 1));
 
               if (estimatedRobotPose.isPresent()) {
-
                 Pose3d estimatedRobotPose3d = estimatedRobotPose.get().estimatedPose;
                 Pose2d estimatedRobotPose2d = estimatedRobotPose3d.toPose2d();
-
+                // Set shuffleboard to the side for now
                 yawEntry.setDouble(yaw);
                 pitchEntry.setDouble(pitch);
                 areaEntry.setDouble(area);

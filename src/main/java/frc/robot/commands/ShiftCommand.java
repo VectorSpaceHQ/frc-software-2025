@@ -12,12 +12,14 @@ public class ShiftCommand extends Command {
   private final double speed;
   private final Timer timer = new Timer();
   private final double duration;
+  private final double rot;
 
   // Sets the ShiftCommand constructor
-  public ShiftCommand(DriveSubsystem driveSubsystem, double speed, double duration) {
+  public ShiftCommand(DriveSubsystem driveSubsystem, double speed, double rot, double duration) {
     this.driveSubsystem = driveSubsystem;
     this.speed = speed; //Default speed is input speed (idk if it works)
-    this.duration = duration = 0.5;
+    this.rot = rot;
+    this.duration = duration;
     addRequirements(driveSubsystem);
   }
 
@@ -27,7 +29,7 @@ public class ShiftCommand extends Command {
   public void initialize() {
     timer.reset();
     timer.start();
-    SmartDashboard.putString("Shifting Status", "ShiftCommand Initialized. Speed = " + speed + ", Duration = " + duration);
+    SmartDashboard.putString("Shifting Status", "ShiftCommand Initialized. Speed = " + speed + ", Rot = " + rot + " Duration = " + duration);
   }
 
   // Executes the ShiftCommand
@@ -47,7 +49,7 @@ public class ShiftCommand extends Command {
   // Ends the ShiftCommand
   @Override
   public void end(boolean interrupted) {
-    driveSubsystem.drive(0, 0, 0, true);
+    driveSubsystem.drive(0, 0, 0, false);
     SmartDashboard.putString("Shifting Status", "ShiftCommand Ended");
   }
 }
