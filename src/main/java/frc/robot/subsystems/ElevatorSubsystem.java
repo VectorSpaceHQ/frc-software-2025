@@ -13,10 +13,13 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.lang.Math;
+
+import org.ejml.dense.row.SpecializedOps_CDRM;
 
 public class ElevatorSubsystem extends SubsystemBase{
 
@@ -91,6 +94,12 @@ public class ElevatorSubsystem extends SubsystemBase{
     if (limitBottom) {
       encoder.setPosition(0);
     }
+
+    ElevatorLogger();
+  }
+
+  private void ElevatorLogger(){
+    //SmartDashboard.putNumber("Scissor Lift Speed", this.speed);
   }
 
   // R = (sqrt(L^2 - X^2) - C) / P
@@ -142,13 +151,27 @@ public class ElevatorSubsystem extends SubsystemBase{
     }
   }
 
+  private void setSpeed(double speed){
+    // positive speed raises scissor
+    if(limitBottom)
+    {
+      speed = Math.min(0, speed);
+    }
+    if(limitTop)
+    {
+      speed = Math.max(speed, 0);
+    }
+    motor1.set(speed);
+  }
+
   // runEnd adds a runnable on iteration and a runnable on termination
   // lower on iteration stop on termination
   public Command ElevatorLowerCommand() {
     return runEnd(
       () -> {
         update();
-        this.manualAdjustment(-0.20);
+        //this.manualAdjustment(-0.20);
+        this.setSpeed(-0.2);
       },
       () -> {
         motor1.stopMotor();
@@ -162,7 +185,8 @@ public class ElevatorSubsystem extends SubsystemBase{
     return runEnd(
       () -> {
         update();
-        this.manualAdjustment(0.5);
+        //this.manualAdjustment(0.5);
+        this.setSpeed(-0.2);
       },
       () -> {
         motor1.stopMotor();

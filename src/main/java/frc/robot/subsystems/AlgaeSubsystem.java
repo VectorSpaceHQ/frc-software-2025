@@ -18,7 +18,8 @@ public class AlgaeSubsystem extends SubsystemBase {
     private double speed = 0;
     private final SparkMax motor_left = new SparkMax(CANIDs.kAlgaeSubsystemLeft, MotorType.kBrushless);
     private final SparkMax motor_right = new SparkMax(CANIDs.kAlgaeSubsystemRight, MotorType.kBrushless);
-    private SparkMaxConfig config = new SparkMaxConfig();
+    private SparkMaxConfig leftConfig = new SparkMaxConfig();
+    private SparkMaxConfig rightConfig = new SparkMaxConfig();
     private final DigitalInput l_Left = new DigitalInput(DigitalInputPorts.kAlgaeSubsystemLeft);
     private final DigitalInput l_Right = new DigitalInput(DigitalInputPorts.kAlgaeSubsystemRight);
     private boolean limitSwitchLeft = l_Left.get();
@@ -26,10 +27,12 @@ public class AlgaeSubsystem extends SubsystemBase {
 
     public AlgaeSubsystem() {
         //config.follow(CANIDs.kAlgaeSubsystemLeft,true);
-        config.smartCurrentLimit(20, 20);
+        leftConfig.smartCurrentLimit(20, 20);
+        rightConfig.smartCurrentLimit(20, 20);
+        rightConfig.inverted(true);
 
-        motor_right.configure(config, null, null);
-        motor_left.configure(config, null, null);
+        motor_right.configure(rightConfig, null, null);
+        motor_left.configure(leftConfig, null, null);
     }
 
     @Override
@@ -38,6 +41,7 @@ public class AlgaeSubsystem extends SubsystemBase {
     }
 
     private void update(){
+        // True when limit switch is pressed.
         limitSwitchLeft = !l_Left.get();
         limitSwitchRight = !l_Right.get();
     }
@@ -51,9 +55,13 @@ public class AlgaeSubsystem extends SubsystemBase {
     }
 
     private void setSpeed(double speed){
-        // positive speed opens claws.
+        // negative speed opens claws.
         double left_speed = speed;
         double right_speed = speed;
+
+        // limit the opening speeds
+        left_speed = Math.max(left_speed, -0.15);
+        right_speed = Math.max(right_speed, -0.15);
 
         if(limitSwitchLeft){
             left_speed = Math.max(0, speed);
@@ -65,7 +73,7 @@ public class AlgaeSubsystem extends SubsystemBase {
         }
 
         motor_left.set(left_speed);
-        motor_right.set(right_speed * -1.0);
+        motor_right.set(right_speed);
     }
     
     // Sets both motors
@@ -108,7 +116,7 @@ public class AlgaeSubsystem extends SubsystemBase {
                     motor_right.stopMotor();
                 }
             }, 
-            interrupted -> {motor_right.configure(config, null, null);}, 
+            interrupted -> {}, 
             () -> (limitSwitchLeft && limitSwitchRight), 
             this);
     }
