@@ -57,6 +57,7 @@ public class RobotContainer {
   private final FieldTagMap fieldTagMap = new FieldTagMap();
   // The driver's controller
   CommandXboxController m_driverController = new CommandXboxController(OIConstants.kDriverControllerPort);
+  CommandXboxController m_operatorController = new CommandXboxController(OIConstants.kOperatorControllerPort);
 
   private final DriveTargetCommand aimTarget = new DriveTargetCommand(m_robotDrive, m_robotVision, m_driverController);
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
@@ -79,8 +80,6 @@ public class RobotContainer {
     Map<String, AprilTags> fieldMap = fieldTagMap.getRedMap();
 
     // Spin Coral Discharge on Hold / Stop on release
-
-    SmartDashboard.putNumber("coralRegister", 99);
     m_driverController
         .a()
         .and(m_driverController.leftBumper().negate())
@@ -109,17 +108,17 @@ public class RobotContainer {
     //     .onTrue(m_robotElevator.GoTo(Level.L4));
 
     // Manually Raise Elevator - Add Function in Feature Branch
-    m_driverController
+    m_operatorController
         .back()
-        .and(m_driverController.leftBumper().negate())
-        .and(m_driverController.rightBumper().negate())
+        .and(m_operatorController.leftBumper().negate())
+        .and(m_operatorController.rightBumper().negate())
         .whileTrue(m_robotElevator.ElevatorLowerCommand());
     
     // Manually Lower Elevator - Add Function in Feature Branch
-    m_driverController
+    m_operatorController
         .start()
-        .and(m_driverController.leftBumper().negate())
-        .and(m_driverController.rightBumper().negate())
+        .and(m_operatorController.leftBumper().negate())
+        .and(m_operatorController.rightBumper().negate())
         .whileTrue(m_robotElevator.ElevatorRaiseCommand());
 
     // Go To Dispenser 1 (Left) - Add CMD in Feature Branch

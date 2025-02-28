@@ -63,12 +63,12 @@ public class ElevatorSubsystem extends SubsystemBase{
   public ElevatorSubsystem() {
     // Invert the SparkMax
     config.inverted(true);
-    config.smartCurrentLimit(100);
+    config.smartCurrentLimit(105);
     // Apply the Inversion
     motor1.configure(config, null, null);
     // Reduce PID error tolerance from 0.05 to 0.02
     pid.setTolerance(0.02);
-    config2.smartCurrentLimit(100);
+    config2.smartCurrentLimit(105);
     config2.follow(CANIDs.kElevatorSubsystemMain);
     motor2.configure(config2, null, null);
 
@@ -194,7 +194,7 @@ public class ElevatorSubsystem extends SubsystemBase{
       () -> {
         update();
         //this.manualAdjustment(0.5);
-        this.setSpeed(0.5);
+        this.setSpeed(0.75);
       },
       () -> {
         motor1.stopMotor();
