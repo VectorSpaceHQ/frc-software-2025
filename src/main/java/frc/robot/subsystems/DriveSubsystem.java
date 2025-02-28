@@ -8,14 +8,20 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelPositions;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.MecanumDriveKinematics;
 import edu.wpi.first.math.estimator.MecanumDrivePoseEstimator;
 import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
+import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.CANIDs;
 import frc.robot.Constants.DriveConstants;
+import java.util.function.Supplier;
 
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -25,6 +31,8 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.studica.frc.AHRS;
 
+import choreo.trajectory.SwerveSample;
+import choreo.trajectory.TrajectorySample;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 // Can I do this? And where do I put this? Also saying that it is unused when I literally used in in the vision update as the robot pose (vision) method for the mecanum pose estimator 
@@ -37,7 +45,7 @@ public class DriveSubsystem extends SubsystemBase {
   private final TalonFX m_frontRight = new TalonFX(CANIDs.kDriveSubsystemFrontRight);
   private final TalonFX m_rearRight = new TalonFX(CANIDs.kDriveSubsystemRearRight);
 
-  //This too
+  // This too
   private VisionSubsystem visionSubsystem;
 
   private double m_frontLeftEncoder = 0;
@@ -48,7 +56,7 @@ public class DriveSubsystem extends SubsystemBase {
       m_rearRight::set);
 
   // The gyro sensor
-   private final AHRS m_gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
+  private final AHRS m_gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
 
   // using default frontR rearR inverted right now
   private final TalonFXConfigurator frontRightConfigurator = m_frontRight.getConfigurator();
@@ -75,12 +83,19 @@ public class DriveSubsystem extends SubsystemBase {
       VecBuilder.fill(0.1, 0.1, 0.1), // Standard deviations for state measurements?
       VecBuilder.fill(0.45, 0.45, 0.45)); // Standard deviations for vision measurements?
 
+  // PID Controllers
+  private final PIDController kPXController = new PIDController(AutoConstants.kPXController, 0, 0);
+  private final PIDController kPYController = new PIDController(AutoConstants.kPYController, 0, 0);
+  private final ProfiledPIDController headingController = new ProfiledPIDController(AutoConstants.kPThetaController, 0,
+      0, AutoConstants.kThetaControllerConstraints);
+
   /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
     SendableRegistry.addChild(m_drive, m_frontLeft);
     SendableRegistry.addChild(m_drive, m_rearLeft);
     SendableRegistry.addChild(m_drive, m_frontRight);
     SendableRegistry.addChild(m_drive, m_rearRight);
+    headingController.enableContinuousInput(-Math.PI, Math.PI);
 
     // Sets the distance per pulse for the encoders (most likely won't be used but
     // was in original template)
@@ -122,6 +137,16 @@ public class DriveSubsystem extends SubsystemBase {
     m_drive.setMaxOutput(0.25); // Conservative for now
   }
 
+  /**
+   * Sets the wheel speeds for the mecanum drive.
+   *
+   * @param wheelSpeeds The desired wheel speeds.
+   */
+  public void setWheelSpeeds(MecanumDriveWheelSpeeds wheelSpeeds) {
+    m_drive.driveCartesian(wheelSpeeds.frontLeftMetersPerSecond, wheelSpeeds.frontRightMetersPerSecond,
+        wheelSpeeds.rearLeftMetersPerSecond, m_gyro.getRotation2d());
+  }
+
   @Override
   public void periodic() {
     // Update the odometry in the periodic block
@@ -142,9 +167,11 @@ public class DriveSubsystem extends SubsystemBase {
   public Pose2d getPose() {
     return m_poseEstimator.getEstimatedPosition();
   }
+
   public double gyroAngle() {
-      return m_gyro.getRotation2d().getDegrees();
+    return m_gyro.getRotation2d().getDegrees();
   }
+
   /**
    * Resets the odometry to the specified pose.
    *
@@ -152,6 +179,20 @@ public class DriveSubsystem extends SubsystemBase {
    */
   public void resetOdometry(Pose2d pose) {
     m_poseEstimator.resetPosition(m_gyro.getRotation2d(), getCurrentWheelDistances(), pose);
+  }
+
+  public void followTrajectory(SwerveSample sample) {
+    // Get the current pose of the robot
+    Pose2d pose = getPose();
+
+    // Generate the next speeds for the robot
+    ChassisSpeeds speeds = new ChassisSpeeds(
+        sample.vx + kPXController.calculate(pose.getX(), sample.x),
+        sample.vy + kPYController.calculate(pose.getY(), sample.y),
+        sample.omega + headingController.calculate(pose.getRotation().getRadians(), sample.heading));
+    MecanumDriveWheelSpeeds wheelSpeeds = DriveConstants.kDriveKinematics.toWheelSpeeds(speeds);
+    setWheelSpeeds(wheelSpeeds);
+
   }
 
   /**
@@ -177,7 +218,7 @@ public class DriveSubsystem extends SubsystemBase {
   public void strafe(double ySpeed) {
     m_drive.driveCartesian(0, ySpeed, 0, m_gyro.getRotation2d());
   }
-  
+
   public void turn(double rot) {
     m_drive.driveCartesian(0, 0, rot, m_gyro.getRotation2d());
   }
@@ -211,6 +252,17 @@ public class DriveSubsystem extends SubsystemBase {
    */
   public double getRearRightEncoder() {
     return m_rearRightEncoder;
+  }
+
+  public void setDriveMotorControllersVolts(
+      double frontLeftVoltage,
+      double frontRightVoltage,
+      double rearLeftVoltage,
+      double rearRightVoltage) {
+    m_frontLeft.setVoltage(frontLeftVoltage);
+    m_rearLeft.setVoltage(rearLeftVoltage);
+    m_frontRight.setVoltage(frontRightVoltage);
+    m_rearRight.setVoltage(rearRightVoltage);
   }
 
   /**
@@ -272,4 +324,5 @@ public class DriveSubsystem extends SubsystemBase {
   public double getTurnRate() {
     return -m_gyro.getRate();
   }
+
 }
