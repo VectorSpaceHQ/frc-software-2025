@@ -12,6 +12,7 @@ import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.CANIDs;
 import frc.robot.Constants.DriveConstants;
 
@@ -165,6 +166,11 @@ public class DriveSubsystem extends SubsystemBase {
     if(m_rearRight.getFault_StatorCurrLimit().getValue()) {
       DataLogManager.log("Rear Right Stator Current Limit Hit");
     }
+
+    SmartDashboard.putNumber("front left drive current", m_frontLeft.getStatorCurrent().getValueAsDouble());
+    SmartDashboard.putNumber("front right drive current", m_frontRight.getStatorCurrent().getValueAsDouble());
+    SmartDashboard.putNumber("rear left drive current", m_rearLeft.getStatorCurrent().getValueAsDouble());
+    SmartDashboard.putNumber("rear right drive current", m_rearRight.getStatorCurrent().getValueAsDouble());
   
   }
   /**

@@ -104,6 +104,8 @@ public class ElevatorSubsystem extends SubsystemBase{
     SmartDashboard.putNumber("Scissor Lift Speed", scissor_speed);
     SmartDashboard.putBoolean("Scissor Bottom Limit", limitBottom);
     SmartDashboard.putBoolean("Scissor Top Limit", limitTop);
+    SmartDashboard.putNumber("Scissor Motor1 Current", motor1.getOutputCurrent());
+    SmartDashboard.putNumber("Scissor Motor2 Current", motor2.getOutputCurrent());
   }
 
   // R = (sqrt(L^2 - X^2) - C) / P
@@ -177,7 +179,7 @@ public class ElevatorSubsystem extends SubsystemBase{
       () -> {
         update();
         //this.manualAdjustment(-0.20);
-        this.setSpeed(-0.2);
+        this.setSpeed(-0.25);
       },
       () -> {
         motor1.stopMotor();
