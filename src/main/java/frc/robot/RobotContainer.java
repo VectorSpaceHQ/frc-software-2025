@@ -66,14 +66,7 @@ public class RobotContainer {
 
     m_robotDrive.setDefaultCommand(aimTarget);
 
-    m_robotAlgae.setDefaultCommand(
-        // Left + Right Full Pressed = 0
-        // Left Closes Right Opens (this result can be scaled down by a constant multiple if needed)
-        new RunCommand(
-            () -> 
-                m_robotAlgae.runClaws(
-                m_driverController), 
-                m_robotAlgae));
+    m_robotAlgae.setDefaultCommand(m_robotAlgae.runClaws(m_driverController));
  }
 
   /**
@@ -92,7 +85,7 @@ public class RobotContainer {
         .a()
         .and(m_driverController.leftBumper().negate())
         .and(m_driverController.rightBumper().negate())
-        .whileTrue(new InstantCommand(() -> m_robotCoral.runCoralDispenser()));
+        .whileTrue(m_robotCoral.runCoralDispenser());
 
     // Elevator to L2 - Add CMD in Feature Branch
     // m_driverController

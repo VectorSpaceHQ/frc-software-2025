@@ -45,8 +45,8 @@ public class DriveTargetCommand extends Command {
   @Override
   public void execute() {
    
-    double forward =  x_rate.calculate(driverController.getLeftY() * AutoConstants.kMaxSpeedMetersPerSecond);
-    double strafe =  y_rate.calculate(-driverController.getLeftX() * AutoConstants.kMaxSpeedMetersPerSecond);
+    double forward =  x_rate.calculate(driverController.getLeftY());
+    double strafe =  y_rate.calculate(-driverController.getLeftX());
     double turn = theta_rate.calculate(-0.3 * driverController.getRightX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
 
     // Check if the camera is connected and displays the aiming and camera status
