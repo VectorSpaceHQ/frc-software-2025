@@ -58,6 +58,7 @@ public class ElevatorSubsystem extends SubsystemBase{
   private double r_currentRotations = 0;
   private double r_targetRotations = 0;
   private double PIDFeedback = 0;
+  private double scissor_speed = 0;
 
   public ElevatorSubsystem() {
     // Invert the SparkMax
@@ -70,6 +71,7 @@ public class ElevatorSubsystem extends SubsystemBase{
     config2.smartCurrentLimit(100);
     config2.follow(CANIDs.kElevatorSubsystemMain);
     motor2.configure(config2, null, null);
+
   }
 
 
@@ -99,7 +101,9 @@ public class ElevatorSubsystem extends SubsystemBase{
   }
 
   private void ElevatorLogger(){
-    //SmartDashboard.putNumber("Scissor Lift Speed", this.speed);
+    SmartDashboard.putNumber("Scissor Lift Speed", scissor_speed);
+    SmartDashboard.putBoolean("Scissor Bottom Limit", limitBottom);
+    SmartDashboard.putBoolean("Scissor Top Limit", limitTop);
   }
 
   // R = (sqrt(L^2 - X^2) - C) / P
@@ -155,13 +159,15 @@ public class ElevatorSubsystem extends SubsystemBase{
     // positive speed raises scissor
     if(limitBottom)
     {
-      speed = Math.min(0, speed);
+      speed = Math.max(0, speed);
     }
     if(limitTop)
     {
-      speed = Math.max(speed, 0);
+      speed = Math.min(speed, 0);
     }
     motor1.set(speed);
+
+    scissor_speed = speed;
   }
 
   // runEnd adds a runnable on iteration and a runnable on termination
@@ -186,7 +192,7 @@ public class ElevatorSubsystem extends SubsystemBase{
       () -> {
         update();
         //this.manualAdjustment(0.5);
-        this.setSpeed(-0.2);
+        this.setSpeed(0.5);
       },
       () -> {
         motor1.stopMotor();
