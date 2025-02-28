@@ -6,6 +6,7 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import frc.robot.Constants.CANIDs;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -28,7 +29,7 @@ public class CoralSubsystem extends SubsystemBase {
 
   // Motors are Synchronized so setspeed is controlled via common input 0.1 = 10%
   // of max output
-  private final double motorspeed = 0.2;
+  private final double motorspeed = 0.1;
 
   public CoralSubsystem() {
 
@@ -50,9 +51,12 @@ public class CoralSubsystem extends SubsystemBase {
   }
 
   public Command runCoralDispenser() {
+    SmartDashboard.putNumber("runCoralDispenser", 8);
+
     return new FunctionalCommand(() -> {
     },
         () -> {
+          SmartDashboard.putNumber("coralSpeed", motorspeed);
           motor_left.set(motorspeed);
         },
         interrupted -> {

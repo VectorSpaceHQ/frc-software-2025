@@ -12,6 +12,8 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.MecanumDriveKinematics;
 import edu.wpi.first.math.estimator.MecanumDrivePoseEstimator;
 import edu.wpi.first.util.sendable.SendableRegistry;
+import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
@@ -44,7 +46,6 @@ public class DriveSubsystem extends SubsystemBase {
   private final TalonFX m_frontRight = new TalonFX(CANIDs.kDriveSubsystemFrontRight);
   private final TalonFX m_rearRight = new TalonFX(CANIDs.kDriveSubsystemRearRight);
 
-
   private double m_frontLeftEncoder = 0;
   private double m_rearLeftEncoder = 0;
   private double m_frontRightEncoder = 0;
@@ -55,13 +56,14 @@ public class DriveSubsystem extends SubsystemBase {
   // The gyro sensor
   private final AHRS m_gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
 
- /**
- * Sets the vision subsystem for pose estimation
- * @param vision The vision subsystem to use
- */
-public void setVisionSubsystem(VisionSubsystem vision) {
-  this.m_robotVision = vision;
-}
+  /**
+   * Sets the vision subsystem for pose estimation
+   * 
+   * @param vision The vision subsystem to use
+   */
+  public void setVisionSubsystem(VisionSubsystem vision) {
+    this.m_robotVision = vision;
+  }
 
   // using default frontR rearR inverted right now
   private final TalonFXConfigurator frontRightConfigurator = m_frontRight.getConfigurator();
@@ -117,17 +119,17 @@ public void setVisionSubsystem(VisionSubsystem vision) {
     rearRightMotorConfigs.Inverted = InvertedValue.Clockwise_Positive;
 
     // Current Limits
-    frontRightCurrentConfigs.withSupplyCurrentLimit(10);
-    frontRightCurrentConfigs.withStatorCurrentLimit(10);
+    frontRightCurrentConfigs.withSupplyCurrentLimit(40);
+    frontRightCurrentConfigs.withStatorCurrentLimit(60);
 
-    rearRightCurrentConfigs.withSupplyCurrentLimit(10);
-    rearRightCurrentConfigs.withStatorCurrentLimit(10);
+    rearRightCurrentConfigs.withSupplyCurrentLimit(40);
+    rearRightCurrentConfigs.withStatorCurrentLimit(60);
 
-    frontLeftCurrentConfigs.withSupplyCurrentLimit(10);
-    frontLeftCurrentConfigs.withStatorCurrentLimit(10);
+    frontLeftCurrentConfigs.withSupplyCurrentLimit(40);
+    frontLeftCurrentConfigs.withStatorCurrentLimit(60);
 
-    rearLeftCurrentConfigs.withSupplyCurrentLimit(10);
-    rearLeftCurrentConfigs.withStatorCurrentLimit(10);
+    rearLeftCurrentConfigs.withSupplyCurrentLimit(40);
+    rearLeftCurrentConfigs.withStatorCurrentLimit(60);
 
     frontRightConfigurator.apply(frontRightMotorConfigs);
     rearRightConfigurator.apply(rearRightMotorConfigs);
@@ -139,9 +141,9 @@ public void setVisionSubsystem(VisionSubsystem vision) {
     frontLeftConfigurator.apply(frontLeftCurrentConfigs);
     rearLeftConfigurator.apply(rearLeftCurrentConfigs);
 
-    m_drive.setMaxOutput(0.25); // Conservative for now
+    // m_drive.setMaxOutput(0.25); // Conservative for now
   }
-  
+
   /**
    * Sets the wheel speeds for the mecanum drive.
    *
@@ -160,8 +162,46 @@ public void setVisionSubsystem(VisionSubsystem vision) {
     m_frontRightEncoder = m_frontRight.getPosition().getValue().magnitude();
     m_rearRightEncoder = m_rearRight.getPosition().getValue().magnitude();
     m_poseEstimator.update(m_gyro.getRotation2d(), getCurrentWheelDistances());
-      m_robotVision.getRobotPose()
-        .ifPresent(pose -> m_poseEstimator.addVisionMeasurement(pose, Timer.getFPGATimestamp()));
+    m_robotVision.getRobotPose()
+    .ifPresent(pose -> m_poseEstimator.addVisionMeasurement(pose, Timer.getFPGATimestamp()));
+  }
+
+  // Runs motor fault checks for logging purposes
+  private void faultChecks() {
+    // Supply Limit Checks
+    if (m_frontLeft.getFault_SupplyCurrLimit().getValue()) {
+      DataLogManager.log("Front Left Supply Current Limit Hit");
+    }
+
+    if (m_rearLeft.getFault_SupplyCurrLimit().getValue()) {
+      DataLogManager.log("Rear Left Supply Current Limit Hit");
+    }
+
+    if (m_frontRight.getFault_SupplyCurrLimit().getValue()) {
+      DataLogManager.log("Front Right Supply Current Limit Hit");
+    }
+
+    if (m_rearRight.getFault_SupplyCurrLimit().getValue()) {
+      DataLogManager.log("Rear Right Supply Current Limit Hit");
+    }
+
+    // Stator Limit Checks
+    if (m_frontLeft.getFault_StatorCurrLimit().getValue()) {
+      DataLogManager.log("Front Left Stator Current Limit Hit");
+    }
+
+    if (m_rearLeft.getFault_StatorCurrLimit().getValue()) {
+      DataLogManager.log("Rear Left Stator Current Limit Hit");
+    }
+
+    if (m_frontRight.getFault_StatorCurrLimit().getValue()) {
+      DataLogManager.log("Front Right Stator Current Limit Hit");
+    }
+
+    if (m_rearRight.getFault_StatorCurrLimit().getValue()) {
+      DataLogManager.log("Rear Right Stator Current Limit Hit");
+    }
+
   }
 
   /**

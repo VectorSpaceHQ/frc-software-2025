@@ -6,11 +6,13 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import frc.robot.Constants.CANIDs;
+import frc.robot.Constants.DigitalInputPorts;
 import frc.robot.Constants.ElevatorSpecifics;
 import frc.robot.Constants.PIDTunings;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -36,12 +38,14 @@ public class ElevatorSubsystem extends SubsystemBase {
     }
   };
 
-  private final SparkMax motor = new SparkMax(CANIDs.kElevatorSubsystemMain, MotorType.kBrushless);
+  private final SparkMax motor1 = new SparkMax(CANIDs.kElevatorSubsystemMain, MotorType.kBrushless);
+  private final SparkMax motor2 = new SparkMax(CANIDs.kElevatorSubsystemSecondary, MotorType.kBrushless);
   private SparkMaxConfig config = new SparkMaxConfig();
-  RelativeEncoder encoder = motor.getEncoder();
+  private SparkMaxConfig config2 = new SparkMaxConfig();
+  RelativeEncoder encoder = motor1.getEncoder();
   PIDController pid = new PIDController(PIDTunings.kElevatorKP, PIDTunings.kElevatorKI, PIDTunings.kElevatorKD);
-  private DigitalInput l_top = new DigitalInput(0);
-  private DigitalInput l_bottom = new DigitalInput(1);
+  private DigitalInput l_top = new DigitalInput(DigitalInputPorts.kElevatorSubsystemUp);
+  private DigitalInput l_bottom = new DigitalInput(DigitalInputPorts.kElevatorSubsystemDown);
 
   // True when pressed
   private boolean limitTop = l_top.get();
@@ -53,15 +57,16 @@ public class ElevatorSubsystem extends SubsystemBase {
   private double PIDFeedback = 0;
 
   public ElevatorSubsystem() {
-    // Registers the subsystem with the command scheduler
-    register();
     // Invert the SparkMax
     config.inverted(true);
-    config.smartCurrentLimit(1, 1);
+    config.smartCurrentLimit(100);
     // Apply the Inversion
-    motor.configure(config, null, null);
+    motor1.configure(config, null, null);
     // Reduce PID error tolerance from 0.05 to 0.02
     pid.setTolerance(0.02);
+    config2.smartCurrentLimit(100);
+    config2.follow(CANIDs.kElevatorSubsystemMain);
+    motor2.configure(config2, null, null);
   }
 
   @Override
@@ -80,15 +85,11 @@ public class ElevatorSubsystem extends SubsystemBase {
     // DataLogManager.log("Adjusted Speed" + SigmoidAdjustment(PIDFeedback));
     // DataLogManager.log("At Setpoint " + pid.atSetpoint());
     // DataLogManager.log("Target Rotational Value: " + r_targetRotations);
-    limitTop = l_top.get();
-    limitBottom = l_bottom.get();
+    limitTop = !l_top.get();
+    limitBottom = !l_bottom.get();
     if (limitBottom) {
       encoder.setPosition(0);
     }
-  }
-
-  private void stopMotor() {
-    motor.stopMotor();
   }
 
   // R = (sqrt(L^2 - X^2) - C) / P
@@ -122,23 +123,23 @@ public class ElevatorSubsystem extends SubsystemBase {
   private void manualAdjustment(double speed) {
     // If speed is within -1 to 1 and neither limit switch is triggered
     if (!limitBottom && !limitTop) {
-      motor.set(speed);
+      motor1.set(speed);
       System.out.println("First Logic");
     }
     // If speed is positive and bottom limit switch is triggered
-    else if (limitBottom && !limitTop && (speed < 0)) {
-      motor.set(speed);
+    else if (limitBottom && !limitTop && (speed > 0)) {
+      motor1.set(speed);
       System.out.println("Second Logic");
     }
     // If speed is negative and top limit switch is triggered
-    else if (limitTop && !limitBottom && (speed > 0)) {
-      motor.set(speed);
+    else if (limitTop && !limitBottom && (speed < 0)) {
+      motor1.set(speed);
       System.out.println("Third Logic");
     }
     //
     else {
       System.out.println("Stop Logic");
-      motor.stopMotor();
+      motor1.stopMotor();
     }
   }
 
@@ -148,10 +149,10 @@ public class ElevatorSubsystem extends SubsystemBase {
     return runEnd(
         () -> {
           update();
-          this.manualAdjustment(-0.05);
+          this.manualAdjustment(-0.20);
         },
         () -> {
-          this.stopMotor();
+          motor1.stopMotor();
         });
   }
 
@@ -161,10 +162,10 @@ public class ElevatorSubsystem extends SubsystemBase {
     return runEnd(
         () -> {
           update();
-          this.manualAdjustment(0.05);
+          this.manualAdjustment(0.5);
         },
         () -> {
-          this.stopMotor();
+          motor1.stopMotor();
         });
   }
 
@@ -179,14 +180,13 @@ public class ElevatorSubsystem extends SubsystemBase {
           () -> {
             update();
             double x = SigmoidAdjustment(PIDFeedback);
-            DataLogManager.log("" + x);
             if (!limitTop) {
-              motor.set(x);
+              motor1.set(x);
             }
           },
           // onEnd: Stop the motor
           interrupted -> {
-            motor.stopMotor();
+            motor1.stopMotor();
           },
           // isFinished: End the command when the target is reached or we hit our limit
           // switch
@@ -203,12 +203,12 @@ public class ElevatorSubsystem extends SubsystemBase {
             update();
             double x = SigmoidAdjustment(PIDFeedback);
             if (!limitBottom) {
-              motor.set(x);
+              motor1.set(x);
             }
           },
           // onEnd: Stop the motor
           interrupted -> {
-            motor.stopMotor();
+            motor1.stopMotor();
           },
           // isFinished: End the command when the target is reached or we hit our limit
           // switch
@@ -226,7 +226,7 @@ public class ElevatorSubsystem extends SubsystemBase {
           manualAdjustment(-0.05);
         },
         interrupted -> {
-          motor.stopMotor();
+          motor1.stopMotor();
           encoder.setPosition(0);
         },
         () -> (limitBottom),

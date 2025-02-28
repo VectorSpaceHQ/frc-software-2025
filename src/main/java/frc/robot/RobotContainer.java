@@ -15,6 +15,7 @@ import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
@@ -40,6 +41,10 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import java.util.List;
 import java.util.Map;
 import choreo.Choreo;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
+
+
 
 /*
  * This class is where the bulk of the robot should be declared.  Since Command-based is a
@@ -71,16 +76,9 @@ public class RobotContainer {
     configureButtonBindings();
 
     m_robotDrive.setDefaultCommand(aimTarget);
-    m_robotDrive.setVisionSubsystem(m_robotVision);
-    m_robotAlgae.setDefaultCommand(
-        // Left + Right Full Pressed = 0
-        // Left Closes Right Opens (this result can be scaled down by a constant
-        // multiple if needed)
-        new RunCommand(
-            () -> m_robotAlgae.runClaws(
-                m_driverController),
-            m_robotAlgae));
-  }
+    m_robotAlgae.setDefaultCommand(m_robotAlgae.runClaws(m_driverController));
+
+ }
 
   public VisionSubsystem getVisionSubsystem() {
 
@@ -104,6 +102,7 @@ public class RobotContainer {
     return m_robotAlgae;
   }
 
+ 
   /**
    * Use this method to define your button->command mappings. Buttons can be
    * created by
@@ -116,46 +115,48 @@ public class RobotContainer {
   private void configureButtonBindings() {
     Map<String, AprilTags> fieldMap = fieldTagMap.getRedMap();
     // Spin Coral Discharge on Hold / Stop on release
+
+    SmartDashboard.putNumber("coralRegister", 99);
     m_driverController
         .a()
         .and(m_driverController.leftBumper().negate())
         .and(m_driverController.rightBumper().negate())
-        .whileTrue(new InstantCommand(() -> m_robotCoral.runCoralDispenser()));
+        .whileTrue(m_robotCoral.runCoralDispenser());
 
     // Elevator to L2 - Add CMD in Feature Branch
-    m_driverController
-        .b()
-        .and(m_driverController.leftBumper().negate())
-        .and(m_driverController.rightBumper().negate())
-        .onTrue(m_robotElevator.GoTo(Level.L2));
-
+    // m_driverController
+    //     .b()
+    //     .and(m_driverController.leftBumper().negate())
+    //     .and(m_driverController.rightBumper().negate())
+    //     .onTrue(m_robotElevator.GoTo(Level.L2));
+    
     // Elevator to L3 - Add CMD in Feature Branch
-    m_driverController
-        .x()
-        .and(m_driverController.leftBumper().negate())
-        .and(m_driverController.rightBumper().negate())
-        .onTrue(m_robotElevator.GoTo(Level.L3));
+    // m_driverController
+    //     .x()
+    //     .and(m_driverController.leftBumper().negate())
+    //     .and(m_driverController.rightBumper().negate())
+    //     .onTrue(m_robotElevator.GoTo(Level.L3));
 
     // Elevator to L4 - Add CMD in Feature Branch
-    m_driverController
-        .y()
-        .and(m_driverController.leftBumper().negate())
-        .and(m_driverController.rightBumper().negate())
-        .onTrue(m_robotElevator.GoTo(Level.L4));
+    // m_driverController
+    //     .y()
+    //     .and(m_driverController.leftBumper().negate())
+    //     .and(m_driverController.rightBumper().negate())
+    //     .onTrue(m_robotElevator.GoTo(Level.L4));
 
     // Manually Raise Elevator - Add Function in Feature Branch
     m_driverController
         .back()
         .and(m_driverController.leftBumper().negate())
         .and(m_driverController.rightBumper().negate())
-        .whileTrue(m_robotElevator.ElevatorRaiseCommand());
-
+        .whileTrue(m_robotElevator.ElevatorLowerCommand());
+    
     // Manually Lower Elevator - Add Function in Feature Branch
     m_driverController
         .start()
         .and(m_driverController.leftBumper().negate())
         .and(m_driverController.rightBumper().negate())
-        .whileTrue(m_robotElevator.ElevatorLowerCommand());
+        .whileTrue(m_robotElevator.ElevatorRaiseCommand());
 
     // Go To Dispenser 1 (Left) - Add CMD in Feature Branch
     m_driverController
@@ -246,13 +247,12 @@ public class RobotContainer {
 
     // Homing Routines
     m_driverController
-        .rightBumper()
-        .and(m_driverController.leftBumper())
-        .and(m_driverController.a())
-        .onTrue(m_robotElevator.Homing())
-        .onTrue(m_robotAlgae.homeClaws())
-        .onTrue(new InstantCommand(() -> System.out.println("Homing Process B")));
-
+    .rightBumper()
+    .and(m_driverController.leftBumper())
+    .and(m_driverController.a())
+    // .onTrue(m_robotElevator.Homing())
+    .onTrue(m_robotAlgae.homeClaws());
+    
   }
 
   /**
