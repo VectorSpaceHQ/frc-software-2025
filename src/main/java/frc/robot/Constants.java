@@ -79,6 +79,7 @@ public final class Constants {
     public static final int kDriveSubsystemFrontLeft = 6;
     public static final int kDriveSubsystemRearRight = 8;
     public static final int kDriveSubsystemRearLeft = 9;
+    public static final int kElevatorSubsystemSecondary = 10;
     public static final int kElevatorSubsystemMain = 11;
     public static final int kAlgaeSubsystemLeft = 3;
     public static final int kAlgaeSubsystemRight = 2;

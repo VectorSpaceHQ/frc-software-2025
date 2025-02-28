@@ -52,7 +52,7 @@ public class RobotContainer {
   private final DriveSubsystem m_robotDrive = new DriveSubsystem();
   private final CoralSubsystem m_robotCoral = new CoralSubsystem();
   private final VisionSubsystem m_robotVision = new VisionSubsystem();
-  // private final ElevatorSubsystem m_robotElevator = new ElevatorSubsystem();
+  private final ElevatorSubsystem m_robotElevator = new ElevatorSubsystem();
   private final AlgaeSubsystem m_robotAlgae = new AlgaeSubsystem();
   private final FieldTagMap fieldTagMap = new FieldTagMap();
   // The driver's controller
@@ -108,19 +108,19 @@ public class RobotContainer {
     //     .and(m_driverController.rightBumper().negate())
     //     .onTrue(m_robotElevator.GoTo(Level.L4));
 
-    // // Manually Raise Elevator - Add Function in Feature Branch
-    // m_driverController
-    //     .back()
-    //     .and(m_driverController.leftBumper().negate())
-    //     .and(m_driverController.rightBumper().negate())
-    //     .whileTrue(m_robotElevator.ElevatorRaiseCommand());
+    // Manually Raise Elevator - Add Function in Feature Branch
+    m_driverController
+        .back()
+        .and(m_driverController.leftBumper().negate())
+        .and(m_driverController.rightBumper().negate())
+        .whileTrue(m_robotElevator.ElevatorLowerCommand());
     
-    // // Manually Lower Elevator - Add Function in Feature Branch
-    // m_driverController
-    //     .start()
-    //     .and(m_driverController.leftBumper().negate())
-    //     .and(m_driverController.rightBumper().negate())
-    //     .whileTrue(m_robotElevator.ElevatorLowerCommand());
+    // Manually Lower Elevator - Add Function in Feature Branch
+    m_driverController
+        .start()
+        .and(m_driverController.leftBumper().negate())
+        .and(m_driverController.rightBumper().negate())
+        .whileTrue(m_robotElevator.ElevatorRaiseCommand());
 
     // Go To Dispenser 1 (Left) - Add CMD in Feature Branch
     m_driverController
