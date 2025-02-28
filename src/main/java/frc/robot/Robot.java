@@ -4,22 +4,23 @@
 
 package frc.robot;
 
-import java.util.Optional;
-
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.DriveSubsystem;
+import frc.robot.subsystems.AlgaeSubsystem;
 import frc.robot.subsystems.CoralSubsystem;
 import frc.robot.subsystems.ElevatorSubsystem;
+import frc.robot.subsystems.VisionSubsystem;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.math.geometry.Pose2d;
-import choreo.Choreo;
-import choreo.trajectory.Trajectory;
-import choreo.trajectory.SwerveSample;
+
+// import edu.wpi.first.wpilibj.DriverStation;
+// import edu.wpi.first.wpilibj.DriverStation.Alliance;
+// import edu.wpi.first.math.geometry.Pose2d;
+// import choreo.Choreo;
+// import choreo.trajectory.Trajectory;
+// import choreo.trajectory.SwerveSample;
 import choreo.auto.AutoFactory;
 
 /**
@@ -31,16 +32,16 @@ import choreo.auto.AutoFactory;
  */
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
-  private Optional<Trajectory<SwerveSample>> trajectory1;
-  private Optional<Trajectory<SwerveSample>> trajectory2;
-  private Optional<Trajectory<SwerveSample>> trajectory3;
-  private Optional<Trajectory<SwerveSample>> trajectory4;
-  private final Timer timer = new Timer();
+
+  // private final Timer timer = new Timer();
   private AutoFactory autoFactory;
   private final RobotContainer m_robotContainer;
-  private final DriveSubsystem m_driveSubsystem = new DriveSubsystem();
-  private final CoralSubsystem m_coralSubsystem = new CoralSubsystem();
-  private final ElevatorSubsystem m_elevatorSubsystem = new ElevatorSubsystem();
+  private final DriveSubsystem m_robotDrive;
+  private final CoralSubsystem m_robotCoral;
+  private final ElevatorSubsystem m_robotElevator;
+  // private final VisionSubsystem m_robotVision;
+  // private final AlgaeSubsystem m_robotAlgae;
+
 
   /**
    * This function is run when the robot is first started up and should be used
@@ -52,17 +53,18 @@ public class Robot extends TimedRobot {
     // and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
-    trajectory1 = Choreo.loadTrajectory("2-Piece Coral Auto Part 1");
-    trajectory2 = Choreo.loadTrajectory("2-Piece Coral Auto Part 2");
-    trajectory3 = Choreo.loadTrajectory("2-Piece Coral Auto Part 3");
-    trajectory4 = Choreo.loadTrajectory("2-Piece Coral Auto Part 4");
+    m_robotDrive = m_robotContainer.getDriveSubsystem();
+    m_robotCoral = m_robotContainer.getCoralSubsystem();
+    m_robotElevator = m_robotContainer.getElevatorSubsystem();
+    // m_robotVision = m_robotContainer.getVisionSubsystem();
+    // m_robotAlgae = m_robotContainer.getAlgaeSubsystem();
     autoFactory = new AutoFactory(
-        m_driveSubsystem::getPose, // A function that returns the current robot pose
-        m_driveSubsystem::resetOdometry, // A function that resets the current robot pose to the provided Pose2d
-        m_driveSubsystem::followTrajectory, // The drive subsystem trajectory follower
+        m_robotDrive::getPose, // A function that returns the current robot pose
+        m_robotDrive::resetOdometry, // A function that resets the current robot pose to the provided Pose2d
+        m_robotDrive::followTrajectory, // The drive subsystem trajectory follower
         true, // Alliance Switch
 
-        m_driveSubsystem // The drive subsystem
+        m_robotDrive // The drive subsystem
     );
   }
 
@@ -104,14 +106,6 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     m_autonomousCommand = coralAutoCommand();
-    if (trajectory1.isPresent()) {
-      Optional<Pose2d> initialPose = trajectory1.get().getInitialPose(isRedAlliance());
-      if (initialPose.isPresent()) {
-        m_driveSubsystem.resetOdometry(initialPose.get());
-      }
-    }
-
-    timer.restart();
 
     /*
      * String autoSelected = SmartDashboard.getString("Auto Selector",
@@ -129,17 +123,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-    if (trajectory1.isPresent()) {
-      Optional<SwerveSample> sample = trajectory1.get().sampleAt(timer.get(), isRedAlliance()); //Assuming if we are on the red side
-      if (sample.isPresent()) {
-        m_driveSubsystem.followTrajectory(sample.get());
-      }
-    }
-    CommandScheduler.getInstance().run();
-  }
 
-  private boolean isRedAlliance() {
-    return DriverStation.getAlliance().orElse(Alliance.Blue).equals(Alliance.Red);
   }
 
   @Override
@@ -172,15 +156,15 @@ public class Robot extends TimedRobot {
   public Command coralAutoCommand() {
     return Commands.sequence(
         autoFactory.trajectoryCmd("2-Piece Coral Auto Part 1"),
-        m_elevatorSubsystem.GoTo(ElevatorSubsystem.Level.Bottom).withTimeout(1),
-        m_coralSubsystem.runCoralDispenser().withTimeout(1),
+        m_robotElevator.GoTo(ElevatorSubsystem.Level.Bottom).withTimeout(1),
+        m_robotCoral.runCoralDispenser().withTimeout(1),
         autoFactory.trajectoryCmd("2-Piece Coral Auto Part 2"),
-        m_elevatorSubsystem.GoTo(ElevatorSubsystem.Level.L3).withTimeout(1),
-        m_coralSubsystem.runCoralDispenser().withTimeout(1),
+        m_robotElevator.GoTo(ElevatorSubsystem.Level.L3).withTimeout(1),
+        m_robotCoral.runCoralDispenser().withTimeout(1),
         autoFactory.trajectoryCmd("2-Piece Coral Auto Part 3"),
-        m_elevatorSubsystem.GoTo(ElevatorSubsystem.Level.Bottom).withTimeout(1),
-        m_coralSubsystem.runCoralDispenser().withTimeout(1),
+        m_robotElevator.GoTo(ElevatorSubsystem.Level.Bottom).withTimeout(1),
+        m_robotCoral.runCoralDispenser().withTimeout(1),
         autoFactory.trajectoryCmd("2-Piece Coral Auto Part 4"),
-        m_elevatorSubsystem.GoTo(ElevatorSubsystem.Level.L3).withTimeout(1));
-}
+        m_robotElevator.GoTo(ElevatorSubsystem.Level.L3).withTimeout(1));
+  }
 }

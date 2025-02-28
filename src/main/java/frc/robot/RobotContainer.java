@@ -55,6 +55,7 @@ public class RobotContainer {
   private final ElevatorSubsystem m_robotElevator = new ElevatorSubsystem();
   private final AlgaeSubsystem m_robotAlgae = new AlgaeSubsystem();
   private final FieldTagMap fieldTagMap = new FieldTagMap();
+  
   // The driver's controller
   CommandXboxController m_driverController = new CommandXboxController(OIConstants.kDriverControllerPort);
 
@@ -70,7 +71,7 @@ public class RobotContainer {
     configureButtonBindings();
 
     m_robotDrive.setDefaultCommand(aimTarget);
-
+    m_robotDrive.setVisionSubsystem(m_robotVision);
     m_robotAlgae.setDefaultCommand(
         // Left + Right Full Pressed = 0
         // Left Closes Right Opens (this result can be scaled down by a constant
@@ -79,6 +80,28 @@ public class RobotContainer {
             () -> m_robotAlgae.runClaws(
                 m_driverController),
             m_robotAlgae));
+  }
+
+  public VisionSubsystem getVisionSubsystem() {
+
+    return m_robotVision;
+
+  }
+
+  public DriveSubsystem getDriveSubsystem() {
+    return m_robotDrive;
+  }
+
+  public CoralSubsystem getCoralSubsystem() {
+    return m_robotCoral;
+  }
+
+  public ElevatorSubsystem getElevatorSubsystem() {
+    return m_robotElevator;
+  }
+
+  public AlgaeSubsystem getAlgaeSubsystem() {
+    return m_robotAlgae;
   }
 
   /**

@@ -35,18 +35,15 @@ import choreo.trajectory.SwerveSample;
 import choreo.trajectory.TrajectorySample;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-// Can I do this? And where do I put this? Also saying that it is unused when I literally used in in the vision update as the robot pose (vision) method for the mecanum pose estimator 
-import frc.robot.subsystems.VisionSubsystem;
-
 public class DriveSubsystem extends SubsystemBase {
+
+  private VisionSubsystem m_robotVision;
 
   private final TalonFX m_frontLeft = new TalonFX(CANIDs.kDriveSubsystemFrontLeft);
   private final TalonFX m_rearLeft = new TalonFX(CANIDs.kDriveSubsystemRearLeft);
   private final TalonFX m_frontRight = new TalonFX(CANIDs.kDriveSubsystemFrontRight);
   private final TalonFX m_rearRight = new TalonFX(CANIDs.kDriveSubsystemRearRight);
 
-  // This too
-  private VisionSubsystem visionSubsystem;
 
   private double m_frontLeftEncoder = 0;
   private double m_rearLeftEncoder = 0;
@@ -57,6 +54,14 @@ public class DriveSubsystem extends SubsystemBase {
 
   // The gyro sensor
   private final AHRS m_gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
+
+ /**
+ * Sets the vision subsystem for pose estimation
+ * @param vision The vision subsystem to use
+ */
+public void setVisionSubsystem(VisionSubsystem vision) {
+  this.m_robotVision = vision;
+}
 
   // using default frontR rearR inverted right now
   private final TalonFXConfigurator frontRightConfigurator = m_frontRight.getConfigurator();
@@ -136,7 +141,7 @@ public class DriveSubsystem extends SubsystemBase {
 
     m_drive.setMaxOutput(0.25); // Conservative for now
   }
-
+  
   /**
    * Sets the wheel speeds for the mecanum drive.
    *
@@ -155,7 +160,7 @@ public class DriveSubsystem extends SubsystemBase {
     m_frontRightEncoder = m_frontRight.getPosition().getValue().magnitude();
     m_rearRightEncoder = m_rearRight.getPosition().getValue().magnitude();
     m_poseEstimator.update(m_gyro.getRotation2d(), getCurrentWheelDistances());
-    visionSubsystem.getRobotPose()
+      m_robotVision.getRobotPose()
         .ifPresent(pose -> m_poseEstimator.addVisionMeasurement(pose, Timer.getFPGATimestamp()));
   }
 
