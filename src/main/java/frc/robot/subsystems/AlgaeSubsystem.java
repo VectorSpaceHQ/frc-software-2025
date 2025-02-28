@@ -78,13 +78,13 @@ public class AlgaeSubsystem extends SubsystemBase {
     
     // Sets both motors
     // Stops on either limit switch pressed
-    public Command runClaws(CommandXboxController m_drivercontroller) {
+    public Command runClaws(CommandXboxController m_operatorcontroller) {
         return new FunctionalCommand(
             () -> {                
                 },
             () -> {
                 update();
-                speed = m_drivercontroller.getLeftTriggerAxis() - m_drivercontroller.getRightTriggerAxis();
+                speed = m_operatorcontroller.getRightY();
                 speed = 0.2 * speed;
                 //motor_left.set(speed);
                 setSpeed(speed);

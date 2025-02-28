@@ -66,8 +66,8 @@ public class RobotContainer {
     configureButtonBindings();
 
     m_robotDrive.setDefaultCommand(aimTarget);
-
-    m_robotAlgae.setDefaultCommand(m_robotAlgae.runClaws(m_driverController));
+    m_robotElevator.setDefaultCommand(m_robotElevator.ElevatorRaiseCommand(m_operatorController));
+    m_robotAlgae.setDefaultCommand(m_robotAlgae.runClaws(m_operatorController));
  }
 
   /**
@@ -80,10 +80,8 @@ public class RobotContainer {
     Map<String, AprilTags> fieldMap = fieldTagMap.getRedMap();
 
     // Spin Coral Discharge on Hold / Stop on release
-    m_driverController
+    m_operatorController
         .a()
-        .and(m_driverController.leftBumper().negate())
-        .and(m_driverController.rightBumper().negate())
         .whileTrue(m_robotCoral.runCoralDispenser());
 
     // Elevator to L2 - Add CMD in Feature Branch
@@ -111,15 +109,15 @@ public class RobotContainer {
     m_operatorController
         .back()
         .and(m_operatorController.leftBumper().negate())
-        .and(m_operatorController.rightBumper().negate())
-        .whileTrue(m_robotElevator.ElevatorLowerCommand());
+        .and(m_operatorController.rightBumper().negate());
+        // .whileTrue(m_robotElevator.ElevatorLowerCommand());
     
     // Manually Lower Elevator - Add Function in Feature Branch
     m_operatorController
         .start()
         .and(m_operatorController.leftBumper().negate())
-        .and(m_operatorController.rightBumper().negate())
-        .whileTrue(m_robotElevator.ElevatorRaiseCommand());
+        .and(m_operatorController.rightBumper().negate());
+        // .whileTrue(m_robotElevator.ElevatorRaiseCommand());
 
     // Go To Dispenser 1 (Left) - Add CMD in Feature Branch
     m_driverController

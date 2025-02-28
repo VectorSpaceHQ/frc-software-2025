@@ -17,6 +17,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+
 import java.lang.Math;
 
 import org.ejml.dense.row.SpecializedOps_CDRM;
@@ -174,31 +176,39 @@ public class ElevatorSubsystem extends SubsystemBase{
 
   // runEnd adds a runnable on iteration and a runnable on termination
   // lower on iteration stop on termination
-  public Command ElevatorLowerCommand() {
-    return runEnd(
-      () -> {
-        update();
-        //this.manualAdjustment(-0.20);
-        this.setSpeed(-0.25);
-      },
-      () -> {
-        motor1.stopMotor();
-      }
-    );
-  }
+  // public Command ElevatorLowerCommand() {
+  //   return runEnd(
+  //     () -> {
+  //       update();
+  //       //this.manualAdjustment(-0.20);
+  //       this.setSpeed(-0.25)
+  //     },
+  //     () -> {
+  //       motor1.stopMotor();
+  //     }
+  //   );
+  // }
 
   // runEnd adds a runnable on iteration and a runnable on termination
   // raise on iteration stop on termination
-  public Command ElevatorRaiseCommand() {
-    return runEnd(
+  public Command ElevatorRaiseCommand(CommandXboxController m_operatorController) {
+    return new FunctionalCommand(
+      () -> {},
       () -> {
         update();
         //this.manualAdjustment(0.5);
-        this.setSpeed(0.75);
+        // RT Up
+        double Raise = m_operatorController.getRightTriggerAxis();
+        // DT Down
+        double Lower = 0.25 * m_operatorController.getLeftTriggerAxis();
+        this.setSpeed(Raise - Lower);
       },
-      () -> {
+      interrupted -> {
         motor1.stopMotor();
-      }
+    },
+      () -> (false),
+      this
+
     );
   }
 

@@ -28,7 +28,7 @@ public class CoralSubsystem extends SubsystemBase{
 
 
     // Motors are Synchronized so setspeed is controlled via common input 0.1 = 10% of max output
-    private final double motorspeed = 0.1;
+    private final double motorspeed = 0.3;
 
     public CoralSubsystem() {
 
