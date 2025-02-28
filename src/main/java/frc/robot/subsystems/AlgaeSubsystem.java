@@ -6,6 +6,7 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -17,7 +18,6 @@ public class AlgaeSubsystem extends SubsystemBase {
     private double speed = 0;
     private final SparkMax motor_left = new SparkMax(CANIDs.kAlgaeSubsystemLeft, MotorType.kBrushless);
     private final SparkMax motor_right = new SparkMax(CANIDs.kAlgaeSubsystemRight, MotorType.kBrushless);
-    private SparkMaxConfig defaultconfig = new SparkMaxConfig();
     private SparkMaxConfig config = new SparkMaxConfig();
     private final DigitalInput l_Left = new DigitalInput(DigitalInputPorts.kAlgaeSubsystemLeft);
     private final DigitalInput l_Right = new DigitalInput(DigitalInputPorts.kAlgaeSubsystemRight);
@@ -25,10 +25,11 @@ public class AlgaeSubsystem extends SubsystemBase {
     private boolean limitSwitchRight = l_Right.get();
 
     public AlgaeSubsystem() {
-        // Sets right motor to an inverted follower of the left
-        defaultconfig.smartCurrentLimit(20, 20);
-        config.follow(CANIDs.kAlgaeSubsystemLeft,true);
+        //config.follow(CANIDs.kAlgaeSubsystemLeft,true);
         config.smartCurrentLimit(20, 20);
+
+        motor_right.configure(config, null, null);
+        motor_left.configure(config, null, null);
     }
 
     @Override
@@ -40,30 +41,60 @@ public class AlgaeSubsystem extends SubsystemBase {
         limitSwitchLeft = !l_Left.get();
         limitSwitchRight = !l_Right.get();
     }
+
+    private void AlgaeLogger(){
+      SmartDashboard.putNumber("Algae motor speed", speed);
+      //SmartDashboard.putNumber("Algae Left Motor Current", motorspeed);
+      //SmartDashboard.putNumber("Algae Right Motor Current", motorspeed);
+      SmartDashboard.putBoolean("Algae Left Motor Limit", limitSwitchLeft);
+      SmartDashboard.putBoolean("Algae Right Motor Limit", limitSwitchRight);
+    }
+
+    private void setSpeed(double speed){
+        // positive speed opens claws.
+        double left_speed = speed;
+        double right_speed = speed;
+
+        if(limitSwitchLeft){
+            left_speed = Math.max(0, speed);
+        }
+
+        if(limitSwitchRight)
+        {
+            right_speed = Math.max(0, speed);
+        }
+
+        motor_left.set(left_speed);
+        motor_right.set(right_speed * -1.0);
+    }
     
     // Sets both motors
     // Stops on either limit switch pressed
     public Command runClaws(CommandXboxController m_drivercontroller) {
         return new FunctionalCommand(
-            () -> {motor_right.configure(config, null, null);},
+            () -> {                
+                },
             () -> {
                 update();
                 speed = m_drivercontroller.getLeftTriggerAxis() - m_drivercontroller.getRightTriggerAxis();
                 speed = 0.3 * speed;
-                motor_left.set(speed);
+                //motor_left.set(speed);
+                setSpeed(speed);
+                AlgaeLogger();
             },
             interrupted -> {
                 motor_left.stopMotor();
             },
-            () -> ((limitSwitchLeft || limitSwitchRight) && (speed <= 0)),
-            this);
+            //() -> ((limitSwitchLeft || limitSwitchRight) && (speed <= 0)),
+            //this);
+            () -> (false),  this);
     }
 
     // Homes claws then on finish sets right motor to inverted follower
     // Returns both motors to their respective limit switches
     public Command homeClaws() {
         return new FunctionalCommand(
-            () -> {motor_right.configure(defaultconfig, null, null);},
+            () -> {},
             () -> {
                 update();
                 if (!limitSwitchLeft) {

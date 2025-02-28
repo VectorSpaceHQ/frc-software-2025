@@ -49,14 +49,19 @@ public class CoralSubsystem extends SubsystemBase{
     public void periodic() {
     }
 
+    private void CoralLogger(){
+      SmartDashboard.putNumber("CoralSpeed", motorspeed);
+      //SmartDashboard.putNumber("Coral Left Motor Current", motorspeed);
+      //SmartDashboard.putNumber("Coral Right Motor Current", motorspeed);
+    }
+
     public Command runCoralDispenser() {
-      SmartDashboard.putNumber("runCoralDispenser", 8);
 
       return new FunctionalCommand
       (() -> {}, 
       () -> {
-            SmartDashboard.putNumber("coralSpeed", motorspeed);
-        motor_left.set(motorspeed);
+            CoralLogger();
+            motor_left.set(motorspeed);
       }, 
       interrupted -> {
         motor_left.stopMotor();
