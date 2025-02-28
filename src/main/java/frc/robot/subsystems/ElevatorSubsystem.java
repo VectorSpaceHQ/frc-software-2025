@@ -58,7 +58,7 @@ public class ElevatorSubsystem extends SubsystemBase{
 
   public ElevatorSubsystem() {
     // Invert the SparkMax
-    // config.inverted(true);
+    config.inverted(true);
     config.smartCurrentLimit(100);
     // Apply the Inversion
     motor1.configure(config, null, null);
@@ -148,7 +148,7 @@ public class ElevatorSubsystem extends SubsystemBase{
     return runEnd(
       () -> {
         update();
-        this.manualAdjustment(-0.1);
+        this.manualAdjustment(-0.20);
       },
       () -> {
         motor1.stopMotor();

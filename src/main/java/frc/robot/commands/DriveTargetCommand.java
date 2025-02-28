@@ -45,7 +45,7 @@ public class DriveTargetCommand extends Command {
   @Override
   public void execute() {
    
-    double forward =  x_rate.calculate(driverController.getLeftY());
+    double forward =  x_rate.calculate(driverController.getLeftY() * 0.5);
     double strafe =  y_rate.calculate(-driverController.getLeftX());
     double turn = theta_rate.calculate(-0.3 * driverController.getRightX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
 
