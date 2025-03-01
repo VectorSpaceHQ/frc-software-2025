@@ -95,17 +95,17 @@ public class DriveSubsystem extends SubsystemBase {
     
     // Current Limits
     frontRightCurrentConfigs.withSupplyCurrentLimit(40);
-    frontRightCurrentConfigs.withStatorCurrentLimit(60);
+    frontRightCurrentConfigs.withStatorCurrentLimit(100);
     
 
     rearRightCurrentConfigs.withSupplyCurrentLimit(40);
-    rearRightCurrentConfigs.withStatorCurrentLimit(60);
+    rearRightCurrentConfigs.withStatorCurrentLimit(100);
 
     frontLeftCurrentConfigs.withSupplyCurrentLimit(40);
-    frontLeftCurrentConfigs.withStatorCurrentLimit(60);
+    frontLeftCurrentConfigs.withStatorCurrentLimit(100);
 
     rearLeftCurrentConfigs.withSupplyCurrentLimit(40);
-    rearLeftCurrentConfigs.withStatorCurrentLimit(60);
+    rearLeftCurrentConfigs.withStatorCurrentLimit(100);
 
     frontRightConfigurator.apply(frontRightMotorConfigs);
     rearRightConfigurator.apply(rearRightMotorConfigs);

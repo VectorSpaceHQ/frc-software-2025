@@ -19,6 +19,7 @@ public class DriveTargetCommand extends Command {
   private DriveSubsystem driveSubsystem;
   private VisionSubsystem visionSubsystem;
   private CommandXboxController driverController;
+  private double speedscalar = 1;
   private double targetID = 0;
 
   private SlewRateLimiter x_rate = new SlewRateLimiter(AutoConstants.kMaxAccelerationMetersPerSecondSquared);
@@ -46,7 +47,7 @@ public class DriveTargetCommand extends Command {
   public void execute() {
    
     double forward =  x_rate.calculate(driverController.getLeftY() * 0.5);
-    double strafe =  y_rate.calculate(-driverController.getLeftX());
+    double strafe =  y_rate.calculate(-driverController.getLeftX() * speedscalar);
     double turn = theta_rate.calculate(-0.3 * driverController.getRightX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
 
     // Check if the camera is connected and displays the aiming and camera status
@@ -85,5 +86,9 @@ public class DriveTargetCommand extends Command {
   public void end(boolean interrupted) {
     driveSubsystem.drive(0, 0, 0, true);
     SmartDashboard.putString("Aiming Status", "Command Ended");
+  }
+
+  public void setSpeedScalar(double val){
+    speedscalar = val;
   }
 }

@@ -79,6 +79,11 @@ public class RobotContainer {
   private void configureButtonBindings() {
     Map<String, AprilTags> fieldMap = fieldTagMap.getRedMap();
 
+    m_driverController
+        .leftBumper()
+        .onTrue(new InstantCommand(() -> aimTarget.setSpeedScalar(0.5)))
+        .onFalse(new InstantCommand(() -> aimTarget.setSpeedScalar(1)));
+
     // Spin Coral Discharge on Hold / Stop on release
     m_operatorController
         .a()
