@@ -221,7 +221,7 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    return null;
+    return new RunCommand(() -> m_robotDrive.drive(1, 0, 0, false), m_robotDrive);
 //     // Create config for trajectory
 //     TrajectoryConfig config =
 //         new TrajectoryConfig(
@@ -272,6 +272,6 @@ public class RobotContainer {
 //         new InstantCommand(() -> m_robotDrive.resetOdometry(exampleTrajectory.getInitialPose())),
 //         mecanumControllerCommand,
 //         new InstantCommand(() -> m_robotDrive.drive(0, 0, 0, false)));
-//   }
+//   
   }
 }
