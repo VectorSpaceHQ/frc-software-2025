@@ -201,6 +201,7 @@ public class DriveSubsystem extends SubsystemBase {
    * @param fieldRelative Whether the provided x and y speeds are relative to the field.
    */
   public void drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative) {
+    SmartDashboard.putNumber("x speed", xSpeed);
     if (fieldRelative) {
       m_drive.driveCartesian(xSpeed, ySpeed, rot, m_gyro.getRotation2d());
     } else {

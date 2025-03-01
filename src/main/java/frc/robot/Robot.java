@@ -65,7 +65,7 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     starttime = Timer.getFPGATimestamp();
-    m_autonomousCommand = m_robotContainer.getAutonomousCommand();
+    m_autonomousCommand = m_robotContainer.getAutonomousCommand().withTimeout(3);
     // /*
     //  * String autoSelected = SmartDashboard.getString("Auto Selector",
     //  * "Default"); switch(autoSelected) { case "My Auto": autonomousCommand
@@ -82,9 +82,6 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-    if ((Timer.getFPGATimestamp() - starttime) > 3) {
-      m_autonomousCommand.cancel();
-    }
   }
 
   @Override
