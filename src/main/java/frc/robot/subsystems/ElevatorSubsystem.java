@@ -124,7 +124,7 @@ public class ElevatorSubsystem extends SubsystemBase{
 
   // 4*sqrt(L^2 - ((C-R*P)^2))
   private void calculateCurrentHeight() {
-    double result = 2 * Math.sqrt(Math.pow(ElevatorSpecifics.kScissorLength, 2) - (Math.pow(ElevatorSpecifics.kC - (r_currentRotations * (1 / ElevatorSpecifics.kScrewPitch)), 2)));
+    double result = ElevatorSpecifics.kLinkageCount * Math.sqrt(Math.pow(ElevatorSpecifics.kScissorLength, 2) - (Math.pow(ElevatorSpecifics.kC - (r_currentRotations * (1 / ElevatorSpecifics.kScrewPitch)), 2)));
     y_currentHeight = result + ElevatorSpecifics.kInitialHeight;
   }
 
@@ -135,9 +135,8 @@ public class ElevatorSubsystem extends SubsystemBase{
   // R is rotations
   // L is scissor length
   // X is target height above initial
-  // C is fixed length between farthest linkage connection and point of lead screw rotation (24.38 inches)
+  // C is fixed length between farthest linkage connection and point of lead screw rotation
   // P is screw pitch
-  // C = L
   // https://erobtic.wixsite.com/erobtic/post/scissor-lifting-elevator-mechanism
   // https://vectorspace.slack.com/archives/C07H5JJBLCX/p1739492047940889
   private void calculateTargetRotations() {
