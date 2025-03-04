@@ -93,11 +93,13 @@ public final class Constants {
   }
 
   public static final class ElevatorSpecifics {
-    public static final double kScissorLength = 24.75; // inches -- Length of Each Rod
+    public static final double kScissorLength = 23.75; // inches -- Length of Each Rod
     public static final double kScrewPitch = 10; // threads / inch -- of lead screw
-    public static final double kInitialHeight = 21.78; // inches -- from bottom to platform
+    // public static final double kInitialHeight = 21.78; // inches -- from bottom to platform
+    public static final double kInitialHeight = 11.75; // inches -- from bottom to platform ignoring scissor
     public static final double kLinkageCount = 2; // Linkage Counts per Side
     public static final double kPlatformToInputHeight = 14.26; // Distance between Platform and Coral Input
+    public static final double kC = 23.375;
   }
 
   public static final class DigitalInputPorts {

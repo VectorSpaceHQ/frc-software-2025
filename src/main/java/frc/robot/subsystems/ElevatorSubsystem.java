@@ -56,6 +56,7 @@ public class ElevatorSubsystem extends SubsystemBase{
   private boolean limitTop = l_top.get();
   // True when pressed
   private boolean limitBottom = l_bottom.get();
+  private double y_currentHeight = 0;
   private double y_targetHeight = ElevatorSpecifics.kInitialHeight;
   private double r_currentRotations = 0;
   private double r_targetRotations = 0;
@@ -79,12 +80,13 @@ public class ElevatorSubsystem extends SubsystemBase{
 
   @Override
   public void periodic() {
-    
+    ElevatorLogger();
   }
 
   // Internal Function for updating constants
   private void update() {
     calculateTargetRotations();
+    calculateCurrentHeight();
     r_currentRotations = encoder.getPosition();
     // y_currentHeight = calculateCurrentHeight();
     PIDFeedback = pid.calculate(r_currentRotations, r_targetRotations);
@@ -99,7 +101,6 @@ public class ElevatorSubsystem extends SubsystemBase{
       encoder.setPosition(0);
     }
 
-    ElevatorLogger();
   }
 
   private void ElevatorLogger(){
@@ -108,14 +109,35 @@ public class ElevatorSubsystem extends SubsystemBase{
     SmartDashboard.putBoolean("Scissor Top Limit", limitTop);
     SmartDashboard.putNumber("Scissor Motor1 Current", motor1.getOutputCurrent());
     SmartDashboard.putNumber("Scissor Motor2 Current", motor2.getOutputCurrent());
+    SmartDashboard.putNumber("Target Height", y_targetHeight);
+    SmartDashboard.putNumber("Current Height Estimate", y_currentHeight);
+    SmartDashboard.putNumber("Current Rotations", r_currentRotations);
+    SmartDashboard.putNumber("Target Rotations", r_targetRotations);
+  }
+
+  // // sqrt((RP+C)^2 - L^2) + y0 = yx
+  // private void calculateCurrentHeight() {
+  //   double term1 = Math.sqrt(Math.pow((r_currentRotations * ElevatorSpecifics.kScrewPitch) + ElevatorSpecifics.kScissorLength, 2) - Math.pow(ElevatorSpecifics.kC,2));
+  //   double result = Math.sqrt(term1) + ElevatorSpecifics.kInitialHeight;
+  //   y_currentHeight = result;
+  // }
+
+  // 4*sqrt(L^2 - ((C-R*P)^2))
+  private void calculateCurrentHeight() {
+    double result = 2 * Math.sqrt(Math.pow(ElevatorSpecifics.kScissorLength, 2) - (Math.pow(ElevatorSpecifics.kC - (r_currentRotations * (1 / ElevatorSpecifics.kScrewPitch)), 2)));
+    y_currentHeight = result + ElevatorSpecifics.kInitialHeight;
   }
 
   // R = (sqrt(L^2 - X^2) - C) / P
+  // (RP + C)^2 = L^2 + X^2
+  // sqrt((RP+C)^2 - L^2) = X
+  // sqrt((RP+C)^2 - L^2) + y0 = yx
   // R is rotations
   // L is scissor length
-  // X is target height
-  // C is fixed length between farthest linkage connection and point of lead screw rotation (24.38 inches or 24 inches)
+  // X is target height above initial
+  // C is fixed length between farthest linkage connection and point of lead screw rotation (24.38 inches)
   // P is screw pitch
+  // C = L
   // https://erobtic.wixsite.com/erobtic/post/scissor-lifting-elevator-mechanism
   // https://vectorspace.slack.com/archives/C07H5JJBLCX/p1739492047940889
   private void calculateTargetRotations() {
@@ -133,30 +155,6 @@ public class ElevatorSubsystem extends SubsystemBase{
     double num = -value * 0.1; // Adjust this second value to change maximum / minimum output of this function (-0.3 = {-0.3 to 0.3})
     double denom = 1 + Math.abs(value);
     return num / denom;
-  }
-
-  // for manually raising / lowering elevator -> contains logic for limit switches
-  private void manualAdjustment(double speed){
-    // If speed is within -1 to 1 and neither limit switch is triggered
-    if (!limitBottom && !limitTop){
-      motor1.set(speed);
-      System.out.println("First Logic");
-    }
-    // If speed is positive and bottom limit switch is triggered
-    else if (limitBottom && !limitTop && (speed > 0)){
-      motor1.set(speed);
-      System.out.println("Second Logic");
-    }
-    // If speed is negative and top limit switch is triggered
-    else if (limitTop && !limitBottom && (speed < 0)){
-      motor1.set(speed);
-      System.out.println("Third Logic");
-    }
-    // 
-    else{
-      System.out.println("Stop Logic");
-      motor1.stopMotor();
-    }
   }
 
   private void setSpeed(double speed){
@@ -259,7 +257,7 @@ public class ElevatorSubsystem extends SubsystemBase{
     return new FunctionalCommand(
       () -> {}, 
       () -> {
-        manualAdjustment(-0.05);
+        setSpeed(-0.05);
       }, 
       interrupted -> {
         motor1.stopMotor();
