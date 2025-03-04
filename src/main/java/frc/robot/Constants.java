@@ -99,7 +99,7 @@ public final class Constants {
     public static final double kInitialHeight = 11.75; // inches -- from bottom to platform ignoring scissor
     public static final double kLinkageCount = 2; // Linkage Counts per Side
     public static final double kPlatformToInputHeight = 14.26; // Distance between Platform and Coral Input
-    public static final double kC = 23.375;
+    public static final double kC = 23.375; // fixed length between farthest linkage connection and point of lead screw rotation
   }
 
   public static final class DigitalInputPorts {
