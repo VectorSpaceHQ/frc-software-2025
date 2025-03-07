@@ -21,7 +21,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 
 import java.lang.Math;
 
-import org.ejml.dense.row.SpecializedOps_CDRM;
+
 
 public class ElevatorSubsystem extends SubsystemBase{
 
@@ -29,7 +29,9 @@ public class ElevatorSubsystem extends SubsystemBase{
     Bottom(ElevatorSpecifics.kInitialHeight),
     L2(31.875),
     L3(47.65),
-    L4(72.0),
+    // L4(72.),
+    L4(62.0),
+    Inspection(36)
     ;
 
     private double value;
@@ -39,7 +41,7 @@ public class ElevatorSubsystem extends SubsystemBase{
     }
 
     public double getLevel() {
-      return this.value;
+      return value;
     }
   };
 
@@ -57,9 +59,8 @@ public class ElevatorSubsystem extends SubsystemBase{
   // True when pressed
   private boolean limitBottom = l_bottom.get();
   private double y_currentHeight = 0;
-  private double y_targetHeight = ElevatorSpecifics.kInitialHeight;
+  private double y_targetHeight = 0;
   private double r_currentRotations = 0;
-  private double r_targetRotations = 0;
   private double PIDFeedback = 0;
   private double scissor_speed = 0;
 
@@ -69,8 +70,8 @@ public class ElevatorSubsystem extends SubsystemBase{
     config.smartCurrentLimit(105);
     // Apply the Inversion
     motor1.configure(config, null, null);
-    // Reduce PID error tolerance from 0.05 to 0.02
-    pid.setTolerance(0.02);
+    // Increase PID error tolerance from 0.05 to 0.1
+    pid.setTolerance(0.1);
     config2.smartCurrentLimit(105);
     config2.follow(CANIDs.kElevatorSubsystemMain);
     motor2.configure(config2, null, null);
@@ -81,20 +82,13 @@ public class ElevatorSubsystem extends SubsystemBase{
   @Override
   public void periodic() {
     ElevatorLogger();
+    r_currentRotations = encoder.getPosition();
+    calculateCurrentHeight();
   }
 
   // Internal Function for updating constants
   private void update() {
-    calculateTargetRotations();
-    calculateCurrentHeight();
-    r_currentRotations = encoder.getPosition();
-    // y_currentHeight = calculateCurrentHeight();
-    PIDFeedback = pid.calculate(r_currentRotations, r_targetRotations);
-    // DataLogManager.log("PID Feedback" + PIDFeedback);
-    // DataLogManager.log("Target Height" + y_targetHeight);
-    // DataLogManager.log("Adjusted Speed" + SigmoidAdjustment(PIDFeedback));
-    // DataLogManager.log("At Setpoint " + pid.atSetpoint());
-    // DataLogManager.log("Target Rotational Value: " + r_targetRotations);
+    PIDFeedback = pid.calculate(y_currentHeight, y_targetHeight);
     limitTop = !l_top.get();
     limitBottom = !l_bottom.get();
     if (limitBottom) {
@@ -112,7 +106,7 @@ public class ElevatorSubsystem extends SubsystemBase{
     SmartDashboard.putNumber("Target Height", y_targetHeight);
     SmartDashboard.putNumber("Current Height Estimate", y_currentHeight);
     SmartDashboard.putNumber("Current Rotations", r_currentRotations);
-    SmartDashboard.putNumber("Target Rotations", r_targetRotations);
+    SmartDashboard.putNumber("PIDFeedback", PIDFeedback);
   }
 
   // // sqrt((RP+C)^2 - L^2) + y0 = yx
@@ -122,7 +116,7 @@ public class ElevatorSubsystem extends SubsystemBase{
   //   y_currentHeight = result;
   // }
 
-  // 4*sqrt(L^2 - ((C-R*P)^2))
+  // N*sqrt(L^2 - ((C-R*P)^2))
   private void calculateCurrentHeight() {
     double result = ElevatorSpecifics.kLinkageCount * Math.sqrt(Math.pow(ElevatorSpecifics.kScissorLength, 2) - (Math.pow(ElevatorSpecifics.kC - (r_currentRotations * (1 / ElevatorSpecifics.kScrewPitch)), 2)));
     y_currentHeight = result + ElevatorSpecifics.kInitialHeight;
@@ -139,17 +133,17 @@ public class ElevatorSubsystem extends SubsystemBase{
   // P is screw pitch
   // https://erobtic.wixsite.com/erobtic/post/scissor-lifting-elevator-mechanism
   // https://vectorspace.slack.com/archives/C07H5JJBLCX/p1739492047940889
-  private void calculateTargetRotations() {
-    double LSquared = Math.pow(ElevatorSpecifics.kScissorLength,2);
-    double XSquared = Math.pow(y_targetHeight / ElevatorSpecifics.kLinkageCount,2);
-    double LS_XS = LSquared - XSquared;
-    double sqrt = Math.sqrt(LS_XS);
-    double num = sqrt - ElevatorSpecifics.kScissorLength;
-    double denom = ElevatorSpecifics.kScrewPitch;
-    r_targetRotations = num / denom;
-  }
+  // private void calculateTargetRotations() {
+  //   double LSquared = Math.pow(ElevatorSpecifics.kScissorLength,2);
+  //   double XSquared = Math.pow(y_targetHeight / ElevatorSpecifics.kLinkageCount,2);
+  //   double LS_XS = LSquared - XSquared;
+  //   double sqrt = Math.sqrt(LS_XS);
+  //   double num = sqrt - ElevatorSpecifics.kScissorLength;
+  //   double denom = ElevatorSpecifics.kScrewPitch;
+  //   r_targetRotations = num / denom;
+  // }
 
-  // Scaling PIDFeedback -0.3 to 0.3
+  // Scaling PIDFeedback -0.1 to 0.1
   private double SigmoidAdjustment(double value) {
     double num = -value * 0.1; // Adjust this second value to change maximum / minimum output of this function (-0.3 = {-0.3 to 0.3})
     double denom = 1 + Math.abs(value);
@@ -186,8 +180,6 @@ public class ElevatorSubsystem extends SubsystemBase{
   //   );
   // }
 
-  // runEnd adds a runnable on iteration and a runnable on termination
-  // raise on iteration stop on termination
   public Command ElevatorRaiseCommand(CommandXboxController m_operatorController) {
     return new FunctionalCommand(
       () -> {},
@@ -210,56 +202,36 @@ public class ElevatorSubsystem extends SubsystemBase{
   }
 
   public Command GoTo(Level target) {
-    y_targetHeight = target.getLevel();
-    if (r_targetRotations >= r_currentRotations) {
+
       return new FunctionalCommand(
       // onInit: Initialize our values
-      () -> {},
+      () -> {
+        y_targetHeight = target.getLevel();
+      },
       // onExecute: Update our calculations and drive the motor
       () -> {
         update();
+        // Sigmoid Currently Maxes out at 0.1
         double x = SigmoidAdjustment(PIDFeedback);
-        if (!limitTop) {motor1.set(x);}
+        this.setSpeed(x);
       },
       // onEnd: Stop the motor
       interrupted -> {
         motor1.stopMotor(); 
       },
-      // isFinished: End the command when the target is reached or we hit our limit switch
-      () -> ( limitTop || r_currentRotations >= r_targetRotations) || pid.atSetpoint(),
+      // isFinished: End the command when the target is reached
+      () -> (pid.atSetpoint()),
       // Require this subsystem
       this
     );
-    }
-    else{
-    return new FunctionalCommand(
-      // onInit: Initialize our values
-      () -> {},
-      // onExecute: Update our calculations and drive the motor
-      () -> {
-        update();
-        double x = SigmoidAdjustment(PIDFeedback);
-        if (!limitBottom) {motor1.set(x);}
-      },
-      // onEnd: Stop the motor
-      interrupted -> {
-        motor1.stopMotor(); 
-      },
-      // isFinished: End the command when the target is reached or we hit our limit switch
-      () -> ( limitBottom || r_currentRotations <= r_targetRotations || pid.atSetpoint()),
-      // Require this subsystem
-      this
-    );
-  }
 }
   public Command Homing() {
     return new FunctionalCommand(
       () -> {}, 
       () -> {
-        setSpeed(-0.05);
+        this.setSpeed(-0.05);
       }, 
       interrupted -> {
-        motor1.stopMotor();
         encoder.setPosition(0);
       }, 
       () -> (limitBottom), 

@@ -50,7 +50,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class RobotContainer {
   // The robot's subsystems
   private final DriveSubsystem m_robotDrive = new DriveSubsystem();
-  private final CoralSubsystem m_robotCoral = new CoralSubsystem();
+  // private final CoralSubsystem m_robotCoral = new CoralSubsystem();
   private final VisionSubsystem m_robotVision = new VisionSubsystem();
   private final ElevatorSubsystem m_robotElevator = new ElevatorSubsystem();
   private final AlgaeSubsystem m_robotAlgae = new AlgaeSubsystem();
@@ -84,27 +84,26 @@ public class RobotContainer {
         .onTrue(new InstantCommand(() -> aimTarget.setSpeedScalar(0.5)))
         .onFalse(new InstantCommand(() -> aimTarget.setSpeedScalar(1)));
 
+    // m_operatorController
+    //     .b()
+    //     .onTrue(m_robotElevator.GoTo(Level.L2));
     // Spin Coral Discharge on Hold / Stop on release
-    m_operatorController
-        .a()
-        .whileTrue(m_robotCoral.runCoralDispenser());
+    // m_operatorController
+    //     .a()
+    //     .whileTrue(m_robotCoral.runCoralDispenser());
 
     // Elevator to L2 - Add CMD in Feature Branch
-    // m_driverController
-    //     .b()
-    //     .and(m_driverController.leftBumper().negate())
-    //     .and(m_driverController.rightBumper().negate())
-    //     .onTrue(m_robotElevator.GoTo(Level.L2));
+    m_operatorController
+        .b()
+        .onTrue(m_robotElevator.GoTo(Level.L2));
     
     // Elevator to L3 - Add CMD in Feature Branch
-    // m_driverController
-    //     .x()
-    //     .and(m_driverController.leftBumper().negate())
-    //     .and(m_driverController.rightBumper().negate())
-    //     .onTrue(m_robotElevator.GoTo(Level.L3));
+    m_operatorController
+        .x()
+        .onTrue(m_robotElevator.GoTo(Level.L3));
 
     // Elevator to L4 - Add CMD in Feature Branch
-    // m_driverController
+    // m_operatorController
     //     .y()
     //     .and(m_driverController.leftBumper().negate())
     //     .and(m_driverController.rightBumper().negate())
