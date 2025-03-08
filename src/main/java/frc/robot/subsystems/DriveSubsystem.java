@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.CANIDs;
 import frc.robot.Constants.DriveConstants;
+import edu.wpi.first.wpilibj.Timer;
 
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -22,30 +23,27 @@ import com.ctre.phoenix6.configs.TalonFXConfigurator;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
-import com.studica.frc.AHRS;
+import frc.robot.Gyro;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 
 
 public class DriveSubsystem extends SubsystemBase {
-
-  
   private final TalonFX m_frontLeft = new TalonFX(CANIDs.kDriveSubsystemFrontLeft);
   private final TalonFX m_rearLeft = new TalonFX(CANIDs.kDriveSubsystemRearLeft);
   private final TalonFX m_frontRight = new TalonFX(CANIDs.kDriveSubsystemFrontRight);
   private final TalonFX m_rearRight = new TalonFX(CANIDs.kDriveSubsystemRearRight);
 
-
   private double m_frontLeftEncoder = 0;
   private double m_rearLeftEncoder = 0;
   private double m_frontRightEncoder = 0;
   private double m_rearRightEncoder = 0;
+  
   private final MecanumDrive m_drive =
      new MecanumDrive(m_frontLeft::set, m_rearLeft::set, m_frontRight::set, m_rearRight::set);
 
-  // The gyro sensor
-  private final AHRS m_gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
+
 
    //using default frontR rearR inverted right now
   private final TalonFXConfigurator frontRightConfigurator = m_frontRight.getConfigurator();
@@ -63,17 +61,20 @@ public class DriveSubsystem extends SubsystemBase {
   private final CurrentLimitsConfigs frontLeftCurrentConfigs = new CurrentLimitsConfigs();
   private final CurrentLimitsConfigs rearLeftCurrentConfigs = new CurrentLimitsConfigs();
 
+  private Gyro m_gyro = null;
   
 
   // Odometry class for tracking robot pose
-  MecanumDriveOdometry m_odometry =
-      new MecanumDriveOdometry(
-          DriveConstants.kDriveKinematics,
-          m_gyro.getRotation2d(),
-          new MecanumDriveWheelPositions());
+  MecanumDriveOdometry m_odometry = null;
+      
 
   /** Creates a new DriveSubsystem. */
-  public DriveSubsystem() {
+  public DriveSubsystem(Gyro gyro) {
+    m_gyro = gyro;
+    m_odometry = new MecanumDriveOdometry(
+      DriveConstants.kDriveKinematics,
+      m_gyro.getRotation2d(),
+      new MecanumDriveWheelPositions());
     SendableRegistry.addChild(m_drive, m_frontLeft);
     SendableRegistry.addChild(m_drive, m_rearLeft);
     SendableRegistry.addChild(m_drive, m_frontRight);
@@ -96,7 +97,6 @@ public class DriveSubsystem extends SubsystemBase {
     // Current Limits
     frontRightCurrentConfigs.withSupplyCurrentLimit(40);
     frontRightCurrentConfigs.withStatorCurrentLimit(100);
-    
 
     rearRightCurrentConfigs.withSupplyCurrentLimit(40);
     rearRightCurrentConfigs.withStatorCurrentLimit(100);
@@ -129,6 +129,8 @@ public class DriveSubsystem extends SubsystemBase {
     m_rearRightEncoder = m_rearRight.getPosition().getValue().magnitude();
     m_odometry.update(m_gyro.getRotation2d(), getCurrentWheelDistances());
     faultChecks();
+    m_gyro.DisplayIMUData();
+    
   }
 
   // Runs motor fault checks for logging purposes
@@ -300,4 +302,6 @@ public class DriveSubsystem extends SubsystemBase {
   public double getTurnRate() {
     return -m_gyro.getRate();
   }
+
+  
 }
