@@ -4,33 +4,35 @@
 
 package frc.robot;
 
+// Everything that says "Never Used" should be used? (but I don't know why it's not being used)
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.ChassisSpeeds; // Never Used
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
-import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation; // Never Used
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard; // Never Used
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
-import frc.robot.AprilTags;
-import frc.robot.FieldTagMap;
+import frc.robot.AprilTags; // Never Used
+import frc.robot.FieldTagMap; // Never Used
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.CoralSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
-import frc.robot.subsystems.ElevatorSubsystem.Level;
+import frc.robot.subsystems.ElevatorSubsystem.Level; // Never Used
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.AlgaeSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.MecanumControllerCommand;
+import edu.wpi.first.wpilibj2.command.button.Trigger; // Never Used
 
 import frc.robot.commands.DriveTargetCommand;
 import frc.robot.commands.ShiftCommand;
@@ -40,11 +42,8 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import java.util.List;
 import java.util.Map;
-import choreo.Choreo;
+import choreo.auto.AutoFactory;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-
-
-
 
 /*
  * This class is where the bulk of the robot should be declared.  Since Command-based is a
@@ -60,30 +59,40 @@ public class RobotContainer {
   private final ElevatorSubsystem m_robotElevator = new ElevatorSubsystem();
   private final AlgaeSubsystem m_robotAlgae = new AlgaeSubsystem();
   private final FieldTagMap fieldTagMap = new FieldTagMap();
-  
+
   // The driver's controller
   CommandXboxController m_driverController = new CommandXboxController(OIConstants.kDriverControllerPort);
 
+  // The driving command for april tags
   private final DriveTargetCommand aimTarget = new DriveTargetCommand(m_robotDrive, m_robotVision,
       m_driverController);
+  private AutoFactory m_autoFactory;
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
-
+    m_autoFactory = new AutoFactory(
+        m_robotDrive::getPose,
+        m_robotDrive::resetOdometry,
+        m_robotDrive::followTrajectory,
+        true,
+        m_robotDrive);
     // Configure the button bindings
     configureButtonBindings();
 
+    // Set up the event markers for the CoralAutoCommand (will create standalone
+    // once more complicated)
+    setupEventMarkers();
     m_robotDrive.setDefaultCommand(aimTarget);
     m_robotAlgae.setDefaultCommand(m_robotAlgae.runClaws(m_driverController));
+    m_robotDrive.setVisionSubsystem(m_robotVision);
 
- }
+  }
 
+  // Getters for the subsystems
   public VisionSubsystem getVisionSubsystem() {
-
     return m_robotVision;
-
   }
 
   public DriveSubsystem getDriveSubsystem() {
@@ -102,7 +111,10 @@ public class RobotContainer {
     return m_robotAlgae;
   }
 
- 
+  public AutoFactory getAutoFactory() {
+    return m_autoFactory;
+  }
+
   /**
    * Use this method to define your button->command mappings. Buttons can be
    * created by
@@ -125,24 +137,24 @@ public class RobotContainer {
 
     // Elevator to L2 - Add CMD in Feature Branch
     // m_driverController
-    //     .b()
-    //     .and(m_driverController.leftBumper().negate())
-    //     .and(m_driverController.rightBumper().negate())
-    //     .onTrue(m_robotElevator.GoTo(Level.L2));
-    
+    // .b()
+    // .and(m_driverController.leftBumper().negate())
+    // .and(m_driverController.rightBumper().negate())
+    // .onTrue(m_robotElevator.GoTo(Level.L2));
+
     // Elevator to L3 - Add CMD in Feature Branch
     // m_driverController
-    //     .x()
-    //     .and(m_driverController.leftBumper().negate())
-    //     .and(m_driverController.rightBumper().negate())
-    //     .onTrue(m_robotElevator.GoTo(Level.L3));
+    // .x()
+    // .and(m_driverController.leftBumper().negate())
+    // .and(m_driverController.rightBumper().negate())
+    // .onTrue(m_robotElevator.GoTo(Level.L3));
 
     // Elevator to L4 - Add CMD in Feature Branch
     // m_driverController
-    //     .y()
-    //     .and(m_driverController.leftBumper().negate())
-    //     .and(m_driverController.rightBumper().negate())
-    //     .onTrue(m_robotElevator.GoTo(Level.L4));
+    // .y()
+    // .and(m_driverController.leftBumper().negate())
+    // .and(m_driverController.rightBumper().negate())
+    // .onTrue(m_robotElevator.GoTo(Level.L4));
 
     // Manually Raise Elevator - Add Function in Feature Branch
     m_driverController
@@ -150,7 +162,7 @@ public class RobotContainer {
         .and(m_driverController.leftBumper().negate())
         .and(m_driverController.rightBumper().negate())
         .whileTrue(m_robotElevator.ElevatorLowerCommand());
-    
+
     // Manually Lower Elevator - Add Function in Feature Branch
     m_driverController
         .start()
@@ -247,12 +259,23 @@ public class RobotContainer {
 
     // Homing Routines
     m_driverController
-    .rightBumper()
-    .and(m_driverController.leftBumper())
-    .and(m_driverController.a())
-    // .onTrue(m_robotElevator.Homing())
-    .onTrue(m_robotAlgae.homeClaws());
-    
+        .rightBumper()
+        .and(m_driverController.leftBumper())
+        .and(m_driverController.a())
+        // .onTrue(m_robotElevator.Homing())
+        .onTrue(m_robotAlgae.homeClaws());
+
+  }
+
+  private void setupEventMarkers() {
+    m_autoFactory.bind("ElevatorToBottom", // Elevator to bottom marker
+        m_robotElevator.GoTo(ElevatorSubsystem.Level.Bottom).withTimeout(1.75));
+
+    m_autoFactory.bind("ElevatorToL2", // Elevator to L2 marker
+        m_robotElevator.GoTo(ElevatorSubsystem.Level.L2).withTimeout(1.75));
+
+    m_autoFactory.bind("CoralOffload", // Coral offload marker
+        m_robotCoral.runCoralDispenser().withTimeout(1));
   }
 
   /**
@@ -261,6 +284,32 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
+    return coralAutoCommand();
+  }
+
+  /**
+   * Does not Include any vision (will be added eventually to ensure alignment)
+   * Applies to the blue alliance (alliance switch is enabled, however)
+   * Timeouts might need to be adjusted
+   * Event Markers are used
+   * Only Autonomous Command for now (will add more later)
+   */
+
+  public Command coralAutoCommand() {
+
+    return Commands.sequence(
+        // Moves towards first reef
+        m_autoFactory.trajectoryCmd("2 Piece Coral Auto Part 1", 0),
+
+        // Heads to a coral station
+        m_autoFactory.trajectoryCmd("2 Piece Coral Auto Part 2", 1),
+
+        // Heads to reef on the opposite side
+        m_autoFactory.trajectoryCmd("2 Piece Coral Auto Part 3", 2),
+        m_robotCoral.runCoralDispenser().withTimeout(1));
+  }
+
+  public Command getWPITrajectoryCommand() {
     // Create config for trajectory
     TrajectoryConfig config = new TrajectoryConfig(
         AutoConstants.kMaxSpeedMetersPerSecond,
@@ -308,5 +357,5 @@ public class RobotContainer {
         mecanumControllerCommand,
         new InstantCommand(() -> m_robotDrive.drive(0, 0, 0, false)));
   }
-
+  
 }

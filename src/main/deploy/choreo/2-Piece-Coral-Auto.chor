@@ -1,0 +1,78 @@
+{
+ "name":"2-Piece-Coral-Auto",
+ "version":1,
+ "type":"Swerve",
+ "variables":{
+  "expressions":{},
+  "poses":{}
+ },
+ "config":{
+  "frontLeft":{
+   "x":{
+    "exp":"11 in",
+    "val":0.2794
+   },
+   "y":{
+    "exp":"11 in",
+    "val":0.2794
+   }
+  },
+  "backLeft":{
+   "x":{
+    "exp":"-11 in",
+    "val":-0.2794
+   },
+   "y":{
+    "exp":"11 in",
+    "val":0.2794
+   }
+  },
+  "mass":{
+   "exp":"110 lbs",
+   "val":49.895160700000005
+  },
+  "inertia":{
+   "exp":"0.002307 kg m ^ 2",
+   "val":0.002307
+  },
+  "gearing":{
+   "exp":"7.9",
+   "val":7.9
+  },
+  "radius":{
+   "exp":"2 in",
+   "val":0.0508
+  },
+  "vmax":{
+   "exp":"5400 RPM",
+   "val":565.4866776461628
+  },
+  "tmax":{
+   "exp":"4.4 N * m",
+   "val":4.4
+  },
+  "cof":{
+   "exp":"0.65",
+   "val":0.65
+  },
+  "bumper":{
+   "front":{
+    "exp":"16 in",
+    "val":0.4064
+   },
+   "side":{
+    "exp":"16 in",
+    "val":0.4064
+   },
+   "back":{
+    "exp":"16 in",
+    "val":0.4064
+   }
+  },
+  "differentialTrackWidth":{
+   "exp":"22 in",
+   "val":0.5588
+  }
+ },
+ "generationFeatures":[]
+}

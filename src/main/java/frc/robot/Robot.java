@@ -9,21 +9,22 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.subsystems.DriveSubsystem;
-import frc.robot.subsystems.AlgaeSubsystem;
-import frc.robot.subsystems.CoralSubsystem;
-import frc.robot.subsystems.ElevatorSubsystem;
-import frc.robot.subsystems.VisionSubsystem;
-import edu.wpi.first.wpilibj.Timer;
+// import edu.wpi.first.wpilibj2.command.Commands;
+// import frc.robot.subsystems.DriveSubsystem;
+// import frc.robot.subsystems.AlgaeSubsystem;
+// import frc.robot.subsystems.CoralSubsystem;
+// import frc.robot.subsystems.ElevatorSubsystem;
+// import frc.robot.subsystems.VisionSubsystem;
+// import edu.wpi.first.wpilibj.Timer;
 
 // import edu.wpi.first.wpilibj.DriverStation;
 // import edu.wpi.first.wpilibj.DriverStation.Alliance;
 // import edu.wpi.first.math.geometry.Pose2d;
 // import choreo.Choreo;
+// import choreo.auto.AutoFactory;
 // import choreo.trajectory.Trajectory;
 // import choreo.trajectory.SwerveSample;
-import choreo.auto.AutoFactory;
+
 
 /**
  * The methods in this class are called automatically corresponding to each
@@ -36,15 +37,15 @@ public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
   // private final Timer timer = new Timer();
-  private AutoFactory autoFactory;
+
   private final RobotContainer m_robotContainer;
-  private final DriveSubsystem m_robotDrive;
-  private final CoralSubsystem m_robotCoral;
-  private final ElevatorSubsystem m_robotElevator;
+  // private final DriveSubsystem m_robotDrive;
+  // private final CoralSubsystem m_robotCoral;
+  // private final ElevatorSubsystem m_robotElevator;
   // private final VisionSubsystem m_robotVision;
   // private final AlgaeSubsystem m_robotAlgae;
-
-
+  // private AutoFactory m_autoFactory;
+  
   /**
    * This function is run when the robot is first started up and should be used
    * for any
@@ -59,19 +60,12 @@ public class Robot extends TimedRobot {
     
 
     m_robotContainer = new RobotContainer();
-    m_robotDrive = m_robotContainer.getDriveSubsystem();
-    m_robotCoral = m_robotContainer.getCoralSubsystem();
-    m_robotElevator = m_robotContainer.getElevatorSubsystem();
+    // m_robotDrive = m_robotContainer.getDriveSubsystem();
+    // m_robotCoral = m_robotContainer.getCoralSubsystem();
+    // m_robotElevator = m_robotContainer.getElevatorSubsystem();
     // m_robotVision = m_robotContainer.getVisionSubsystem();
     // m_robotAlgae = m_robotContainer.getAlgaeSubsystem();
-    autoFactory = new AutoFactory(
-        m_robotDrive::getPose, // A function that returns the current robot pose
-        m_robotDrive::resetOdometry, // A function that resets the current robot pose to the provided Pose2d
-        m_robotDrive::followTrajectory, // The drive subsystem trajectory follower
-        true, // Alliance Switch
-
-        m_robotDrive // The drive subsystem
-    );
+    // m_autoFactory = m_robotContainer.getAutoFactory();
   }
 
   /**
@@ -111,21 +105,13 @@ public class Robot extends TimedRobot {
    * {@link RobotContainer} class.
    */
   @Override
-  public void autonomousInit() {
-    m_autonomousCommand = coralAutoCommand();
-
-    /*
-     * String autoSelected = SmartDashboard.getString("Auto Selector",
-     * "Default"); switch(autoSelected) { case "My Auto": autonomousCommand
-     * = new MyAutoCommand(); break; case "Default Auto": default:
-     * autonomousCommand = new ExampleCommand(); break; }
-     */
-
-    // schedule the autonomous command (example)
+public void autonomousInit() {
+    m_autonomousCommand = m_robotContainer.coralAutoCommand();
+    
     if (m_autonomousCommand != null) {
-      m_autonomousCommand.schedule();
+        m_autonomousCommand.schedule();
     }
-  }
+}
 
   /** This function is called periodically during autonomous. */
   @Override
@@ -158,20 +144,5 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during test mode. */
   @Override
   public void testPeriodic() {
-  }
-
-  public Command coralAutoCommand() {
-    return Commands.sequence(
-        autoFactory.trajectoryCmd("2-Piece Coral Auto Part 1"),
-        m_robotElevator.GoTo(ElevatorSubsystem.Level.Bottom).withTimeout(1),
-        m_robotCoral.runCoralDispenser().withTimeout(1),
-        autoFactory.trajectoryCmd("2-Piece Coral Auto Part 2"),
-        m_robotElevator.GoTo(ElevatorSubsystem.Level.L3).withTimeout(1),
-        m_robotCoral.runCoralDispenser().withTimeout(1),
-        autoFactory.trajectoryCmd("2-Piece Coral Auto Part 3"),
-        m_robotElevator.GoTo(ElevatorSubsystem.Level.Bottom).withTimeout(1),
-        m_robotCoral.runCoralDispenser().withTimeout(1),
-        autoFactory.trajectoryCmd("2-Piece Coral Auto Part 4"),
-        m_robotElevator.GoTo(ElevatorSubsystem.Level.L3).withTimeout(1));
   }
 }

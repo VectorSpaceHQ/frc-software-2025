@@ -1,0 +1,46 @@
+{
+ "name":"2-Piece Coral Auto Part 1",
+ "version":1,
+ "snapshot":{
+  "waypoints":[
+    {"x":7.063462257385254, "y":4.025999546051025, "heading":3.141592653589793, "intervals":7, "split":false, "fixTranslation":true, "fixHeading":true, "overrideIntervals":false},
+    {"x":6.174989223480225, "y":4.054623126983643, "heading":-3.117206666668643, "intervals":14, "split":false, "fixTranslation":true, "fixHeading":true, "overrideIntervals":false}],
+  "constraints":[
+    {"from":"first", "to":null, "data":{"type":"StopPoint", "props":{}}, "enabled":true},
+    {"from":"last", "to":null, "data":{"type":"StopPoint", "props":{}}, "enabled":true},
+    {"from":"first", "to":"last", "data":{"type":"KeepInRectangle", "props":{"x":0.0, "y":0.0, "w":17.548, "h":8.052}}, "enabled":false},
+    {"from":1, "to":null, "data":{"type":"StopPoint", "props":{}}, "enabled":true}],
+  "targetDt":0.05
+ },
+ "params":{
+  "waypoints":[
+    {"x":{"exp":"7.063462257385254 m", "val":7.063462257385254}, "y":{"exp":"4.025999546051025 m", "val":4.025999546051025}, "heading":{"exp":"3.141592653589793 rad", "val":3.141592653589793}, "intervals":7, "split":false, "fixTranslation":true, "fixHeading":true, "overrideIntervals":false},
+    {"x":{"exp":"6.174989223480225 m", "val":6.174989223480225}, "y":{"exp":"4.054623126983643 m", "val":4.054623126983643}, "heading":{"exp":"-3.117206666668643 rad", "val":-3.117206666668643}, "intervals":14, "split":false, "fixTranslation":true, "fixHeading":true, "overrideIntervals":false}],
+  "constraints":[
+    {"from":"first", "to":null, "data":{"type":"StopPoint", "props":{}}, "enabled":true},
+    {"from":"last", "to":null, "data":{"type":"StopPoint", "props":{}}, "enabled":true},
+    {"from":"first", "to":"last", "data":{"type":"KeepInRectangle", "props":{"x":{"exp":"0 m", "val":0.0}, "y":{"exp":"0 m", "val":0.0}, "w":{"exp":"17.548 m", "val":17.548}, "h":{"exp":"8.052 m", "val":8.052}}}, "enabled":false},
+    {"from":1, "to":null, "data":{"type":"StopPoint", "props":{}}, "enabled":true}],
+  "targetDt":{
+   "exp":"0.05 s",
+   "val":0.05
+  }
+ },
+ "trajectory":{
+  "sampleType":"Swerve",
+  "waypoints":[0.0,0.39288],
+  "samples":[
+    {"t":0.0, "x":7.06346, "y":4.026, "heading":3.14159, "vx":0.0, "vy":0.0, "omega":0.0, "ax":-25.44466, "ay":0.81974, "alpha":3.21084, "fx":[-317.39155,-317.39112,-317.39114,-317.39157], "fy":[10.21887,10.2321,10.23167,10.21844]},
+    {"t":0.05613, "x":7.02339, "y":4.02729, "heading":3.14159, "vx":-1.42811, "vy":0.04601, "omega":0.18021, "ax":-25.42256, "ay":0.81903, "alpha":-2.55088, "fx":[-317.11556,-317.11589,-317.11586,-317.11553], "fy":[10.22147,10.21097,10.21131,10.22181]},
+    {"t":0.11225, "x":6.90319, "y":4.03116, "heading":-3.13148, "vx":-2.85497, "vy":0.09198, "omega":0.03704, "ax":-13.84294, "ay":0.44597, "alpha":-0.65995, "fx":[-172.67443,-172.67444,-172.67341,-172.6734], "fy":[5.5638,5.5621,5.56214,5.56383]},
+    {"t":0.16838, "x":6.72115, "y":4.03703, "heading":-3.1294, "vx":-3.63192, "vy":0.11701, "omega":0.0, "ax":0.0, "ay":0.0, "alpha":0.0, "fx":[0.0,0.0,0.0,0.0], "fy":[0.0,0.0,0.0,0.0]},
+    {"t":0.2245, "x":6.5173, "y":4.04359, "heading":-3.1294, "vx":-3.63192, "vy":0.11701, "omega":0.0, "ax":13.84294, "ay":-0.44597, "alpha":0.66, "fx":[172.67443,172.67444,172.67341,172.6734], "fy":[-5.56379,-5.5621,-5.56214,-5.56384]},
+    {"t":0.28063, "x":6.33526, "y":4.04946, "heading":-3.1294, "vx":-2.85497, "vy":0.09198, "omega":0.03704, "ax":25.42256, "ay":-0.81903, "alpha":2.55046, "fx":[317.11556,317.1159,317.11586,317.11553], "fy":[-10.2214,-10.21091,-10.21138,-10.22187]},
+    {"t":0.33676, "x":6.21507, "y":4.05333, "heading":-3.12732, "vx":-1.42811, "vy":0.04601, "omega":0.18019, "ax":25.44466, "ay":-0.81974, "alpha":-3.21047, "fx":[317.39154,317.39112,317.39115,317.39157], "fy":[-10.21897,-10.23219,-10.23157,-10.21835]},
+    {"t":0.39288, "x":6.17499, "y":4.05462, "heading":-3.11721, "vx":0.0, "vy":0.0, "omega":0.0, "ax":0.0, "ay":0.0, "alpha":0.0, "fx":[0.0,0.0,0.0,0.0], "fy":[0.0,0.0,0.0,0.0]}],
+  "splits":[0]
+ },
+ "events":[
+   {"name":"Coral Offload", "from":{"target":1, "targetTimestamp":0.39288, "offset":{"exp":"0.2 s", "val":0.2}}, "event":null},
+   {"name":"ElevatorToBottom", "from":{"target":0, "targetTimestamp":0.0, "offset":{"exp":"0.2 s", "val":0.2}}, "event":null}]
+}
