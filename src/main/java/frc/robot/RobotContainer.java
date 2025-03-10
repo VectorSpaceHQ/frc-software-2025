@@ -56,6 +56,7 @@ public class RobotContainer {
   private AlgaeSubsystem m_robotAlgae = null;
   private FieldTagMap fieldTagMap = null;
   private IMUImpl m_IMU = null;
+  private RuntimeParameters m_Parameters = null;
   // The driver's controller
   CommandXboxController m_driverController = null;
   CommandXboxController m_operatorController = null;
@@ -88,6 +89,10 @@ public class RobotContainer {
     if (Constants.FeatureToggles.enableAlgae) {
       m_robotAlgae = new AlgaeSubsystem();
       m_robotAlgae.setDefaultCommand(m_robotAlgae.runClaws(m_operatorController));
+    }
+
+    if (Constants.FeatureToggles.enableRuntimeParams) {
+        m_Parameters = new RuntimeParameters();
     }
 
     fieldTagMap = new FieldTagMap();

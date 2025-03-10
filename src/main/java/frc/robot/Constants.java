@@ -25,6 +25,7 @@ public final class Constants {
     public static final boolean enableVision = false;
     public static final boolean enableCoral = false;
     public static final boolean enableIMU = true;
+    public static final boolean enableRuntimeParams = true;
   }
 
   public static final class DriveConstants {
