@@ -225,7 +225,6 @@ public class ElevatorSubsystem extends SubsystemBase{
       return new FunctionalCommand(
       // onInit: Initialize our values
       () -> {
-
         y_targetHeight = target.getLevel();
       },
       // onExecute: Update our calculations and drive the motor
@@ -248,6 +247,19 @@ public class ElevatorSubsystem extends SubsystemBase{
       this
     );
 }
+
+public double getElevatorHeight() {
+  return y_currentHeight;
+}
+
+public double getMaxHeight() {
+  return (ElevatorSpecifics.kScissorLength * ElevatorSpecifics.kLinkageCount) + ElevatorSpecifics.kInitialHeight;
+}
+
+public double getMinHeight() {
+  return (ElevatorSpecifics.kLinkageCount * Math.sqrt(Math.pow(ElevatorSpecifics.kScissorLength,2) - Math.pow(ElevatorSpecifics.kC, 2))) + ElevatorSpecifics.kInitialHeight;
+} 
+
   // public Command Homing() {
   //   return new FunctionalCommand(
   //     () -> {}, 
