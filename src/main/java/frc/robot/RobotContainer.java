@@ -95,11 +95,16 @@ public class RobotContainer {
     // Elevator to L2 - Add CMD in Feature Branch
     m_operatorController
         .b()
+        .and(m_driverController.leftBumper().negate())
+        .and(m_driverController.rightBumper().negate())
         .onTrue(m_robotElevator.GoTo(Level.L2));
+
     
     // Elevator to L3 - Add CMD in Feature Branch
     m_operatorController
         .x()
+        .and(m_driverController.leftBumper().negate())
+        .and(m_driverController.rightBumper().negate())
         .onTrue(m_robotElevator.GoTo(Level.L3));
 
     // Elevator to L4 - Add CMD in Feature Branch
@@ -115,6 +120,12 @@ public class RobotContainer {
         .and(m_operatorController.leftBumper().negate())
         .and(m_operatorController.rightBumper().negate());
         // .whileTrue(m_robotElevator.ElevatorLowerCommand());
+
+    // Interrupts GoTo by Rescheduling Triggers
+    m_operatorController
+        .rightTrigger(0.02)
+        .or(m_operatorController.leftTrigger(0.02))
+        .onTrue(m_robotElevator.ElevatorRaiseCommand(m_operatorController));
     
     // Manually Lower Elevator - Add Function in Feature Branch
     m_operatorController

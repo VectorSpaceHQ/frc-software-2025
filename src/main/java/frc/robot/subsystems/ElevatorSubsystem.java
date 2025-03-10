@@ -1,6 +1,9 @@
 package frc.robot.subsystems;
 
+import com.revrobotics.spark.ClosedLoopSlot;
+import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkMaxConfig;
@@ -10,6 +13,8 @@ import frc.robot.Constants.DigitalInputPorts;
 import frc.robot.Constants.ElevatorSpecifics;
 import frc.robot.Constants.PIDTunings;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
@@ -29,8 +34,8 @@ public class ElevatorSubsystem extends SubsystemBase{
     Bottom(ElevatorSpecifics.kInitialHeight),
     L2(31.875),
     L3(47.65),
-    // L4(72.),
-    L4(62.0),
+    // L4(72.), //not possible atm because of linkage limitations
+  
     Inspection(36)
     ;
 
@@ -50,29 +55,36 @@ public class ElevatorSubsystem extends SubsystemBase{
   private SparkMaxConfig config = new SparkMaxConfig();
   private SparkMaxConfig config2 = new SparkMaxConfig();
   RelativeEncoder encoder = motor1.getEncoder();
-  PIDController pid = new PIDController(PIDTunings.kElevatorKP, PIDTunings.kElevatorKI, PIDTunings.kElevatorKD);
+  private SparkClosedLoopController controller1 = motor1.getClosedLoopController();
+  TrapezoidProfile.Constraints constraints = new TrapezoidProfile.Constraints(500,20);
+  ProfiledPIDController pid = new ProfiledPIDController(PIDTunings.kElevatorKP, PIDTunings.kElevatorKI, PIDTunings.kElevatorKD, constraints);
   private DigitalInput l_top = new DigitalInput(DigitalInputPorts.kElevatorSubsystemUp);
   private DigitalInput l_bottom = new DigitalInput(DigitalInputPorts.kElevatorSubsystemDown);
 
   // True when pressed
   private boolean limitTop = l_top.get();
+  private boolean prevLimitBottom;
   // True when pressed
   private boolean limitBottom = l_bottom.get();
   private double y_currentHeight = 0;
-  private double y_targetHeight = 0;
+  private double y_targetHeight = 21.875;
   private double r_currentRotations = 0;
+  private double r_targetRotations = 0;
+  private double v_feedforward;
   private double PIDFeedback = 0;
   private double scissor_speed = 0;
+  private double y_stageHeight;
 
   public ElevatorSubsystem() {
     // Invert the SparkMax
     config.inverted(true);
-    config.smartCurrentLimit(105);
+    config.smartCurrentLimit(95);
+    // config.closedLoop.p(.0001).i(0.000001).d(0.01); // for if we need manual to have pid
     // Apply the Inversion
     motor1.configure(config, null, null);
-    // Increase PID error tolerance from 0.05 to 0.1
-    pid.setTolerance(0.1);
-    config2.smartCurrentLimit(105);
+    // Increase PID error tolerance from 0.05 to 0.2
+    pid.setTolerance(0.2);
+    config2.smartCurrentLimit(95);
     config2.follow(CANIDs.kElevatorSubsystemMain);
     motor2.configure(config2, null, null);
 
@@ -88,10 +100,10 @@ public class ElevatorSubsystem extends SubsystemBase{
 
   // Internal Function for updating constants
   private void update() {
-    PIDFeedback = pid.calculate(y_currentHeight, y_targetHeight);
+    prevLimitBottom = limitBottom;
     limitTop = !l_top.get();
     limitBottom = !l_bottom.get();
-    if (limitBottom) {
+    if (limitBottom && !prevLimitBottom) {
       encoder.setPosition(0);
     }
 
@@ -106,49 +118,36 @@ public class ElevatorSubsystem extends SubsystemBase{
     SmartDashboard.putNumber("Target Height", y_targetHeight);
     SmartDashboard.putNumber("Current Height Estimate", y_currentHeight);
     SmartDashboard.putNumber("Current Rotations", r_currentRotations);
+    SmartDashboard.putNumber("Target Rotations", r_targetRotations);
     SmartDashboard.putNumber("PIDFeedback", PIDFeedback);
+    SmartDashboard.putNumber("Feedforward", v_feedforward);
+    SmartDashboard.putNumber("Stage Height", y_stageHeight);
+    SmartDashboard.putNumber("Velocity", encoder.getVelocity());
+    SmartDashboard.putNumber("Applied Voltage", motor1.getBusVoltage() * motor1.getAppliedOutput());
   }
 
-  // // sqrt((RP+C)^2 - L^2) + y0 = yx
-  // private void calculateCurrentHeight() {
-  //   double term1 = Math.sqrt(Math.pow((r_currentRotations * ElevatorSpecifics.kScrewPitch) + ElevatorSpecifics.kScissorLength, 2) - Math.pow(ElevatorSpecifics.kC,2));
-  //   double result = Math.sqrt(term1) + ElevatorSpecifics.kInitialHeight;
-  //   y_currentHeight = result;
-  // }
-
-  // N*sqrt(L^2 - ((C-R*P)^2))
-  private void calculateCurrentHeight() {
-    double result = ElevatorSpecifics.kLinkageCount * Math.sqrt(Math.pow(ElevatorSpecifics.kScissorLength, 2) - (Math.pow(ElevatorSpecifics.kC - (r_currentRotations * (1 / ElevatorSpecifics.kScrewPitch)), 2)));
-    y_currentHeight = result + ElevatorSpecifics.kInitialHeight;
-  }
-
-  // R = (sqrt(L^2 - X^2) - C) / P
-  // (RP + C)^2 = L^2 + X^2
-  // sqrt((RP+C)^2 - L^2) = X
-  // sqrt((RP+C)^2 - L^2) + y0 = yx
   // R is rotations
   // L is scissor length
   // X is target height above initial
   // C is fixed length between farthest linkage connection and point of lead screw rotation
   // P is screw pitch
-  // https://erobtic.wixsite.com/erobtic/post/scissor-lifting-elevator-mechanism
-  // https://vectorspace.slack.com/archives/C07H5JJBLCX/p1739492047940889
-  // private void calculateTargetRotations() {
-  //   double LSquared = Math.pow(ElevatorSpecifics.kScissorLength,2);
-  //   double XSquared = Math.pow(y_targetHeight / ElevatorSpecifics.kLinkageCount,2);
-  //   double LS_XS = LSquared - XSquared;
-  //   double sqrt = Math.sqrt(LS_XS);
-  //   double num = sqrt - ElevatorSpecifics.kScissorLength;
-  //   double denom = ElevatorSpecifics.kScrewPitch;
-  //   r_targetRotations = num / denom;
-  // }
-
-  // Scaling PIDFeedback -0.1 to 0.1
-  private double SigmoidAdjustment(double value) {
-    double num = -value * 0.1; // Adjust this second value to change maximum / minimum output of this function (-0.3 = {-0.3 to 0.3})
-    double denom = 1 + Math.abs(value);
-    return num / denom;
+  // N*sqrt(L^2 - (C-R*P)^2))
+  private void calculateCurrentHeight() {
+    y_stageHeight = Math.sqrt(
+      Math.pow(ElevatorSpecifics.kScissorLength, 2) - 
+      (Math.pow(ElevatorSpecifics.kC - (r_currentRotations * (1 / ElevatorSpecifics.kScrewPitch)), 2)));
+    double result = ElevatorSpecifics.kLinkageCount * y_stageHeight;
+    y_currentHeight = result + ElevatorSpecifics.kInitialHeight;
   }
+
+  private void calculateTargetRotations(double targetHeight) {
+    double scissorheight = targetHeight - ElevatorSpecifics.kInitialHeight;
+    double term1 = Math.pow(scissorheight / ElevatorSpecifics.kLinkageCount, 2);
+    double term2 = Math.sqrt(Math.pow(ElevatorSpecifics.kScissorLength, 2) - term1); 
+    double term3 = ElevatorSpecifics.kC - term2;
+    r_targetRotations = term3 * ElevatorSpecifics.kScrewPitch;
+  }
+
 
   private void setSpeed(double speed){
     // positive speed raises scissor
@@ -160,7 +159,28 @@ public class ElevatorSubsystem extends SubsystemBase{
     {
       speed = Math.min(speed, 0);
     }
+
     motor1.set(speed);
+
+    // controller1.setReference(speed*500, ControlType.kVelocity, ClosedLoopSlot.kSlot0, 
+    // speed>0?1:0);
+
+    // scissor_speed = speed*500;
+    
+    scissor_speed = speed;
+  }
+
+  private void setRPM(double speed){
+    // positive speed raises scissor
+    if(limitBottom)
+    {
+      speed = Math.max(0, speed);
+    }
+    if(limitTop)
+    {
+      speed = Math.min(speed, 0);
+    }
+    controller1.setReference(speed, ControlType.kVelocity, ClosedLoopSlot.kSlot0, speed>0?1:0);
 
     scissor_speed = speed;
   }
@@ -185,11 +205,10 @@ public class ElevatorSubsystem extends SubsystemBase{
       () -> {},
       () -> {
         update();
-        //this.manualAdjustment(0.5);
         // RT Up
         double Raise = m_operatorController.getRightTriggerAxis();
         // DT Down
-        double Lower = 0.25 * m_operatorController.getLeftTriggerAxis();
+        double Lower = m_operatorController.getLeftTriggerAxis();
         this.setSpeed(Raise - Lower);
       },
       interrupted -> {
@@ -206,37 +225,41 @@ public class ElevatorSubsystem extends SubsystemBase{
       return new FunctionalCommand(
       // onInit: Initialize our values
       () -> {
+
         y_targetHeight = target.getLevel();
       },
       // onExecute: Update our calculations and drive the motor
       () -> {
         update();
+        calculateTargetRotations(y_targetHeight);
+        PIDFeedback = pid.calculate(r_currentRotations, r_targetRotations);//rps
         // Sigmoid Currently Maxes out at 0.1
-        double x = SigmoidAdjustment(PIDFeedback);
-        this.setSpeed(x);
+        v_feedforward = pid.getSetpoint().velocity;//rps
+        this.setRPM(60 * (v_feedforward + PIDFeedback));
       },
       // onEnd: Stop the motor
       interrupted -> {
         motor1.stopMotor(); 
+        // SmartDashboard.putBoolean("Elevator GoTo Interrupt", interrupted);
       },
       // isFinished: End the command when the target is reached
-      () -> (pid.atSetpoint()),
+      () ->(pid.atSetpoint()),
       // Require this subsystem
       this
     );
 }
-  public Command Homing() {
-    return new FunctionalCommand(
-      () -> {}, 
-      () -> {
-        this.setSpeed(-0.05);
-      }, 
-      interrupted -> {
-        encoder.setPosition(0);
-      }, 
-      () -> (limitBottom), 
-      this);
-  }
+  // public Command Homing() {
+  //   return new FunctionalCommand(
+  //     () -> {}, 
+  //     () -> {
+  //       this.setSpeed(-0.05);
+  //     }, 
+  //     interrupted -> {
+  //       encoder.setPosition(0);
+  //     }, 
+  //     () -> (limitBottom), 
+  //     this);
+  // }
 }
 
 

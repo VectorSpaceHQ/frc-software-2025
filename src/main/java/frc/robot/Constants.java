@@ -87,7 +87,7 @@ public final class Constants {
   }
 
   public static final class PIDTunings {
-    public static final double kElevatorKP = 1.2;
+    public static final double kElevatorKP = 0.5;
     public static final double kElevatorKI = 0;
     public static final double kElevatorKD = 0;
   }
@@ -99,14 +99,14 @@ public final class Constants {
     public static final double kInitialHeight = 11.75; // inches -- from bottom to platform ignoring scissor
     public static final double kLinkageCount = 2; // Linkage Counts per Side
     public static final double kPlatformToInputHeight = 14.26; // Distance between Platform and Coral Input
-    public static final double kC = 23.375; // fixed length between farthest linkage connection and point of lead screw rotation
+    public static final double kC = 23.4; // fixed length between farthest linkage connection and point of lead screw rotation
   }
 
   public static final class DigitalInputPorts {
-    public static final int kAlgaeSubsystemRight = 0;
-    public static final int kAlgaeSubsystemLeft = 1;
-    public static final int kElevatorSubsystemUp = 2;
-    public static final int kElevatorSubsystemDown = 3;
+    public static final int kAlgaeSubsystemRight = 2;
+    public static final int kAlgaeSubsystemLeft = 3;
+    public static final int kElevatorSubsystemUp = 0;
+    public static final int kElevatorSubsystemDown = 1;
   }
 
   public static final class AutoConstants {
