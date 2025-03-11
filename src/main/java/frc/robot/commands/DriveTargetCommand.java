@@ -19,12 +19,16 @@ public class DriveTargetCommand extends Command {
   private DriveSubsystem driveSubsystem;
   private VisionSubsystem visionSubsystem;
   private CommandXboxController driverController;
-  private double speedscalar = 1;
+  private double speedscalar = 0.1;
   private double targetID = 0;
 
   private SlewRateLimiter x_rate = new SlewRateLimiter(AutoConstants.kMaxAccelerationMetersPerSecondSquared);
   private SlewRateLimiter y_rate = new SlewRateLimiter(AutoConstants.kMaxAccelerationMetersPerSecondSquared);
   private SlewRateLimiter theta_rate = new SlewRateLimiter(AutoConstants.kMaxAngularSpeedRadiansPerSecondSquared);
+
+  double forward = 0;
+  double strafe = 0;
+  double turn = 0;
 
   // Sets the drivetarget constructor
   public DriveTargetCommand(
@@ -45,9 +49,6 @@ public class DriveTargetCommand extends Command {
   // Executes the drivetarget command (periodic)
   @Override
   public void execute() {
-    double forward =  0;
-    double strafe =  0;
-    double turn = 0;
 
     // Check if the camera is connected and displays the aiming and camera status
     if (visionSubsystem.isCameraConnected()) {
@@ -58,38 +59,48 @@ public class DriveTargetCommand extends Command {
         // If the camera is connected, get the target yaw and drive towards it
         double targetYaw = visionSubsystem.getTargetYaw((int) targetID);
         double targetRange = visionSubsystem.getTargetRange((int) targetID);
-        forward =  x_rate.calculate(driverController.getLeftY() * 0.5);
-        strafe =  y_rate.calculate(-driverController.getLeftX() * speedscalar);
-        turn = theta_rate.calculate(-0.3 * driverController.getRightX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
+        SmartDashboard.putNumber("Target ID", targetID);
+
         // Check if the target yaw is valid and displays the aiming status and yaw
         if (!Double.isNaN(targetYaw)) {
           turn = -targetYaw * 0.01 * AutoConstants.kMaxAngularSpeedRadiansPerSecond;
           SmartDashboard.putString("Aiming Status", "Aiming");
           SmartDashboard.putNumber("Target Yaw", targetYaw);
-          // Reset the odometry if the estimated pose has targets
         }
 
         if (!Double.isNaN(targetRange)) {
           forward = (visionThingy - targetRange * 0.01 * AutoConstants.kMaxSpeedMetersPerSecond);
-          SmartDashboard.putString("Aiming Status", "Aiming");
-          SmartDashboard.putNumber("Target Yaw", targetYaw);
+          SmartDashboard.putString("Aiming Status", "Driving Forward");
+          SmartDashboard.putNumber("Target Range", targetRange);
         }
+
+      } else {
+        SmartDashboard.putString("Aiming Status", "No Target Specified");
       }
+
     } else {
       SmartDashboard.putString("Aiming Status", "Camera Not Connected");
     }
 
-    driveSubsystem.drive(forward, strafe, turn, false);
+    // Driver controls if NO april tag is identified
+    if (targetID == AprilTags.None.getId()) {
+      forward = x_rate.calculate(driverController.getLeftY() * 0.5);
+      strafe = y_rate.calculate(-driverController.getLeftX() * speedscalar);
+      turn = theta_rate.calculate(-0.3 * driverController.getRightX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
+      SmartDashboard.putString("Aiming Status", "No Target Specified");
+    }
+
+  driveSubsystem.drive(forward, strafe, turn, false);
   }
 
   // Ends the drivetarget command
   @Override
   public void end(boolean interrupted) {
-    driveSubsystem.drive(0, 0, 0, true);
+    driveSubsystem.drive(0, 0, 0, false);
     SmartDashboard.putString("Aiming Status", "Command Ended");
   }
 
-  public void setSpeedScalar(double val){
+  public void setSpeedScalar(double val) {
     speedscalar = val;
   }
 }
