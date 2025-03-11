@@ -79,7 +79,7 @@ public class ElevatorSubsystem extends SubsystemBase{
     // Invert the SparkMax
     config.inverted(true);
     config.smartCurrentLimit(95);
-    // config.closedLoop.p(.0001).i(0.000001).d(0.01); // for if we need manual to have pid
+    config.closedLoop.p(.0001).i(0.000001).d(0.001);
     // Apply the Inversion
     motor1.configure(config, null, null);
     // Increase PID error tolerance from 0.05 to 0.2
@@ -232,7 +232,6 @@ public class ElevatorSubsystem extends SubsystemBase{
         update();
         calculateTargetRotations(y_targetHeight);
         PIDFeedback = pid.calculate(r_currentRotations, r_targetRotations);//rps
-        // Sigmoid Currently Maxes out at 0.1
         v_feedforward = pid.getSetpoint().velocity;//rps
         this.setRPM(60 * (v_feedforward + PIDFeedback));
       },

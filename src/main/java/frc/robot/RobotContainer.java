@@ -22,6 +22,7 @@ import frc.robot.Constants.OIConstants;
 import frc.robot.AprilTags;
 import frc.robot.FieldTagMap;
 import frc.robot.commands.DriveTargetCommand;
+import frc.robot.commands.GetAlgaeCommand;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.CoralSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
@@ -59,8 +60,6 @@ public class RobotContainer {
   private final ElevatorSubsystem m_robotElevator = new ElevatorSubsystem();
   private final AlgaeSubsystem m_robotAlgae = new AlgaeSubsystem();
   private final FieldTagMap fieldTagMap = new FieldTagMap();
-
-  SendableChooser<Command> m_chooser = new SendableChooser<>();
   
   Map<String, AprilTags> fieldMap = fieldTagMap.getRedMap();
 
@@ -69,6 +68,10 @@ public class RobotContainer {
   CommandXboxController m_operatorController = new CommandXboxController(OIConstants.kOperatorControllerPort);
 
   private final DriveTargetCommand aimTarget = new DriveTargetCommand(m_robotDrive, m_robotVision, m_driverController);
+  private final GetAlgaeCommand getAlgae = new GetAlgaeCommand(aimTarget, m_robotAlgae, m_robotElevator);
+  
+
+  SendableChooser<Command> m_chooser = new SendableChooser<>();
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     // Configure the button bindings
@@ -79,7 +82,7 @@ public class RobotContainer {
     m_robotAlgae.setDefaultCommand(m_robotAlgae.runClaws(m_operatorController));
 
     m_chooser.setDefaultOption("Simple Auto", getSimpleAutonomousCommand());
-    m_chooser.addOption("Complex Auto", getComplexAutonomousCommand());
+    m_chooser.addOption("Reef5", getReef5Command());
     SmartDashboard.putData(m_chooser);
 
     // Default to red
@@ -92,6 +95,9 @@ public class RobotContainer {
             fieldMap = fieldTagMap.getBlueMap();
         }
     }
+
+    // ComplexCMD = getAlgae.getAlgae(Level.L2, fieldMap.get("reef5"));
+    
  }
 
   /**
@@ -262,10 +268,9 @@ public class RobotContainer {
     return m_robotDrive.run(() -> m_robotDrive.drive(-0.2, 0, 0 ,false)).withTimeout(2);
   }
 
-  public Command getComplexAutonomousCommand() {
-    aimTarget.setTargetID(fieldMap.get("RedReef5"));
-
-    return aimTarget.withTimeout(4).alongWith(m_robotElevator.GoTo(Level.L2)).withTimeout(4).andThen(m_robotAlgae.runClaws(0.1).withTimeout(3));
+  public Command getReef5Command() {
+    // aimTarget.setTargetID(fieldMap.get("reef5"));
+    return aimTarget;
   }
 
   public Command getAutonomousCommand() {
