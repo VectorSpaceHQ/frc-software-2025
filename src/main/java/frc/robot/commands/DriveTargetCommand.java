@@ -21,7 +21,9 @@ public class DriveTargetCommand extends Command {
   private CommandXboxController driverController;
   private double speedscalar = 1;
   private double targetID = 0;
-
+  private double forward =  0;
+  private double strafe =  0;
+  private double turn = 0;
   private SlewRateLimiter x_rate = new SlewRateLimiter(AutoConstants.kMaxAccelerationMetersPerSecondSquared);
   private SlewRateLimiter y_rate = new SlewRateLimiter(AutoConstants.kMaxAccelerationMetersPerSecondSquared);
   private SlewRateLimiter theta_rate = new SlewRateLimiter(AutoConstants.kMaxAngularSpeedRadiansPerSecondSquared);
@@ -45,10 +47,9 @@ public class DriveTargetCommand extends Command {
   // Executes the drivetarget command (periodic)
   @Override
   public void execute() {
-   
-    double forward =  x_rate.calculate(driverController.getLeftY() * speedscalar);
-    double strafe =  y_rate.calculate(-driverController.getLeftX() * speedscalar);
-    double turn = theta_rate.calculate(-0.3 * driverController.getRightX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
+    forward =  x_rate.calculate(driverController.getLeftY() * speedscalar);
+    strafe =  y_rate.calculate(-driverController.getLeftX() * speedscalar);
+    turn = theta_rate.calculate(-0.3 * driverController.getRightX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
 
     // Check if the camera is connected and displays the aiming and camera status
     if (visionSubsystem.isCameraConnected()) {

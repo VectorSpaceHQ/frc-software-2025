@@ -56,7 +56,7 @@ public class ElevatorSubsystem extends SubsystemBase{
   private SparkMaxConfig config2 = new SparkMaxConfig();
   RelativeEncoder encoder = motor1.getEncoder();
   private SparkClosedLoopController controller1 = motor1.getClosedLoopController();
-  TrapezoidProfile.Constraints constraints = new TrapezoidProfile.Constraints(500,20);
+  TrapezoidProfile.Constraints constraints = new TrapezoidProfile.Constraints(500,30);
   ProfiledPIDController pid = new ProfiledPIDController(PIDTunings.kElevatorKP, PIDTunings.kElevatorKI, PIDTunings.kElevatorKD, constraints);
   private DigitalInput l_top = new DigitalInput(DigitalInputPorts.kElevatorSubsystemUp);
   private DigitalInput l_bottom = new DigitalInput(DigitalInputPorts.kElevatorSubsystemDown);
@@ -226,13 +226,16 @@ public class ElevatorSubsystem extends SubsystemBase{
       // onInit: Initialize our values
       () -> {
         y_targetHeight = target.getLevel();
+        calculateTargetRotations(y_targetHeight);
+        pid.setGoal(r_targetRotations);
       },
       // onExecute: Update our calculations and drive the motor
       () -> {
         update();
         calculateTargetRotations(y_targetHeight);
-        PIDFeedback = pid.calculate(r_currentRotations, r_targetRotations);//rps
-        v_feedforward = pid.getSetpoint().velocity;//rps
+        PIDFeedback = pid.calculate(r_currentRotations);//rps
+        v_feedforward = pid.getSetpoint().velocity + 10;//rps
+      
         this.setRPM(60 * (v_feedforward + PIDFeedback));
       },
       // onEnd: Stop the motor

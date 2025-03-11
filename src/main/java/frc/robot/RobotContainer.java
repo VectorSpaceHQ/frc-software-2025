@@ -110,7 +110,7 @@ public class RobotContainer {
 
     m_driverController
         .leftBumper()
-        .onTrue(new InstantCommand(() -> aimTarget.setSpeedScalar(0.5)))
+        .onTrue(new InstantCommand(() -> aimTarget.setSpeedScalar(0.3)))
         .onFalse(new InstantCommand(() -> aimTarget.setSpeedScalar(1)));
 
     // m_operatorController
@@ -152,8 +152,8 @@ public class RobotContainer {
 
     // Interrupts GoTo by Rescheduling Triggers
     m_operatorController
-        .rightTrigger(0.02)
-        .or(m_operatorController.leftTrigger(0.02))
+        .rightTrigger(0.1)
+        .or(m_operatorController.leftTrigger(0.1))
         .onTrue(m_robotElevator.ElevatorRaiseCommand(m_operatorController));
     
     // Manually Lower Elevator - Add Function in Feature Branch
