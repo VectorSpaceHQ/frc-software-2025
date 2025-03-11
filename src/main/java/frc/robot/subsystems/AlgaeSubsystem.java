@@ -98,6 +98,24 @@ public class AlgaeSubsystem extends SubsystemBase {
             () -> (false),  this);
     }
 
+    public Command runClaws(double speed) {
+        return new FunctionalCommand(
+            () -> {                
+                },
+            () -> {
+                update();
+                //motor_left.set(speed);
+                setSpeed(speed);
+                AlgaeLogger();
+            },
+            interrupted -> {
+                motor_left.stopMotor();
+            },
+            //() -> ((limitSwitchLeft || limitSwitchRight) && (speed <= 0)),
+            //this);
+            () -> (false),  this);
+    }
+
     // Homes claws then on finish sets right motor to inverted follower
     // Returns both motors to their respective limit switches
     public Command homeClaws() {

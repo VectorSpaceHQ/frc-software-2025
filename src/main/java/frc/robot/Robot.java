@@ -65,7 +65,7 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     starttime = Timer.getFPGATimestamp();
-    m_autonomousCommand = m_robotContainer.getAutonomousCommand().withTimeout(3);
+    m_autonomousCommand = m_robotContainer.getAutonomousCommand();
     // /*
     //  * String autoSelected = SmartDashboard.getString("Auto Selector",
     //  * "Default"); switch(autoSelected) { case "My Auto": autonomousCommand

@@ -13,6 +13,7 @@ import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import frc.robot.Constants.AutoConstants;
@@ -21,6 +22,7 @@ import frc.robot.Constants.OIConstants;
 import frc.robot.AprilTags;
 import frc.robot.FieldTagMap;
 import frc.robot.commands.DriveTargetCommand;
+import frc.robot.commands.GetAlgaeCommand;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.CoralSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
@@ -36,6 +38,9 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
@@ -55,11 +60,18 @@ public class RobotContainer {
   private final ElevatorSubsystem m_robotElevator = new ElevatorSubsystem();
   private final AlgaeSubsystem m_robotAlgae = new AlgaeSubsystem();
   private final FieldTagMap fieldTagMap = new FieldTagMap();
+  
+  Map<String, AprilTags> fieldMap = fieldTagMap.getRedMap();
+
   // The driver's controller
   CommandXboxController m_driverController = new CommandXboxController(OIConstants.kDriverControllerPort);
   CommandXboxController m_operatorController = new CommandXboxController(OIConstants.kOperatorControllerPort);
 
   private final DriveTargetCommand aimTarget = new DriveTargetCommand(m_robotDrive, m_robotVision, m_driverController);
+  private final GetAlgaeCommand getAlgae = new GetAlgaeCommand(aimTarget, m_robotAlgae, m_robotElevator);
+  
+
+  SendableChooser<Command> m_chooser = new SendableChooser<>();
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     // Configure the button bindings
@@ -68,6 +80,24 @@ public class RobotContainer {
     m_robotDrive.setDefaultCommand(aimTarget);
     m_robotElevator.setDefaultCommand(m_robotElevator.ElevatorRaiseCommand(m_operatorController));
     m_robotAlgae.setDefaultCommand(m_robotAlgae.runClaws(m_operatorController));
+
+    m_chooser.setDefaultOption("Simple Auto", getSimpleAutonomousCommand());
+    m_chooser.addOption("Reef5", getReef5Command());
+    SmartDashboard.putData(m_chooser);
+
+    // Default to red
+    Optional<Alliance> ally = DriverStation.getAlliance();
+    if (ally.isPresent()) {
+        if (ally.get() == Alliance.Red) {
+            fieldMap = fieldTagMap.getRedMap();
+        }
+        if (ally.get() == Alliance.Blue) {
+            fieldMap = fieldTagMap.getBlueMap();
+        }
+    }
+
+    // ComplexCMD = getAlgae.getAlgae(Level.L2, fieldMap.get("reef5"));
+    
  }
 
   /**
@@ -77,7 +107,6 @@ public class RobotContainer {
    * {@link JoystickButton}.
    */
   private void configureButtonBindings() {
-    Map<String, AprilTags> fieldMap = fieldTagMap.getRedMap();
 
     m_driverController
         .leftBumper()
@@ -235,58 +264,16 @@ public class RobotContainer {
    *
    * @return the command to run in autonomous
    */
+  public Command getSimpleAutonomousCommand() {
+    return m_robotDrive.run(() -> m_robotDrive.drive(-0.2, 0, 0 ,false)).withTimeout(2);
+  }
+
+  public Command getReef5Command() {
+    // aimTarget.setTargetID(fieldMap.get("reef5"));
+    return aimTarget;
+  }
+
   public Command getAutonomousCommand() {
-    return m_robotDrive.run(() -> m_robotDrive.drive(-0.4, 0, 0 ,false));
-//     // Create config for trajectory
-//     TrajectoryConfig config =
-//         new TrajectoryConfig(
-//                 AutoConstants.kMaxSpeedMetersPerSecond,
-//                 AutoConstants.kMaxAccelerationMetersPerSecondSquared)
-//             // Add kinematics to ensure max speed is actually obeyed
-//             .setKinematics(DriveConstants.kDriveKinematics);
-
-//     // An example trajectory to follow. All units in meters.
-//     Trajectory exampleTrajectory =
-//         TrajectoryGenerator.generateTrajectory(
-//             // Start at the origin facing the +X direction
-//             Pose2d.kZero,
-//             // Pass through these two interior waypoints, making an 's' curve path
-//             List.of(new Translation2d(1, 1), new Translation2d(2, -1)),
-//             // End 3 meters straight ahead of where we started, facing forward
-//             new Pose2d(3, 0, Rotation2d.kZero),
-//             config);
-
-//     MecanumControllerCommand mecanumControllerCommand =
-//         new MecanumControllerCommand(
-//             exampleTrajectory,
-//             m_robotDrive::getPose,
-//             DriveConstants.kFeedforward,
-//             DriveConstants.kDriveKinematics,
-
-//             // Position controllers
-//             new PIDController(AutoConstants.kPXController, 0, 0),
-//             new PIDController(AutoConstants.kPYController, 0, 0),
-//             new ProfiledPIDController(
-//                 AutoConstants.kPThetaController, 0, 0, AutoConstants.kThetaControllerConstraints),
-
-//             // Needed for normalizing wheel speeds
-//             AutoConstants.kMaxSpeedMetersPerSecond,
-
-//             // Velocity PID's
-//             new PIDController(DriveConstants.kPFrontLeftVel, 0, 0),
-//             new PIDController(DriveConstants.kPRearLeftVel, 0, 0),
-//             new PIDController(DriveConstants.kPFrontRightVel, 0, 0),
-//             new PIDController(DriveConstants.kPRearRightVel, 0, 0),
-//             m_robotDrive::getCurrentWheelSpeeds,
-//             m_robotDrive::setDriveMotorControllersVolts, // Consumer for the output motor voltages
-//             m_robotDrive);
-
-//     // Reset odometry to the initial pose of the trajectory, run path following
-//     // command, then stop at the end.
-//     return Commands.sequence(
-//         new InstantCommand(() -> m_robotDrive.resetOdometry(exampleTrajectory.getInitialPose())),
-//         mecanumControllerCommand,
-//         new InstantCommand(() -> m_robotDrive.drive(0, 0, 0, false)));
-//   
+    return m_chooser.getSelected();
   }
 }
