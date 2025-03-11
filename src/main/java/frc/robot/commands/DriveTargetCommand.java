@@ -45,10 +45,9 @@ public class DriveTargetCommand extends Command {
   // Executes the drivetarget command (periodic)
   @Override
   public void execute() {
-   
-    double forward =  x_rate.calculate(driverController.getLeftY() * 0.5);
-    double strafe =  y_rate.calculate(-driverController.getLeftX() * speedscalar);
-    double turn = theta_rate.calculate(-0.3 * driverController.getRightX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
+    double forward =  0;
+    double strafe =  0;
+    double turn = 0;
 
     // Check if the camera is connected and displays the aiming and camera status
     if (visionSubsystem.isCameraConnected()) {
@@ -59,7 +58,9 @@ public class DriveTargetCommand extends Command {
         // If the camera is connected, get the target yaw and drive towards it
         double targetYaw = visionSubsystem.getTargetYaw((int) targetID);
         double targetRange = visionSubsystem.getTargetRange((int) targetID);
-
+        forward =  x_rate.calculate(driverController.getLeftY() * 0.5);
+        strafe =  y_rate.calculate(-driverController.getLeftX() * speedscalar);
+        turn = theta_rate.calculate(-0.3 * driverController.getRightX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
         // Check if the target yaw is valid and displays the aiming status and yaw
         if (!Double.isNaN(targetYaw)) {
           turn = -targetYaw * 0.01 * AutoConstants.kMaxAngularSpeedRadiansPerSecond;
