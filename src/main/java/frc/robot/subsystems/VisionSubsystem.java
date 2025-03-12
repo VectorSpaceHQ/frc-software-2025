@@ -251,9 +251,9 @@ public class VisionSubsystem extends SubsystemBase {
                 xEntry.setDouble(x);
                 yEntry.setDouble(y);
                 zEntry.setDouble(z);
-                poseEntry.setDouble(estimatedRobotPose.get().timestampSeconds);
-                pose3dEntry.setValue(estimatedRobotPose3d);
-                pose2dEntry.setValue(estimatedRobotPose2d);
+                // poseEntry.setDouble(estimatedRobotPose.get().timestampSeconds);
+                // pose3dEntry.setValue(estimatedRobotPose3d);
+                // pose2dEntry.setValue(estimatedRobotPose2d);
 
               }
 

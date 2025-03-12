@@ -43,7 +43,7 @@ public class DriveTargetCommand extends Command {
   }
 
   public void setTargetID(AprilTags tagId) {
-    targetID = 6;
+    targetID = tagId.getId();
   }
 
   // Executes the drivetarget command (periodic)
