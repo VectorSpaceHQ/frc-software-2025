@@ -34,7 +34,7 @@ public class VisionSubsystem extends SubsystemBase {
   public static final PhotonPoseEstimator.PoseStrategy MULTI_TAG_PNP_ON_PROCESSOR = PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR;
 
   // Constants for the camera name and field layout path
-  private static final String camera_name = "Front_Camera_Robot";
+  private static final String camera_name = "Arducam_OV9281_USB_Camera";
   private String field_layout_path = new File(Filesystem.getDeployDirectory(), "2025-reefscape.json")
       .getAbsolutePath();
 
