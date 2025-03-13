@@ -6,21 +6,27 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
 
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonUtils;
 import org.photonvision.targeting.PhotonTrackedTarget;
+import org.photonvision.targeting.PhotonPipelineResult;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.geometry.Rotation3d;
-
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
@@ -168,12 +174,14 @@ public class VisionSubsystem extends SubsystemBase {
       var latestResult = results.get(results.size() - 1);
 
       if (latestResult.hasTargets()) {
+
         for (var target : latestResult.getTargets()) {
+
           if (target.getFiducialId() == id) {
             var tagPose = layout.getTagPose(target.getFiducialId());
-            returnRange = PhotonUtils.calculateDistanceToTargetMeters(0.5, // Measured with a tape measure or in CAD.
+            returnRange = PhotonUtils.calculateDistanceToTargetMeters(0.228, // Measured with a tape measure or in CAD.
                 tagPose.get().getTranslation().getZ(),
-                Units.degreesToRadians(-30.0), // Measured with a protractor, or in CAD.
+                Units.degreesToRadians(0), // Measured with a protractor, or in CAD.
                 Units.degreesToRadians(target.getPitch()));
 
             break;
@@ -184,43 +192,69 @@ public class VisionSubsystem extends SubsystemBase {
     return returnRange;
   }
 
-  // Converts 3d pose to 2d pose
-  public Optional<Pose2d> getRobotPose() {
-    var result = camera.getLatestResult();
+  // Gets the latest pose and timestamp
+  private Optional<EstimatedRobotPose> getLatestEstimatedRobotPose() {
+    var results = camera.getAllUnreadResults();
+    var latestResult = results.get(results.size() - 1);
+    for (var result : results) {
 
-    if (result.hasTargets()) {
-      var target = result.getBestTarget();
-      var tagPose = layout.getTagPose(target.getFiducialId());
+      if (latestResult.hasTargets()) {
+        var target = latestResult.getBestTarget();
+        var tagPose = layout.getTagPose(target.getFiducialId());
 
-      if (tagPose.isPresent()) {
+        if (tagPose.isPresent()) {
+          Optional<EstimatedRobotPose> optionalPose = poseEstimator.update(result);
 
-        Optional<EstimatedRobotPose> optionalPose = poseEstimator.update(result);
-        if (optionalPose.isPresent()) {
-
-          EstimatedRobotPose estimatedRobotPose = optionalPose.get();
-          Pose3d estimatedRobotPose3d = estimatedRobotPose.estimatedPose;
-          Pose2d estimatedRobotPose2d = estimatedRobotPose3d.toPose2d();
-          // Use this 2d pose as the added vision measurement for the pose estimator
-
+          if (optionalPose.isPresent()) {
+            return optionalPose;
+          }
         }
-
       }
     }
 
     return Optional.empty();
   }
 
+  // Converts 3d pose to 2d pose and gets it
+  public Pose2d getRobotPose() {
+    Optional<EstimatedRobotPose> optionalPose = getLatestEstimatedRobotPose();
+    Pose2d estimatedPose2d = null;
+
+    if (optionalPose.isPresent()) {
+      EstimatedRobotPose estimatedRobotPose = optionalPose.get();
+      Pose3d estimatedRobotPose3d = estimatedRobotPose.estimatedPose;
+      estimatedPose2d = estimatedRobotPose3d.toPose2d();
+    }
+
+    return estimatedPose2d;
+  }
+
+  // Method to get the timestamp of the latest pose
+  public double getTimestamp() {
+    Optional<EstimatedRobotPose> optionalPose = getLatestEstimatedRobotPose();
+    double timestamp = 0; // might have to change
+     
+    if (optionalPose.isPresent()) {
+      EstimatedRobotPose estimatedRobotPose = optionalPose.get();
+      timestamp = estimatedRobotPose.timestampSeconds;
+    }
+
+    return timestamp;
+  }
+
   @Override
   public void periodic() {
+
     // This method will be called once per scheduler run
     if (cameraConnected) {
-      var results = camera.getLatestResult();
-      List<PhotonTrackedTarget> targets = results.getTargets();
+      var results = camera.getAllUnreadResults();
+      for (var result : results) {
+        if (result.hasTargets()) {
 
-      if (results.hasTargets()) {
-        for (PhotonTrackedTarget target : targets) {
+        
 
-          if (results.hasTargets()) {
+          for (PhotonTrackedTarget target : result.getTargets()) {
+
             double yaw = target.getYaw();
             double pitch = target.getPitch();
             double area = target.getArea();
@@ -233,9 +267,10 @@ public class VisionSubsystem extends SubsystemBase {
             double z = transform.getTranslation().getZ();
 
             yawEntry.setDouble(yaw);
+
             Optional<Pose3d> tagPose = layout.getTagPose(target.getFiducialId());
             if (tagPose.isPresent()) {
-              Optional<EstimatedRobotPose> estimatedRobotPose = poseEstimator.update(results);
+              Optional<EstimatedRobotPose> estimatedRobotPose = poseEstimator.update(result);
 
               if (estimatedRobotPose.isPresent()) {
 

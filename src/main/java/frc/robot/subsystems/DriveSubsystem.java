@@ -4,6 +4,12 @@
 
 package frc.robot.subsystems;
 
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.estimator.MecanumDrivePoseEstimator;
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.MecanumDriveOdometry;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelPositions;
@@ -26,6 +32,9 @@ import com.studica.frc.AHRS;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+// Temporary: for vision measurements
+import frc.robot.subsystems.VisionSubsystem;
+
 
 
 public class DriveSubsystem extends SubsystemBase {
@@ -36,6 +45,7 @@ public class DriveSubsystem extends SubsystemBase {
   private final TalonFX m_frontRight = new TalonFX(CANIDs.kDriveSubsystemFrontRight);
   private final TalonFX m_rearRight = new TalonFX(CANIDs.kDriveSubsystemRearRight);
 
+  private VisionSubsystem visionSubsystem;
 
   private double m_frontLeftEncoder = 0;
   private double m_rearLeftEncoder = 0;
@@ -63,14 +73,19 @@ public class DriveSubsystem extends SubsystemBase {
   private final CurrentLimitsConfigs frontLeftCurrentConfigs = new CurrentLimitsConfigs();
   private final CurrentLimitsConfigs rearLeftCurrentConfigs = new CurrentLimitsConfigs();
 
-  
+  Matrix <N3, N1> stateStdDevs = VecBuilder.fill(0.1, 0.1, 0.1);
+  Matrix<N3, N1> visionStdDevs = VecBuilder.fill(1, 1, 1);
 
   // Odometry class for tracking robot pose
-  MecanumDriveOdometry m_odometry =
-      new MecanumDriveOdometry(
+  MecanumDrivePoseEstimator m_poseEstimator =
+      new MecanumDrivePoseEstimator(
           DriveConstants.kDriveKinematics,
           m_gyro.getRotation2d(),
-          new MecanumDriveWheelPositions());
+          new MecanumDriveWheelPositions(),
+          new Pose2d(),
+          stateStdDevs,
+          visionStdDevs);
+
 
   /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
@@ -127,7 +142,7 @@ public class DriveSubsystem extends SubsystemBase {
     m_rearLeftEncoder = m_rearLeft.getPosition().getValue().magnitude();
     m_frontRightEncoder = m_frontRight.getPosition().getValue().magnitude();
     m_rearRightEncoder = m_rearRight.getPosition().getValue().magnitude();
-    m_odometry.update(m_gyro.getRotation2d(), getCurrentWheelDistances());
+    m_poseEstimator.update(m_gyro.getRotation2d(), getCurrentWheelDistances());
     faultChecks();
   }
 
@@ -178,8 +193,23 @@ public class DriveSubsystem extends SubsystemBase {
    *
    * @return The pose.
    */
+
   public Pose2d getPose() {
-    return m_odometry.getPoseMeters();
+    return m_poseEstimator.getEstimatedPosition();
+  }
+
+  public void addVisionMeasurement(Pose2d estimatedRobotPose2d, double timestampSeconds) {
+    estimatedRobotPose2d = visionSubsystem.getRobotPose();
+    timestampSeconds = visionSubsystem.getTimestamp();
+    
+    m_poseEstimator.addVisionMeasurement(estimatedRobotPose2d, timestampSeconds);
+  }
+
+public void addVisionMeasurement(Pose2d estimatedRobotPose2d, double timestampSeconds, Matrix<N3, N1> stdDevs) {
+    stdDevs = visionStdDevs;
+    estimatedRobotPose2d = visionSubsystem.getRobotPose();
+    timestampSeconds = visionSubsystem.getTimestamp();
+    m_poseEstimator.addVisionMeasurement(estimatedRobotPose2d, timestampSeconds, stdDevs);
   }
 
   /**
@@ -188,8 +218,9 @@ public class DriveSubsystem extends SubsystemBase {
    * @param pose The pose to which to set the odometry.
    */
   public void resetOdometry(Pose2d pose) {
-    m_odometry.resetPosition(m_gyro.getRotation2d(), getCurrentWheelDistances(), pose);
+    m_poseEstimator.resetPosition(m_gyro.getRotation2d(), getCurrentWheelDistances(), pose);
   }
+
 
   /**
    * Drives the robot at given x, y and theta speeds. Speeds range from [-1, 1] and the linear
