@@ -5,10 +5,15 @@ import edu.wpi.first.wpilibj2.command.Command;
 
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.AutoConstants;
+import frc.robot.Constants.DriveConstants;
+import frc.robot.DynamicSlewRateLimiter;
 import frc.robot.subsystems.DriveSubsystem;
+import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.AprilTags;
 import frc.robot.Constants;
@@ -18,24 +23,44 @@ public class DriveTargetCommand extends Command {
 
   private DriveSubsystem driveSubsystem;
   private VisionSubsystem visionSubsystem;
+  private ElevatorSubsystem elevatorSubsystem;
   private CommandXboxController driverController;
   private double speedscalar = 1;
   private double targetID = 0;
   private double forward =  0;
   private double strafe =  0;
   private double turn = 0;
-  private SlewRateLimiter x_rate = new SlewRateLimiter(AutoConstants.kMaxAccelerationMetersPerSecondSquared);
-  private SlewRateLimiter y_rate = new SlewRateLimiter(AutoConstants.kMaxAccelerationMetersPerSecondSquared);
-  private SlewRateLimiter theta_rate = new SlewRateLimiter(AutoConstants.kMaxAngularSpeedRadiansPerSecondSquared);
+
+  private double forwardPWM;
+  private double strafePWM;
+  private double forwardVoltage;
+  private double strafeVoltage;
+  private double forwardLinearSpeed;
+  private double strafeLinearSpeed;
+  private double forwardAdjustedLinearSpeed;
+  private double strafeAdjustedLinearSpeed;
+  private double forwardAdjustedVoltage;
+  private double strafeAdjustedVoltage;
+  private double forwardAdjustedPWM;
+  private double strafeAdjustedPWM;
+  private double linearAccelerationLimit;
+  private DynamicSlewRateLimiter x_rate = new DynamicSlewRateLimiter(DriveConstants.kMaxAcceleration);
+  private DynamicSlewRateLimiter y_rate = new DynamicSlewRateLimiter(DriveConstants.kMaxAcceleration);
+  private DynamicSlewRateLimiter theta_rate = new DynamicSlewRateLimiter(AutoConstants.kMaxAngularSpeedRadiansPerSecondSquared);
+  private InterpolatingDoubleTreeMap table = new InterpolatingDoubleTreeMap();
 
   // Sets the drivetarget constructor
   public DriveTargetCommand(
       DriveSubsystem driveSubsystem,
       VisionSubsystem visionSubsystem,
-      CommandXboxController driverController) {
+      CommandXboxController driverController,
+      ElevatorSubsystem elevatorSubsystem) {
     this.visionSubsystem = visionSubsystem;
     this.driveSubsystem = driveSubsystem;
     this.driverController = driverController;
+    this.elevatorSubsystem = elevatorSubsystem;
+    table.put(elevatorSubsystem.getMinHeight(), DriveConstants.kMaxAcceleration);
+    table.put(elevatorSubsystem.getMaxHeight(), DriveConstants.kMinAcceleration);
     addRequirements(visionSubsystem, driveSubsystem);
     setTargetID(AprilTags.None);
   }
@@ -47,10 +72,30 @@ public class DriveTargetCommand extends Command {
   // Executes the drivetarget command (periodic)
   @Override
   public void execute() {
-    forward =  x_rate.calculate(driverController.getLeftY() * speedscalar);
-    strafe =  y_rate.calculate(-driverController.getLeftX() * speedscalar);
-    turn = theta_rate.calculate(-0.3 * driverController.getRightX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
+    // forward =  x_rate.calculate(driverController.getLeftY() * speedscalar );
+    // strafe =  y_rate.calculate(-driverController.getLeftX() * speedscalar );
+    // turn = theta_rate.calculate(-0.3 * driverController.getRightX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
+    linearAccelerationLimit = table.get(elevatorSubsystem.getElevatorHeight());
 
+    forwardPWM = driverController.getLeftY() * speedscalar;
+    forwardVoltage = forwardPWM * DriveConstants.kDefaultBusVoltage;
+    forwardLinearSpeed = forwardVoltage / DriveConstants.kForwardVoltsPerMeterPerSecond;
+    forwardAdjustedLinearSpeed = x_rate.calculate(forwardLinearSpeed, linearAccelerationLimit);
+    forwardAdjustedVoltage = forwardAdjustedLinearSpeed * DriveConstants.kForwardVoltsPerMeterPerSecond;
+    forwardAdjustedPWM = forwardAdjustedVoltage / DriveConstants.kDefaultBusVoltage;
+
+    strafePWM = -driverController.getLeftX() * speedscalar;
+    strafeVoltage = strafePWM * DriveConstants.kDefaultBusVoltage;
+    strafeLinearSpeed = strafeVoltage / DriveConstants.kStrafeVoltsPerMeterPerSecond;
+    strafeAdjustedLinearSpeed = y_rate.calculate(strafeLinearSpeed, linearAccelerationLimit);
+    strafeAdjustedVoltage = strafeAdjustedLinearSpeed * DriveConstants.kStrafeVoltsPerMeterPerSecond;
+    strafeAdjustedPWM = strafeAdjustedVoltage / DriveConstants.kDefaultBusVoltage;
+    
+    forward = forwardAdjustedPWM;
+    strafe = strafeAdjustedPWM;
+    // forward =  (driverController.getLeftY() * speedscalar );
+    // strafe =  (-driverController.getLeftX() * speedscalar );
+    turn = theta_rate.calculate(-0.3 * driverController.getRightX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
     // Check if the camera is connected and displays the aiming and camera status
     if (visionSubsystem.isCameraConnected()) {
       SmartDashboard.putString("Aiming Status", "Camera Connected");
@@ -78,7 +123,7 @@ public class DriveTargetCommand extends Command {
     } else {
       SmartDashboard.putString("Aiming Status", "Camera Not Connected");
     }
-
+    DriveTargetCommandLogger();
     driveSubsystem.drive(forward, strafe, turn, false);
   }
 
@@ -91,5 +136,23 @@ public class DriveTargetCommand extends Command {
 
   public void setSpeedScalar(double val){
     speedscalar = val;
+  }
+
+  private void DriveTargetCommandLogger() {
+    SmartDashboard.putNumber("Linear Acceleration Limit", linearAccelerationLimit);
+    SmartDashboard.putNumber("Forward", forward);
+    SmartDashboard.putNumber("Forward PWM", forwardPWM);
+    SmartDashboard.putNumber("Forward Voltage", forwardVoltage);
+    SmartDashboard.putNumber("Forward Linear Speed", forwardLinearSpeed);
+    SmartDashboard.putNumber("Forward Adjusted Linear Speed", forwardAdjustedLinearSpeed);
+    SmartDashboard.putNumber("Forward Adjusted Voltage", forwardAdjustedVoltage);
+    SmartDashboard.putNumber("Forward Adjusted PWM", forwardAdjustedPWM);
+    SmartDashboard.putNumber("Strafe", strafe);
+    SmartDashboard.putNumber("Strafe PWM", strafePWM);
+    SmartDashboard.putNumber("Forward Voltage", strafeVoltage);
+    SmartDashboard.putNumber("strafe Linear Speed", strafeLinearSpeed);
+    SmartDashboard.putNumber("strafe Adjusted Linear Speed", strafeAdjustedLinearSpeed);
+    SmartDashboard.putNumber("strafe Adjusted Voltage", strafeAdjustedVoltage);
+    SmartDashboard.putNumber("strafe Adjusted PWM", strafeAdjustedPWM);
   }
 }

@@ -56,7 +56,7 @@ public class ElevatorSubsystem extends SubsystemBase{
   private SparkMaxConfig config2 = new SparkMaxConfig();
   RelativeEncoder encoder = motor1.getEncoder();
   private SparkClosedLoopController controller1 = motor1.getClosedLoopController();
-  TrapezoidProfile.Constraints constraints = new TrapezoidProfile.Constraints(500,30);
+  TrapezoidProfile.Constraints constraints = new TrapezoidProfile.Constraints(500,20);
   ProfiledPIDController pid = new ProfiledPIDController(PIDTunings.kElevatorKP, PIDTunings.kElevatorKI, PIDTunings.kElevatorKD, constraints);
   private DigitalInput l_top = new DigitalInput(DigitalInputPorts.kElevatorSubsystemUp);
   private DigitalInput l_bottom = new DigitalInput(DigitalInputPorts.kElevatorSubsystemDown);
