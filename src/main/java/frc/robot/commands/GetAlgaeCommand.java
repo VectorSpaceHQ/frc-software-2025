@@ -13,6 +13,7 @@ public class GetAlgaeCommand extends Command{
     private AlgaeSubsystem Algae = null;
     private ElevatorSubsystem Elevator = null;
     private String kReefID;
+    private Boolean clawsON;
 
     private Map<String , ElevatorSubsystem.Level> algaeMap = new HashMap<>();
     private Map<String, AprilTags> targetMap;
@@ -41,7 +42,10 @@ public class GetAlgaeCommand extends Command{
 
     @Override
     public void execute() {
-
+        clawsON = Elevator.atSetPoint() && Target.atTargetID();
+        if (clawsON) {
+            Algae.runClaws(0.1).withTimeout(3);
+        }
     }
 
     @Override

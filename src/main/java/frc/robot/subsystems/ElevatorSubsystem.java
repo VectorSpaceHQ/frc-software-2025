@@ -259,6 +259,9 @@ public double getMinHeight() {
   return (ElevatorSpecifics.kLinkageCount * Math.sqrt(Math.pow(ElevatorSpecifics.kScissorLength,2) - Math.pow(ElevatorSpecifics.kC, 2))) + ElevatorSpecifics.kInitialHeight;
 } 
 
+public Boolean atSetPoint() {
+  return pid.atSetpoint();
+}
   // public Command Homing() {
   //   return new FunctionalCommand(
   //     () -> {}, 
