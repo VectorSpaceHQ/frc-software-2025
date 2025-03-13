@@ -4,39 +4,21 @@
 
 package frc.robot;
 
-import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.trajectory.Trajectory;
-import edu.wpi.first.math.trajectory.TrajectoryConfig;
-import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
-import frc.robot.Constants.AutoConstants;
-import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
-import frc.robot.AprilTags;
-import frc.robot.FieldTagMap;
 import frc.robot.commands.DriveTargetCommand;
 import frc.robot.commands.GetAlgaeCommand;
 import frc.robot.subsystems.DriveSubsystem;
-import frc.robot.subsystems.CoralSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.ElevatorSubsystem.Level;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.AlgaeSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.MecanumControllerCommand;
-import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -68,7 +50,7 @@ public class RobotContainer {
   CommandXboxController m_operatorController = new CommandXboxController(OIConstants.kOperatorControllerPort);
 
   private final DriveTargetCommand aimTarget = new DriveTargetCommand(m_robotDrive, m_robotVision, m_driverController ,m_robotElevator);
-  private final GetAlgaeCommand getAlgae = new GetAlgaeCommand(aimTarget, m_robotAlgae, m_robotElevator);
+//   private final GetAlgaeCommand getAlgae = new GetAlgaeCommand(aimTarget, m_robotAlgae, m_robotElevator);
   
 
   SendableChooser<Command> m_chooser = new SendableChooser<>();
@@ -95,8 +77,6 @@ public class RobotContainer {
             fieldMap = fieldTagMap.getBlueMap();
         }
     }
-
-    // ComplexCMD = getAlgae.getAlgae(Level.L2, fieldMap.get("reef5"));
     
  }
 
