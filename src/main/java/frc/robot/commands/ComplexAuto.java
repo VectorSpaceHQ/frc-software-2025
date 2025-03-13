@@ -27,7 +27,7 @@ public class ComplexAuto extends Command {
     robotTarget.setTargetID(AutotagID);
     new SequentialCommandGroup(
       robotTarget.withTimeout(2), 
-      robotElevator.GoTo(Level.L2).withTimeout(2),
+      robotElevator.GoTo(Level.L3).withTimeout(2),
       robotAlgae.runClaws(.2).withTimeout(2)
     ).schedule();
   }
