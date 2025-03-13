@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.Constants.OIConstants;
+import frc.robot.commands.ComplexAuto;
 import frc.robot.commands.DriveTargetCommand;
 import frc.robot.commands.GetAlgaeCommand;
 import frc.robot.subsystems.DriveSubsystem;
@@ -65,6 +66,7 @@ public class RobotContainer {
 
     m_chooser.setDefaultOption("Simple Auto", getSimpleAutonomousCommand());
     m_chooser.addOption("Reef5", getReef5Command());
+    m_chooser.addOption("Complex Auto", getComplexReef5Command());
     SmartDashboard.putData(m_chooser);
 
     // Default to red
@@ -248,6 +250,10 @@ public class RobotContainer {
     return m_robotDrive.run(() -> m_robotDrive.drive(-0.2, 0, 0 ,false)).withTimeout(2);
   }
 
+  public Command getComplexReef5Command() {
+    return new ComplexAuto(m_robotAlgae, m_robotElevator, aimTarget, fieldMap.get("reef5"));
+  }
+  
   public Command getReef5Command() {
     // aimTarget.setTargetID(fieldMap.get("reef5"));
     return aimTarget;
