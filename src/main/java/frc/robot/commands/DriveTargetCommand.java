@@ -20,7 +20,7 @@ public class DriveTargetCommand extends Command {
   private VisionSubsystem visionSubsystem;
   private CommandXboxController driverController;
   private double speedscalar = 0.1;
-  private double targetID = 0;
+  private double targetID = 6;
 
   private SlewRateLimiter x_rate = new SlewRateLimiter(AutoConstants.kMaxAccelerationMetersPerSecondSquared);
   private SlewRateLimiter y_rate = new SlewRateLimiter(AutoConstants.kMaxAccelerationMetersPerSecondSquared);
