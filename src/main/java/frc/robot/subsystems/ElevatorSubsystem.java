@@ -226,13 +226,16 @@ public class ElevatorSubsystem extends SubsystemBase{
       // onInit: Initialize our values
       () -> {
         y_targetHeight = target.getLevel();
+        calculateTargetRotations(y_targetHeight);
+        pid.setGoal(r_targetRotations);
       },
       // onExecute: Update our calculations and drive the motor
       () -> {
         update();
         calculateTargetRotations(y_targetHeight);
-        PIDFeedback = pid.calculate(r_currentRotations, r_targetRotations);//rps
-        v_feedforward = pid.getSetpoint().velocity;//rps
+        PIDFeedback = pid.calculate(r_currentRotations);//rps
+        v_feedforward = pid.getSetpoint().velocity + 10;//rps
+      
         this.setRPM(60 * (v_feedforward + PIDFeedback));
       },
       // onEnd: Stop the motor

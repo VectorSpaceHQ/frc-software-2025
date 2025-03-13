@@ -67,7 +67,7 @@ public class RobotContainer {
   CommandXboxController m_driverController = new CommandXboxController(OIConstants.kDriverControllerPort);
   CommandXboxController m_operatorController = new CommandXboxController(OIConstants.kOperatorControllerPort);
 
-  private final DriveTargetCommand aimTarget = new DriveTargetCommand(m_robotDrive, m_robotVision, m_driverController);
+  private final DriveTargetCommand aimTarget = new DriveTargetCommand(m_robotDrive, m_robotVision, m_driverController ,m_robotElevator);
   private final GetAlgaeCommand getAlgae = new GetAlgaeCommand(aimTarget, m_robotAlgae, m_robotElevator);
   
 
@@ -110,7 +110,7 @@ public class RobotContainer {
 
     m_driverController
         .leftBumper()
-        .onTrue(new InstantCommand(() -> aimTarget.setSpeedScalar(0.5)))
+        .onTrue(new InstantCommand(() -> aimTarget.setSpeedScalar(0.3)))
         .onFalse(new InstantCommand(() -> aimTarget.setSpeedScalar(1)));
 
     // m_operatorController
@@ -152,8 +152,8 @@ public class RobotContainer {
 
     // Interrupts GoTo by Rescheduling Triggers
     m_operatorController
-        .rightTrigger(0.02)
-        .or(m_operatorController.leftTrigger(0.02))
+        .rightTrigger(0.1)
+        .or(m_operatorController.leftTrigger(0.1))
         .onTrue(m_robotElevator.ElevatorRaiseCommand(m_operatorController));
     
     // Manually Lower Elevator - Add Function in Feature Branch
