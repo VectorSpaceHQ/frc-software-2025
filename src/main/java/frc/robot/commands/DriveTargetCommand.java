@@ -151,4 +151,8 @@ public class DriveTargetCommand extends Command {
     SmartDashboard.putNumber("strafe Adjusted Voltage", strafeAdjustedVoltage);
     SmartDashboard.putNumber("strafe Adjusted PWM", strafeAdjustedPWM);
   }
+
+  public boolean atTargetID() {
+    return false;
+  }
 }
