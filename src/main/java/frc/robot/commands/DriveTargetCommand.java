@@ -14,7 +14,7 @@ import frc.robot.AprilTags;
 import frc.robot.Constants;
 
 public class DriveTargetCommand extends Command {
-  private final double visionThingy = 1.25;
+  private final double desiredRange = 1.25;
 
   private DriveSubsystem driveSubsystem;
   private VisionSubsystem visionSubsystem;
@@ -58,7 +58,7 @@ public class DriveTargetCommand extends Command {
       if (targetID != AprilTags.None.getId()) {
         // If the camera is connected, get the target yaw and drive towards it
         double targetYaw = visionSubsystem.getTargetYaw((int) targetID);
-        double targetRange = visionSubsystem.getTargetRange((int) targetID);
+        double tagRange = visionSubsystem.getTargetRange((int) targetID);
         SmartDashboard.putNumber("Target ID", targetID);
 
         // Check if the target yaw is valid and displays the aiming status and yaw
@@ -68,10 +68,10 @@ public class DriveTargetCommand extends Command {
           SmartDashboard.putNumber("Target Yaw", targetYaw);
         }
 
-        if (!Double.isNaN(targetRange)) {
-          forward = (visionThingy - targetRange * 0.01 * AutoConstants.kMaxSpeedMetersPerSecond);
+        if (!Double.isNaN(tagRange)) {
+          forward = ((tagRange - desiredRange) * 0.01 * AutoConstants.kMaxSpeedMetersPerSecond);
           SmartDashboard.putString("Aiming Status", "Driving Forward");
-          SmartDashboard.putNumber("Target Range", targetRange);
+          SmartDashboard.putNumber("Target Range", tagRange);
         }
 
       } else {
