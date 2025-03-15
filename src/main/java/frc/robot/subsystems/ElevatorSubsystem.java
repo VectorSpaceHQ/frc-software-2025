@@ -12,12 +12,9 @@ import frc.robot.Constants.CANIDs;
 import frc.robot.Constants.DigitalInputPorts;
 import frc.robot.Constants.ElevatorSpecifics;
 import frc.robot.Constants.PIDTunings;
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
@@ -226,13 +223,16 @@ public class ElevatorSubsystem extends SubsystemBase{
       // onInit: Initialize our values
       () -> {
         y_targetHeight = target.getLevel();
+        calculateTargetRotations(y_targetHeight);
+        pid.setGoal(r_targetRotations);
       },
       // onExecute: Update our calculations and drive the motor
       () -> {
         update();
         calculateTargetRotations(y_targetHeight);
-        PIDFeedback = pid.calculate(r_currentRotations, r_targetRotations);//rps
-        v_feedforward = pid.getSetpoint().velocity;//rps
+        PIDFeedback = pid.calculate(r_currentRotations);//rps
+        v_feedforward = pid.getSetpoint().velocity + 10;//rps
+      
         this.setRPM(60 * (v_feedforward + PIDFeedback));
       },
       // onEnd: Stop the motor

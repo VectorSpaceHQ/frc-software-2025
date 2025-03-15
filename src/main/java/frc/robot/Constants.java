@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.MecanumDriveKinematics;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
@@ -23,11 +22,6 @@ public final class Constants {
     public static final int kRearLeftMotorPort = 1;
     public static final int kFrontRightMotorPort = 2;
     public static final int kRearRightMotorPort = 3;
-
-    public static final int[] kFrontLeftEncoderPorts = new int[] {0, 1};
-    public static final int[] kRearLeftEncoderPorts = new int[] {2, 3};
-    public static final int[] kFrontRightEncoderPorts = new int[] {4, 5};
-    public static final int[] kRearRightEncoderPorts = new int[] {6, 7};
 
     public static final boolean kFrontLeftEncoderReversed = false;
     public static final boolean kRearLeftEncoderReversed = true;
@@ -53,18 +47,14 @@ public final class Constants {
         // Assumes the encoders are directly mounted on the wheel shafts
         (kWheelDiameterMeters * Math.PI) / kEncoderCPR;
 
-    // These are example values only - DO NOT USE THESE FOR YOUR OWN ROBOT!
-    // These characterization values MUST be determined either experimentally or theoretically
-    // for *your* robot's drive.
-    // The SysId tool provides a convenient method for obtaining these values for your robot.
-    public static final SimpleMotorFeedforward kFeedforward =
-        new SimpleMotorFeedforward(1, 0.8, 0.15);
-
-    // Example value only - as above, this must be tuned for your drive!
-    public static final double kPFrontLeftVel = 0.5;
-    public static final double kPRearLeftVel = 0.5;
-    public static final double kPFrontRightVel = 0.5;
-    public static final double kPRearRightVel = 0.5;
+    public static final double kKrakenVoltsPerRPM = 1 / 502.1;
+    public static final double kDefaultBusVoltage = 12;
+    public static final double kStrafeMultiplier = 1 / Math.sqrt(2);
+    public static final double kMetersPerRotation = kWheelDiameterMeters * Math.PI * 0.15;
+    public static final double kForwardVoltsPerMeterPerSecond = (kKrakenVoltsPerRPM * 60) / (kMetersPerRotation);
+    public static final double kStrafeVoltsPerMeterPerSecond = kForwardVoltsPerMeterPerSecond * kStrafeMultiplier;
+    public static final double kMaxAcceleration = 5.5; // Drive team traction limited accel
+    public static final double kMinAcceleration = 3.5; // To prevent tipping when scissor lift extended
   }
 
   public static final class OIConstants {
@@ -105,8 +95,8 @@ public final class Constants {
   public static final class DigitalInputPorts {
     public static final int kAlgaeSubsystemRight = 2;
     public static final int kAlgaeSubsystemLeft = 3;
-    public static final int kElevatorSubsystemUp = 0;
-    public static final int kElevatorSubsystemDown = 1;
+    public static final int kElevatorSubsystemUp = 1;
+    public static final int kElevatorSubsystemDown = 0;
   }
 
   public static final class AutoConstants {

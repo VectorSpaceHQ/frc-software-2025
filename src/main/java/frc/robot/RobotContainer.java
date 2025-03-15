@@ -4,39 +4,22 @@
 
 package frc.robot;
 
-import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.trajectory.Trajectory;
-import edu.wpi.first.math.trajectory.TrajectoryConfig;
-import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
-import frc.robot.Constants.AutoConstants;
-import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
-import frc.robot.AprilTags;
-import frc.robot.FieldTagMap;
+import frc.robot.commands.ComplexAuto;
 import frc.robot.commands.DriveTargetCommand;
 import frc.robot.commands.GetAlgaeCommand;
 import frc.robot.subsystems.DriveSubsystem;
-import frc.robot.subsystems.CoralSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.ElevatorSubsystem.Level;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.AlgaeSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.MecanumControllerCommand;
-import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -67,8 +50,8 @@ public class RobotContainer {
   CommandXboxController m_driverController = new CommandXboxController(OIConstants.kDriverControllerPort);
   CommandXboxController m_operatorController = new CommandXboxController(OIConstants.kOperatorControllerPort);
 
-  private final DriveTargetCommand aimTarget = new DriveTargetCommand(m_robotDrive, m_robotVision, m_driverController);
-  private final GetAlgaeCommand getAlgae = new GetAlgaeCommand(aimTarget, m_robotAlgae, m_robotElevator);
+  private final DriveTargetCommand aimTarget = new DriveTargetCommand(m_robotDrive, m_robotVision, m_driverController ,m_robotElevator);
+//   private final GetAlgaeCommand getAlgae = new GetAlgaeCommand(aimTarget, m_robotAlgae, m_robotElevator);
   
 
   SendableChooser<Command> m_chooser = new SendableChooser<>();
@@ -83,6 +66,7 @@ public class RobotContainer {
 
     m_chooser.setDefaultOption("Simple Auto", getSimpleAutonomousCommand());
     m_chooser.addOption("Reef5", getReef5Command());
+    m_chooser.addOption("Complex Auto", getComplexReef5Command());
     SmartDashboard.putData(m_chooser);
 
     // Default to red
@@ -95,8 +79,6 @@ public class RobotContainer {
             fieldMap = fieldTagMap.getBlueMap();
         }
     }
-
-    // ComplexCMD = getAlgae.getAlgae(Level.L2, fieldMap.get("reef5"));
     
  }
 
@@ -110,7 +92,7 @@ public class RobotContainer {
 
     m_driverController
         .leftBumper()
-        .onTrue(new InstantCommand(() -> aimTarget.setSpeedScalar(0.5)))
+        .onTrue(new InstantCommand(() -> aimTarget.setSpeedScalar(0.3)))
         .onFalse(new InstantCommand(() -> aimTarget.setSpeedScalar(1)));
 
     // m_operatorController
@@ -152,8 +134,8 @@ public class RobotContainer {
 
     // Interrupts GoTo by Rescheduling Triggers
     m_operatorController
-        .rightTrigger(0.02)
-        .or(m_operatorController.leftTrigger(0.02))
+        .rightTrigger(0.1)
+        .or(m_operatorController.leftTrigger(0.1))
         .onTrue(m_robotElevator.ElevatorRaiseCommand(m_operatorController));
     
     // Manually Lower Elevator - Add Function in Feature Branch
@@ -268,6 +250,10 @@ public class RobotContainer {
     return m_robotDrive.run(() -> m_robotDrive.drive(-0.2, 0, 0 ,false)).withTimeout(2);
   }
 
+  public Command getComplexReef5Command() {
+    return new ComplexAuto(m_robotAlgae, m_robotElevator, aimTarget, fieldMap.get("reef5"));
+  }
+  
   public Command getReef5Command() {
     // aimTarget.setTargetID(fieldMap.get("reef5"));
     return aimTarget;

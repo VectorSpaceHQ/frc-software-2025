@@ -16,7 +16,6 @@ import edu.wpi.first.math.kinematics.MecanumDriveWheelPositions;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds;
 import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.DataLogManager;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.CANIDs;
@@ -86,6 +85,9 @@ public class DriveSubsystem extends SubsystemBase {
           stateStdDevs,
           visionStdDevs);
 
+
+  MecanumDrivePoseEstimator m_mecanumDrivePoseEstimator =
+      new MecanumDrivePoseEstimator(DriveConstants.kDriveKinematics, m_gyro.getRotation2d(), getCurrentWheelDistances(), getPose());
 
   /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
