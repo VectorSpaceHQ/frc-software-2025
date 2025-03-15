@@ -32,7 +32,7 @@ import com.studica.frc.AHRS;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 // Temporary: for vision measurements
-import frc.robot.subsystems.VisionSubsystem;
+// import frc.robot.subsystems.VisionSubsystem;
 
 
 
@@ -44,7 +44,7 @@ public class DriveSubsystem extends SubsystemBase {
   private final TalonFX m_frontRight = new TalonFX(CANIDs.kDriveSubsystemFrontRight);
   private final TalonFX m_rearRight = new TalonFX(CANIDs.kDriveSubsystemRearRight);
 
-  private VisionSubsystem visionSubsystem;
+  // private VisionSubsystem visionSubsystem;
 
   private double m_frontLeftEncoder = 0;
   private double m_rearLeftEncoder = 0;
@@ -72,8 +72,8 @@ public class DriveSubsystem extends SubsystemBase {
   private final CurrentLimitsConfigs frontLeftCurrentConfigs = new CurrentLimitsConfigs();
   private final CurrentLimitsConfigs rearLeftCurrentConfigs = new CurrentLimitsConfigs();
 
-  Matrix <N3, N1> stateStdDevs = VecBuilder.fill(0.1, 0.1, 0.1);
-  Matrix<N3, N1> visionStdDevs = VecBuilder.fill(1, 1, 1);
+  // Matrix <N3, N1> stateStdDevs = VecBuilder.fill(0.1, 0.1, 0.1);
+  // Matrix<N3, N1> visionStdDevs = VecBuilder.fill(1, 1, 1);
 
   // Odometry class for tracking robot pose
   MecanumDrivePoseEstimator m_poseEstimator =
@@ -81,9 +81,10 @@ public class DriveSubsystem extends SubsystemBase {
           DriveConstants.kDriveKinematics,
           m_gyro.getRotation2d(),
           new MecanumDriveWheelPositions(),
-          new Pose2d(),
-          stateStdDevs,
-          visionStdDevs);
+          new Pose2d()
+          // stateStdDevs,
+          // visionStdDevs
+          );
 
 
   MecanumDrivePoseEstimator m_mecanumDrivePoseEstimator =
@@ -200,19 +201,19 @@ public class DriveSubsystem extends SubsystemBase {
     return m_poseEstimator.getEstimatedPosition();
   }
 
-  public void addVisionMeasurement(Pose2d estimatedRobotPose2d, double timestampSeconds) {
-    estimatedRobotPose2d = visionSubsystem.getRobotPose();
-    timestampSeconds = visionSubsystem.getTimestamp();
+//   public void addVisionMeasurement(Pose2d estimatedRobotPose2d, double timestampSeconds) {
+//     estimatedRobotPose2d = visionSubsystem.getRobotPose();
+//     timestampSeconds = visionSubsystem.getTimestamp();
     
-    m_poseEstimator.addVisionMeasurement(estimatedRobotPose2d, timestampSeconds);
-  }
+//     m_poseEstimator.addVisionMeasurement(estimatedRobotPose2d, timestampSeconds);
+//   }
 
-public void addVisionMeasurement(Pose2d estimatedRobotPose2d, double timestampSeconds, Matrix<N3, N1> stdDevs) {
-    stdDevs = visionStdDevs;
-    estimatedRobotPose2d = visionSubsystem.getRobotPose();
-    timestampSeconds = visionSubsystem.getTimestamp();
-    m_poseEstimator.addVisionMeasurement(estimatedRobotPose2d, timestampSeconds, stdDevs);
-  }
+// public void addVisionMeasurement(Pose2d estimatedRobotPose2d, double timestampSeconds, Matrix<N3, N1> stdDevs) {
+//     stdDevs = visionStdDevs;
+//     estimatedRobotPose2d = visionSubsystem.getRobotPose();
+//     timestampSeconds = visionSubsystem.getTimestamp();
+//     m_poseEstimator.addVisionMeasurement(estimatedRobotPose2d, timestampSeconds, stdDevs);
+//   }
 
   /**
    * Resets the odometry to the specified pose.
