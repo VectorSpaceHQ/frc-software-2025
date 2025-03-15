@@ -4,6 +4,7 @@ package frc.robot.commands;
 import edu.wpi.first.wpilibj2.command.Command;
 
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.AutoConstants;
@@ -42,13 +43,18 @@ public class DriveTargetCommand extends Command {
   private DynamicSlewRateLimiter theta_rate = new DynamicSlewRateLimiter(AutoConstants.kMaxAngularSpeedRadiansPerSecondSquared);
   private InterpolatingDoubleTreeMap table = new InterpolatingDoubleTreeMap();
 
+
   private double forward = 0.0;
   private double strafe = 0.0;
   private double turn = 0.0;
   private double targetID = AprilTags.None.getId(); // Initialize targetID to None
+  private PIDController forwardPIDController = new PIDController(1, 0, 0);
+  private PIDController strafePIDController = new PIDController(1, 0, 0);
+  private PIDController turnPIDController = new PIDController(1, 0, 0);
 
   private final double desiredYaw = 0.0;
-  private final double desiredRange = 0.75;
+  private final double desiredYOffset = 0.3;
+  private final double desiredXOffset = 0.0;
   private final double visionConstantAngle = 0.01;
   private final double visionConstantRange = 0.01;
 
@@ -79,21 +85,8 @@ public class DriveTargetCommand extends Command {
     linearAccelerationLimit = table.get(elevatorSubsystem.getElevatorHeight());
 
     forwardPWM = driverController.getLeftY() * speedscalar;
-    forwardVoltage = forwardPWM * DriveConstants.kDefaultBusVoltage;
-    forwardLinearSpeed = forwardVoltage / DriveConstants.kForwardVoltsPerMeterPerSecond;
-    forwardAdjustedLinearSpeed = x_rate.calculate(forwardLinearSpeed, linearAccelerationLimit);
-    forwardAdjustedVoltage = forwardAdjustedLinearSpeed * DriveConstants.kForwardVoltsPerMeterPerSecond;
-    forwardAdjustedPWM = forwardAdjustedVoltage / DriveConstants.kDefaultBusVoltage;
+    strafePWM = driverController.getLeftX() * speedscalar;
 
-    strafePWM = -driverController.getLeftX() * speedscalar;
-    strafeVoltage = strafePWM * DriveConstants.kDefaultBusVoltage;
-    strafeLinearSpeed = strafeVoltage / DriveConstants.kStrafeVoltsPerMeterPerSecond;
-    strafeAdjustedLinearSpeed = y_rate.calculate(strafeLinearSpeed, linearAccelerationLimit);
-    strafeAdjustedVoltage = strafeAdjustedLinearSpeed * DriveConstants.kStrafeVoltsPerMeterPerSecond;
-    strafeAdjustedPWM = strafeAdjustedVoltage / DriveConstants.kDefaultBusVoltage;
-    
-    forward = forwardAdjustedPWM;
-    strafe = strafeAdjustedPWM;
     // forward =  (driverController.getLeftY() * speedscalar );
     // strafe =  (-driverController.getLeftX() * speedscalar );
     turn = theta_rate.calculate(-0.3 * driverController.getRightX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
@@ -102,7 +95,8 @@ public class DriveTargetCommand extends Command {
       SmartDashboard.putString("Aiming Status", "Camera Connected");
 
       // Check if target has been specified
-      if (targetID != AprilTags.None.getId()) {
+      //&& (visionSubsystem.isTargetVisible(targetID))
+      if ((targetID != AprilTags.None.getId()) && (visionSubsystem.isTargetVisible(targetID))) {
         // If the camera is connected, get the target yaw and drive towards it
         double targetYaw = visionSubsystem.getTargetYaw((int) targetID);
         double tagRange = visionSubsystem.getTargetRange((int) targetID);
@@ -110,7 +104,8 @@ public class DriveTargetCommand extends Command {
 
         // Check if the target yaw is valid and displays the aiming status and yaw
         if (!Double.isNaN(targetYaw)) {
-          turn = ((desiredYaw - targetYaw) * visionConstantAngle * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
+          // turn = ((desiredYaw - targetYaw) * visionConstantAngle * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
+          turn = SigmoidAdjustment(turnPIDController.calculate(targetYaw, desiredYaw));
           SmartDashboard.putString("Aiming Status", "Aiming");
           SmartDashboard.putNumber("Target Yaw", targetYaw);
           
@@ -120,7 +115,8 @@ public class DriveTargetCommand extends Command {
 
         // Check if the target range is valid and update forward speed
         if (!Double.isNaN(tagRange)) {
-          forward = ((tagRange - desiredRange) * visionConstantRange * AutoConstants.kMaxSpeedMetersPerSecond);
+          forwardPWM = SigmoidAdjustment(forwardPIDController.calculate(tagRange * Math.sin(Math.toRadians(targetYaw)), desiredYOffset));
+          strafePWM = SigmoidAdjustment(strafePIDController.calculate(tagRange * Math.cos(Math.toRadians(targetYaw)), desiredXOffset));
           SmartDashboard.putString("Aiming Status", "Driving Forward");
           SmartDashboard.putNumber("Target Range", tagRange);
 
@@ -135,16 +131,25 @@ public class DriveTargetCommand extends Command {
     } else {
       SmartDashboard.putString("Aiming Status", "Camera Not Connected");
     }
-    DriveTargetCommandLogger();
-    // If no valid target ID, use driver inputs
-    if (targetID == AprilTags.None.getId()) {
-      forward = x_rate.calculate(driverController.getLeftY() * 0.5);
-      strafe = y_rate.calculate(-driverController.getLeftX() * speedscalar);
-      turn = theta_rate.calculate(-0.3 * driverController.getRightX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
-    }
 
+    forwardVoltage = forwardPWM * DriveConstants.kDefaultBusVoltage;
+    forwardLinearSpeed = forwardVoltage / DriveConstants.kForwardVoltsPerMeterPerSecond;
+    forwardAdjustedLinearSpeed = x_rate.calculate(forwardLinearSpeed, linearAccelerationLimit);
+    forwardAdjustedVoltage = forwardAdjustedLinearSpeed * DriveConstants.kForwardVoltsPerMeterPerSecond;
+    forwardAdjustedPWM = forwardAdjustedVoltage / DriveConstants.kDefaultBusVoltage;
+
+    strafeVoltage = strafePWM * DriveConstants.kDefaultBusVoltage;
+    strafeLinearSpeed = strafeVoltage / DriveConstants.kStrafeVoltsPerMeterPerSecond;
+    strafeAdjustedLinearSpeed = y_rate.calculate(strafeLinearSpeed, linearAccelerationLimit);
+    strafeAdjustedVoltage = strafeAdjustedLinearSpeed * DriveConstants.kStrafeVoltsPerMeterPerSecond;
+    strafeAdjustedPWM = strafeAdjustedVoltage / DriveConstants.kDefaultBusVoltage;
+
+    forward = forwardAdjustedPWM;
+    strafe = strafeAdjustedPWM;
+
+    DriveTargetCommandLogger();
     // Drive robot with values calculated above
-    driveSubsystem.drive(forward, strafe, turn, true);
+    driveSubsystem.drive(forward, -strafe, turn, false);
   }
 
   // Ends the drivetarget command
@@ -152,6 +157,11 @@ public class DriveTargetCommand extends Command {
   public void end(boolean interrupted) {
     driveSubsystem.drive(0, 0, 0, false);
     SmartDashboard.putString("Aiming Status", "Command Ended");
+  }
+
+  // Logistic Regression of a value to a value between [-1,1]
+  public double SigmoidAdjustment(double value) {
+    return value / (1 + Math.abs(value));
   }
 
   public void setSpeedScalar(double val) {

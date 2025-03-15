@@ -40,7 +40,7 @@ public class VisionSubsystem extends SubsystemBase {
   public static final PhotonPoseEstimator.PoseStrategy MULTI_TAG_PNP_ON_PROCESSOR = PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR;
 
   // Constants for the camera name and field layout path
-  private static final String camera_name = "Arducam_OV9281_USB_Camera";
+  private static final String camera_name = "Front_Camera_Robot";
   private String field_layout_path = new File(Filesystem.getDeployDirectory(), "2025-reefscape.json")
       .getAbsolutePath();
 
@@ -163,6 +163,25 @@ public class VisionSubsystem extends SubsystemBase {
       }
     }
     return returnYaw;
+  }
+
+  public boolean isTargetVisible(double id) {
+    boolean result = false;
+    var results = camera.getAllUnreadResults();
+
+    if (!results.isEmpty()) {
+      var latestResult = results.get(results.size() - 1);
+
+      if (latestResult.hasTargets()) {
+        for (var target : latestResult.getTargets()) {
+          if (target.getFiducialId() == id) {
+            result = true;
+            break;
+          }
+        }
+      }
+    }
+    return result;
   }
 
   // Command to get the target range
