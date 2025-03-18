@@ -31,8 +31,7 @@ public class ElevatorSubsystem extends SubsystemBase{
     Bottom(ElevatorSpecifics.kInitialHeight),
     L2(31.875),
     L3(47.65),
-    // L4(72.), //not possible atm because of linkage limitations
-  
+    L4(72.), 
     Inspection(36)
     ;
 
@@ -156,6 +155,10 @@ public class ElevatorSubsystem extends SubsystemBase{
     {
       speed = Math.min(speed, 0);
     }
+    // software limit
+    if (r_currentRotations < 1) {
+      speed = Math.max(0, speed);
+    }
 
     motor1.set(speed);
 
@@ -177,6 +180,10 @@ public class ElevatorSubsystem extends SubsystemBase{
     {
       speed = Math.min(speed, 0);
     }
+    if (r_currentRotations < 1) {
+      speed = Math.max(0, speed);
+    }
+    
     controller1.setReference(speed, ControlType.kVelocity, ClosedLoopSlot.kSlot0, speed>0?1:0);
 
     scissor_speed = speed;

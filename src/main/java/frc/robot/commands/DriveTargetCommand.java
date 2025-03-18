@@ -21,11 +21,13 @@ public class DriveTargetCommand extends Command {
   private VisionSubsystem visionSubsystem;
   private ElevatorSubsystem elevatorSubsystem;
   private CommandXboxController driverController;
+
   private double speedscalar = 1;
   private double targetID = 0;
   private double forward =  0;
   private double strafe =  0;
   private double turn = 0;
+  private boolean autoDriveFeatureToggle = false;
 
   private double forwardPWM;
   private double strafePWM;
@@ -91,9 +93,9 @@ public class DriveTargetCommand extends Command {
     strafe = strafeAdjustedPWM;
     // forward =  (driverController.getLeftY() * speedscalar );
     // strafe =  (-driverController.getLeftX() * speedscalar );
-    turn = theta_rate.calculate(-0.3 * driverController.getRightX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
+    turn = theta_rate.calculate(-0.3 * driverController.getRightX());
     // Check if the camera is connected and displays the aiming and camera status
-    if (visionSubsystem.isCameraConnected()) {
+    if (visionSubsystem.isCameraConnected() && autoDriveFeatureToggle) {
       SmartDashboard.putString("Aiming Status", "Camera Connected");
 
       // Check if target has been specified

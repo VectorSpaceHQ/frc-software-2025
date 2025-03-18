@@ -53,8 +53,8 @@ public final class Constants {
     public static final double kMetersPerRotation = kWheelDiameterMeters * Math.PI * 0.15;
     public static final double kForwardVoltsPerMeterPerSecond = (kKrakenVoltsPerRPM * 60) / (kMetersPerRotation);
     public static final double kStrafeVoltsPerMeterPerSecond = kForwardVoltsPerMeterPerSecond * kStrafeMultiplier;
-    public static final double kMaxAcceleration = 5.5; // Drive team traction limited accel
-    public static final double kMinAcceleration = 3.5; // To prevent tipping when scissor lift extended
+    public static final double kMaxAcceleration = 5.5; // Drive team traction limited accel should be 5.5
+    public static final double kMinAcceleration = 2.5; // To prevent tipping when scissor lift extended should be 3.5
   }
 
   public static final class OIConstants {
@@ -87,7 +87,7 @@ public final class Constants {
     public static final double kScrewPitch = 10; // threads / inch -- of lead screw
     // public static final double kInitialHeight = 21.78; // inches -- from bottom to platform
     public static final double kInitialHeight = 11.75; // inches -- from bottom to platform ignoring scissor
-    public static final double kLinkageCount = 2; // Linkage Counts per Side
+    public static final double kLinkageCount = 4; // Linkage Counts per Side
     public static final double kPlatformToInputHeight = 14.26; // Distance between Platform and Coral Input
     public static final double kC = 23.4; // fixed length between farthest linkage connection and point of lead screw rotation
   }
