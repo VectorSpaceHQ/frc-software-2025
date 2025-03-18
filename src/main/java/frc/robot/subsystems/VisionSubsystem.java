@@ -40,7 +40,7 @@ public class VisionSubsystem extends SubsystemBase {
   public static final PhotonPoseEstimator.PoseStrategy MULTI_TAG_PNP_ON_PROCESSOR = PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR;
 
   // Constants for the camera name and field layout path
-  private static final String camera_name = "Front_Camera_Robot";
+  private static final String camera_name = "Front_Camera_Robot2";
   private String field_layout_path = new File(Filesystem.getDeployDirectory(), "2025-reefscape.json")
       .getAbsolutePath();
 
@@ -48,6 +48,7 @@ public class VisionSubsystem extends SubsystemBase {
   private final PhotonCamera camera;
   private AprilTagFieldLayout layout;
   private PhotonPoseEstimator poseEstimator;
+  private List<PhotonPipelineResult> cameraResults;
 
   // Transformation3d objects for the camera and robot
   private static final Transform3d cameraToRobot = new Transform3d(
@@ -147,7 +148,7 @@ public class VisionSubsystem extends SubsystemBase {
 
   // Command to get the target yaw
   public double getTargetYaw(int id) {
-    var results = camera.getAllUnreadResults();
+    var results = cameraResults;
     double returnYaw = 0.0;
 
     if (!results.isEmpty()) {
@@ -167,7 +168,7 @@ public class VisionSubsystem extends SubsystemBase {
 
   public boolean isTargetVisible(double id) {
     boolean result = false;
-    var results = camera.getAllUnreadResults();
+    var results = cameraResults;
 
     if (!results.isEmpty()) {
       var latestResult = results.get(results.size() - 1);
@@ -186,7 +187,7 @@ public class VisionSubsystem extends SubsystemBase {
 
   // Command to get the target range
   public double getTargetRange(int id) {
-    var results = camera.getAllUnreadResults();
+    var results = cameraResults;
     double returnRange = 0.0;
 
     if (!results.isEmpty()) {
@@ -213,7 +214,7 @@ public class VisionSubsystem extends SubsystemBase {
 
   // Gets the latest pose and timestamp
   private Optional<EstimatedRobotPose> getLatestEstimatedRobotPose() {
-    var results = camera.getAllUnreadResults();
+    var results = cameraResults;
     var latestResult = results.get(results.size() - 1);
     for (var result : results) {
 
@@ -263,11 +264,11 @@ public class VisionSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-
+    
     // This method will be called once per scheduler run
     if (cameraConnected) {
-      var results = camera.getAllUnreadResults();
-      for (var result : results) {
+      cameraResults = camera.getAllUnreadResults();
+      for (var result : cameraResults) {
         if (result.hasTargets()) {
 
         

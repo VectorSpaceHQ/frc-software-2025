@@ -47,9 +47,11 @@ public class DriveTargetCommand extends Command {
   private double forward = 0.0;
   private double strafe = 0.0;
   private double turn = 0.0;
+  private double targetYaw = 0;
+  private double tagRange = 0;
   private double targetID = AprilTags.None.getId(); // Initialize targetID to None
-  private PIDController forwardPIDController = new PIDController(1, 0, 0);
-  private PIDController strafePIDController = new PIDController(1, 0, 0);
+  private PIDController forwardPIDController = new PIDController(0.01, 0, 0);
+  private PIDController strafePIDController = new PIDController(0.01, 0, 0);
   private PIDController turnPIDController = new PIDController(1, 0, 0);
 
   private final double desiredYaw = 0.0;
@@ -70,6 +72,8 @@ public class DriveTargetCommand extends Command {
     table.put(elevatorSubsystem.getMaxHeight(), DriveConstants.kMinAcceleration);
     addRequirements(visionSubsystem, driveSubsystem);
     setTargetID(AprilTags.BlueProcessor);
+    forwardPIDController.setTolerance(0.2);
+    strafePIDController.setTolerance(0.2);
   }
 
   public void setTargetID(AprilTags tagId) {
@@ -98,8 +102,8 @@ public class DriveTargetCommand extends Command {
       //&& (visionSubsystem.isTargetVisible(targetID))
       if ((targetID != AprilTags.None.getId()) && (visionSubsystem.isTargetVisible(targetID))) {
         // If the camera is connected, get the target yaw and drive towards it
-        double targetYaw = visionSubsystem.getTargetYaw((int) targetID);
-        double tagRange = visionSubsystem.getTargetRange((int) targetID);
+         targetYaw = visionSubsystem.getTargetYaw((int) targetID);
+         tagRange = visionSubsystem.getTargetRange((int) targetID);
         SmartDashboard.putNumber("Target ID", targetID);
 
         // Check if the target yaw is valid and displays the aiming status and yaw
@@ -115,8 +119,8 @@ public class DriveTargetCommand extends Command {
 
         // Check if the target range is valid and update forward speed
         if (!Double.isNaN(tagRange)) {
-          forwardPWM = SigmoidAdjustment(forwardPIDController.calculate(tagRange * Math.sin(Math.toRadians(targetYaw)), desiredYOffset));
-          strafePWM = SigmoidAdjustment(strafePIDController.calculate(tagRange * Math.cos(Math.toRadians(targetYaw)), desiredXOffset));
+          forwardPWM = SigmoidAdjustment(forwardPIDController.calculate(tagRange * Math.cos(Math.toRadians(targetYaw)), desiredYOffset));
+          strafePWM = SigmoidAdjustment(strafePIDController.calculate(tagRange * Math.sin(Math.toRadians(targetYaw)), desiredXOffset));
           SmartDashboard.putString("Aiming Status", "Driving Forward");
           SmartDashboard.putNumber("Target Range", tagRange);
 
@@ -161,7 +165,7 @@ public class DriveTargetCommand extends Command {
 
   // Logistic Regression of a value to a value between [-1,1]
   public double SigmoidAdjustment(double value) {
-    return value / (1 + Math.abs(value));
+    return (value) / (1 + Math.abs(value));
   }
 
   public void setSpeedScalar(double val) {
