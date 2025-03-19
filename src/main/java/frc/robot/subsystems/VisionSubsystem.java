@@ -18,7 +18,6 @@ import org.photonvision.targeting.PhotonPipelineResult;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
 import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -30,6 +29,7 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.networktables.GenericEntry;
@@ -40,7 +40,7 @@ public class VisionSubsystem extends SubsystemBase {
   public static final PhotonPoseEstimator.PoseStrategy MULTI_TAG_PNP_ON_PROCESSOR = PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR;
 
   // Constants for the camera name and field layout path
-  private static final String camera_name = "Front_Camera_Robot2";
+  private static final String camera_name = "Front_Camera_Robot";
   private String field_layout_path = new File(Filesystem.getDeployDirectory(), "2025-reefscape.json")
       .getAbsolutePath();
 
@@ -48,7 +48,8 @@ public class VisionSubsystem extends SubsystemBase {
   private final PhotonCamera camera;
   private AprilTagFieldLayout layout;
   private PhotonPoseEstimator poseEstimator;
-  private List<PhotonPipelineResult> cameraResults;
+
+  private final double maxAmbiguity = 0.2;
 
   // Transformation3d objects for the camera and robot
   private static final Transform3d cameraToRobot = new Transform3d(
@@ -59,7 +60,15 @@ public class VisionSubsystem extends SubsystemBase {
   private Transform3d robotToCamera = cameraToRobot.inverse();
 
   // Status of the camera
-  private boolean cameraConnected = false;
+  private boolean cameraConnected;
+
+  // Stored estimated pose
+  private Optional<EstimatedRobotPose> storedEstimatedPose = Optional.empty();
+
+  // Getting All Unread Results
+  private List<PhotonPipelineResult> allUnreadResults = new ArrayList<>();
+
+
 
   // Shuffleboard entries
   private ShuffleboardTab visionTab;
@@ -72,9 +81,6 @@ public class VisionSubsystem extends SubsystemBase {
   private GenericEntry xEntry;
   private GenericEntry yEntry;
   private GenericEntry zEntry;
-  private GenericEntry poseEntry;
-  private GenericEntry pose3dEntry;
-  private GenericEntry pose2dEntry;
 
   // Vision Subsystem constructor
   public VisionSubsystem() {
@@ -82,12 +88,14 @@ public class VisionSubsystem extends SubsystemBase {
     camera = new PhotonCamera(camera_name);
 
     initializeSubsystem();
+
     initializeShuffleboard();
 
     try {
       initializeAprilTagFieldLayout();
     } catch (IOException e) {
       System.err.println("Error initializing AprilTag field layout: " + e.getMessage());
+      cameraConnected = false;
     }
   }
 
@@ -143,20 +151,21 @@ public class VisionSubsystem extends SubsystemBase {
     xEntry = visionTab.add("X", 0.0).getEntry();
     yEntry = visionTab.add("Y", 0.0).getEntry();
     zEntry = visionTab.add("Z", 0.0).getEntry();
-    poseEntry = visionTab.add("Pose", 0.0).getEntry();
   }
 
   // Command to get the target yaw
-  public double getTargetYaw(int id) {
-    var results = cameraResults;
+  public double getTargetYaw(double id) {
+
     double returnYaw = 0.0;
 
-    if (!results.isEmpty()) {
-      var latestResult = results.get(results.size() - 1);
+    if (!allUnreadResults.isEmpty() && isTargetVisible(id)) {
+      var latestResult = allUnreadResults.get(allUnreadResults.size() - 1);
 
       if (latestResult.hasTargets()) {
         for (var target : latestResult.getTargets()) {
-          if (target.getFiducialId() == id) {
+          double tagID = target.getFiducialId();
+
+          if (tagID == id) {
             returnYaw = target.getYaw();
             break;
           }
@@ -166,16 +175,17 @@ public class VisionSubsystem extends SubsystemBase {
     return returnYaw;
   }
 
+  // Basically useless (repetitive)
   public boolean isTargetVisible(double id) {
     boolean result = false;
-    var results = cameraResults;
 
-    if (!results.isEmpty()) {
-      var latestResult = results.get(results.size() - 1);
+    if (!allUnreadResults.isEmpty()) {
+      var latestResult = allUnreadResults.get(allUnreadResults.size() - 1);
 
       if (latestResult.hasTargets()) {
         for (var target : latestResult.getTargets()) {
-          if (target.getFiducialId() == id) {
+          double tagID = target.getFiducialId();
+          if (tagID == id) {
             result = true;
             break;
           }
@@ -186,62 +196,71 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   // Command to get the target range
-  public double getTargetRange(int id) {
-    var results = cameraResults;
-    double returnRange = 0.0;
+  public double getTargetRange(double id) {
 
-    if (!results.isEmpty()) {
-      var latestResult = results.get(results.size() - 1);
-
-      if (latestResult.hasTargets()) {
+    double returnRange = -1.0;
+    if (!allUnreadResults.isEmpty() && isTargetVisible(id)) {
+      var latestResult = allUnreadResults.get(allUnreadResults.size() - 1);
 
         for (var target : latestResult.getTargets()) {
+          double tagID = target.getFiducialId();
 
-          if (target.getFiducialId() == id) {
+          if (id == tagID) {
             var tagPose = layout.getTagPose(target.getFiducialId());
-            returnRange = PhotonUtils.calculateDistanceToTargetMeters(0.228, // Measured with a tape measure or in CAD.
-                tagPose.get().getTranslation().getZ(),
-                Units.degreesToRadians(0), // Measured with a protractor, or in CAD.
-                Units.degreesToRadians(target.getPitch()));
+            if (tagPose.isPresent()) {
+              returnRange = PhotonUtils.calculateDistanceToTargetMeters(0.228, // Measured with a tape measure or in
+                                                                               // CAD.
+                  tagPose.get().getTranslation().getZ(),
+                  Units.degreesToRadians(0), // Measured with a protractor, or in CAD.
+                  Units.degreesToRadians(target.getPitch()));
 
-            break;
+              break;
+            }
           }
         }
       }
-    }
     return returnRange;
   }
 
-  // Gets the latest pose and timestamp
-  private Optional<EstimatedRobotPose> getLatestEstimatedRobotPose() {
-    var results = cameraResults;
-    var latestResult = results.get(results.size() - 1);
-    for (var result : results) {
+  private void updateRobotPoseEstimate() {
+    // Start from most recent result
+    for (int resultsIndex = allUnreadResults.size() - 1; resultsIndex >= 0; resultsIndex--) {
+      var result = allUnreadResults.get(resultsIndex);
 
-      if (latestResult.hasTargets()) {
-        var target = latestResult.getBestTarget();
-        var tagPose = layout.getTagPose(target.getFiducialId());
+      if (result.hasTargets()) {
+        boolean hasValidTags = false;
+        for (var target : result.getTargets()) {
 
-        if (tagPose.isPresent()) {
-          Optional<EstimatedRobotPose> optionalPose = poseEstimator.update(result);
-
-          if (optionalPose.isPresent()) {
-            return optionalPose;
+          if (layout.getTagPose(target.getFiducialId()).isPresent() &&
+              target.getPoseAmbiguity() < maxAmbiguity) {
+            hasValidTags = true;
+            break;
           }
+        }
+
+        if (hasValidTags) {
+          Optional<EstimatedRobotPose> estimatedRobotPose = poseEstimator.update(result);
+
+          if (estimatedRobotPose.isPresent()) {
+            // Stores pose and logs
+            storedEstimatedPose = estimatedRobotPose;
+            Pose2d pose = estimatedRobotPose.get().estimatedPose.toPose2d();
+            SmartDashboard.putNumber("Robot Pose X", pose.getX());
+            SmartDashboard.putNumber("Robot Pose Y", pose.getY());
+          }
+          break;
         }
       }
     }
-
-    return Optional.empty();
   }
 
   // Converts 3d pose to 2d pose and gets it
   public Pose2d getRobotPose() {
-    Optional<EstimatedRobotPose> optionalPose = getLatestEstimatedRobotPose();
-    Pose2d estimatedPose2d = null;
 
-    if (optionalPose.isPresent()) {
-      EstimatedRobotPose estimatedRobotPose = optionalPose.get();
+    Pose2d estimatedPose2d = new Pose2d();
+
+    if (storedEstimatedPose.isPresent()) {
+      EstimatedRobotPose estimatedRobotPose = storedEstimatedPose.get();
       Pose3d estimatedRobotPose3d = estimatedRobotPose.estimatedPose;
       estimatedPose2d = estimatedRobotPose3d.toPose2d();
     }
@@ -251,70 +270,53 @@ public class VisionSubsystem extends SubsystemBase {
 
   // Method to get the timestamp of the latest pose
   public double getTimestamp() {
-    Optional<EstimatedRobotPose> optionalPose = getLatestEstimatedRobotPose();
-    double timestamp = 0; // might have to change
-     
-    if (optionalPose.isPresent()) {
-      EstimatedRobotPose estimatedRobotPose = optionalPose.get();
+
+    double timestamp = -1;
+
+    if (storedEstimatedPose.isPresent()) {
+      EstimatedRobotPose estimatedRobotPose = storedEstimatedPose.get();
       timestamp = estimatedRobotPose.timestampSeconds;
     }
-
+    
     return timestamp;
   }
 
   @Override
   public void periodic() {
-    
+
     // This method will be called once per scheduler run
     if (cameraConnected) {
-      cameraResults = camera.getAllUnreadResults();
-      for (var result : cameraResults) {
-        if (result.hasTargets()) {
+      allUnreadResults = camera.getAllUnreadResults();
 
-        
+      // Update the robot pose estimate using the estimator
+      updateRobotPoseEstimate();
 
-          for (PhotonTrackedTarget target : result.getTargets()) {
+      if (!allUnreadResults.isEmpty() && allUnreadResults.get(allUnreadResults.size() - 1).hasTargets()) {
+        var latestResult = allUnreadResults.get(allUnreadResults.size() - 1);
 
-            double yaw = target.getYaw();
-            double pitch = target.getPitch();
-            double area = target.getArea();
-            double skew = target.getSkew();
-            double id = target.getFiducialId();
-            double ambiguity = target.getPoseAmbiguity();
-            Transform3d transform = target.getBestCameraToTarget();
-            double x = transform.getTranslation().getX();
-            double y = transform.getTranslation().getY();
-            double z = transform.getTranslation().getZ();
+        for (PhotonTrackedTarget target : latestResult.getTargets()) {
 
-            yawEntry.setDouble(yaw);
+          double yaw = target.getYaw();
+          double pitch = target.getPitch();
+          double area = target.getArea();
+          double skew = target.getSkew();
+          double id = target.getFiducialId();
+          double ambiguity = target.getPoseAmbiguity();
+          Transform3d transform = target.getBestCameraToTarget();
+          double x = transform.getTranslation().getX();
+          double y = transform.getTranslation().getY();
+          double z = transform.getTranslation().getZ();
 
-            Optional<Pose3d> tagPose = layout.getTagPose(target.getFiducialId());
-            if (tagPose.isPresent()) {
-              Optional<EstimatedRobotPose> estimatedRobotPose = poseEstimator.update(result);
+          yawEntry.setDouble(yaw);
+          pitchEntry.setDouble(pitch);
+          areaEntry.setDouble(area);
+          skewEntry.setDouble(skew);
+          idEntry.setDouble(id);
+          ambiguityEntry.setDouble(ambiguity);
+          xEntry.setDouble(x);
+          yEntry.setDouble(y);
+          zEntry.setDouble(z);
 
-              if (estimatedRobotPose.isPresent()) {
-
-                Pose3d estimatedRobotPose3d = estimatedRobotPose.get().estimatedPose;
-                Pose2d estimatedRobotPose2d = estimatedRobotPose3d.toPose2d();
-
-                yawEntry.setDouble(yaw);
-                pitchEntry.setDouble(pitch);
-                areaEntry.setDouble(area);
-                skewEntry.setDouble(skew);
-                idEntry.setDouble(id);
-                ambiguityEntry.setDouble(ambiguity);
-                xEntry.setDouble(x);
-                yEntry.setDouble(y);
-                zEntry.setDouble(z);
-                // poseEntry.setDouble(estimatedRobotPose.get().timestampSeconds);
-                // pose3dEntry.setValue(estimatedRobotPose3d);
-                // pose2dEntry.setValue(estimatedRobotPose2d);
-
-              }
-
-            }
-
-          }
         }
       }
     }
