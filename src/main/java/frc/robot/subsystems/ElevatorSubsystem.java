@@ -51,6 +51,7 @@ public class ElevatorSubsystem extends SubsystemBase{
   private SparkMaxConfig config = new SparkMaxConfig();
   private SparkMaxConfig config2 = new SparkMaxConfig();
   RelativeEncoder encoder = motor1.getEncoder();
+  RelativeEncoder encoder2 = motor2.getEncoder();
   private SparkClosedLoopController controller1 = motor1.getClosedLoopController();
   TrapezoidProfile.Constraints constraints = new TrapezoidProfile.Constraints(500,20);
   ProfiledPIDController pid = new ProfiledPIDController(PIDTunings.kElevatorKP, PIDTunings.kElevatorKI, PIDTunings.kElevatorKD, constraints);
@@ -70,6 +71,7 @@ public class ElevatorSubsystem extends SubsystemBase{
   private double PIDFeedback = 0;
   private double scissor_speed = 0;
   private double y_stageHeight;
+  private boolean limitBottomOnceTrue = false;
 
   public ElevatorSubsystem() {
     // Invert the SparkMax
@@ -90,7 +92,7 @@ public class ElevatorSubsystem extends SubsystemBase{
   @Override
   public void periodic() {
     ElevatorLogger();
-    r_currentRotations = encoder.getPosition();
+    r_currentRotations = (encoder.getPosition() + encoder2.getPosition()) / 2;
     calculateCurrentHeight();
   }
 
@@ -99,6 +101,9 @@ public class ElevatorSubsystem extends SubsystemBase{
     prevLimitBottom = limitBottom;
     limitTop = !l_top.get();
     limitBottom = !l_bottom.get();
+    if (limitBottom && !limitBottomOnceTrue) {
+      limitBottomOnceTrue = true;
+    }
     if (limitBottom && !prevLimitBottom) {
       encoder.setPosition(0);
     }
@@ -156,7 +161,7 @@ public class ElevatorSubsystem extends SubsystemBase{
       speed = Math.min(speed, 0);
     }
     // software limit
-    if (r_currentRotations < 1) {
+    if ((r_currentRotations < 1) && limitBottomOnceTrue) {
       speed = Math.max(0, speed);
     }
 
@@ -212,7 +217,7 @@ public class ElevatorSubsystem extends SubsystemBase{
         // RT Up
         double Raise = m_operatorController.getRightTriggerAxis();
         // DT Down
-        double Lower = m_operatorController.getLeftTriggerAxis();
+        double Lower = 0.8 * m_operatorController.getLeftTriggerAxis();
         this.setSpeed(Raise - Lower);
       },
       interrupted -> {

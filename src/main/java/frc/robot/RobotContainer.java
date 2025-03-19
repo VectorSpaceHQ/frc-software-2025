@@ -59,7 +59,6 @@ public class RobotContainer {
   public RobotContainer() {
     // Configure the button bindings
     configureButtonBindings();
-
     m_robotDrive.setDefaultCommand(aimTarget);
     m_robotElevator.setDefaultCommand(m_robotElevator.ElevatorRaiseCommand(m_operatorController));
     m_robotAlgae.setDefaultCommand(m_robotAlgae.runClaws(m_operatorController));
