@@ -164,6 +164,10 @@ public class ElevatorSubsystem extends SubsystemBase{
     if ((r_currentRotations < 1) && limitBottomOnceTrue) {
       speed = Math.max(0, speed);
     }
+    if((speed < 0) && r_currentRotations < 5)
+    {
+      speed = 0.2 * speed;
+    }
 
     motor1.set(speed);
 

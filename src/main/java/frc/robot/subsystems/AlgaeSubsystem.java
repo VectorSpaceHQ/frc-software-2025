@@ -27,8 +27,8 @@ public class AlgaeSubsystem extends SubsystemBase {
 
     public AlgaeSubsystem() {
         //config.follow(CANIDs.kAlgaeSubsystemLeft,true);
-        leftConfig.smartCurrentLimit(20, 20);
-        rightConfig.smartCurrentLimit(20, 20);
+        leftConfig.smartCurrentLimit(10, 10);
+        rightConfig.smartCurrentLimit(10, 10);
         rightConfig.inverted(true);
 
         motor_right.configure(rightConfig, null, null);
