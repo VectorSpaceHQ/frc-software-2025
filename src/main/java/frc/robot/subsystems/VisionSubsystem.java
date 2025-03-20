@@ -24,6 +24,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.wpilibj.Filesystem;
@@ -40,7 +41,7 @@ public class VisionSubsystem extends SubsystemBase {
   public static final PhotonPoseEstimator.PoseStrategy MULTI_TAG_PNP_ON_PROCESSOR = PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR;
 
   // Constants for the camera name and field layout path
-  private static final String camera_name = "Front_Camera_Robot";
+  private static final String camera_name = "Front_Camera_Robot2";
   private String field_layout_path = new File(Filesystem.getDeployDirectory(), "2025-reefscape.json")
       .getAbsolutePath();
 
@@ -154,25 +155,18 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   // Command to get the target yaw
-  public double getTargetYaw(double id) {
+  public double getTargetYaw(int id) {
 
-    double returnYaw = 0.0;
-
-    if (!allUnreadResults.isEmpty() && isTargetVisible(id)) {
-      var latestResult = allUnreadResults.get(allUnreadResults.size() - 1);
-
-      if (latestResult.hasTargets()) {
-        for (var target : latestResult.getTargets()) {
-          double tagID = target.getFiducialId();
-
-          if (tagID == id) {
-            returnYaw = target.getYaw();
-            break;
-          }
-        }
-      }
-    }
-    return returnYaw;
+    Rotation2d returnYaw = new Rotation2d();
+    double returnYawDouble = 0.0;
+    var tagPose = layout.getTagPose(id);
+    Pose2d tagPose2d = tagPose.get().toPose2d();
+    
+    returnYaw = PhotonUtils.getYawToPose(getRobotPose(), tagPose2d);
+    returnYawDouble = returnYaw.getDegrees();
+            
+    return returnYawDouble;
+  
   }
 
   // Basically useless (repetitive)
@@ -207,12 +201,14 @@ public class VisionSubsystem extends SubsystemBase {
 
           if (id == tagID) {
             var tagPose = layout.getTagPose(target.getFiducialId());
+            Pose2d tagPose2d = tagPose.get().toPose2d();
             if (tagPose.isPresent()) {
-              returnRange = PhotonUtils.calculateDistanceToTargetMeters(0.228, // Measured with a tape measure or in
-                                                                               // CAD.
-                  tagPose.get().getTranslation().getZ(),
-                  Units.degreesToRadians(0), // Measured with a protractor, or in CAD.
-                  Units.degreesToRadians(target.getPitch()));
+              returnRange = PhotonUtils.getDistanceToPose(getRobotPose(), tagPose2d);
+              // PhotonUtils.calculateDistanceToTargetMeters(0.228, // Measured with a tape measure or in
+              //                                                                  // CAD.
+              //     tagPose.get().getTranslation().getZ(),
+              //     Units.degreesToRadians(0), // Measured with a protractor, or in CAD.
+              //     Units.degreesToRadians(target.getPitch()));
 
               break;
             }
@@ -253,6 +249,7 @@ public class VisionSubsystem extends SubsystemBase {
       }
     }
   }
+
 
   // Converts 3d pose to 2d pose and gets it
   public Pose2d getRobotPose() {

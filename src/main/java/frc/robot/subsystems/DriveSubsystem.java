@@ -73,7 +73,7 @@ public class DriveSubsystem extends SubsystemBase {
   private final CurrentLimitsConfigs rearLeftCurrentConfigs = new CurrentLimitsConfigs();
 
   // Matrix <N3, N1> stateStdDevs = VecBuilder.fill(0.1, 0.1, 0.1);
-  // Matrix<N3, N1> visionStdDevs = VecBuilder.fill(1, 1, 1);
+  // Matrix<N3, N1> visionStdDevs = VecBuilder.fill(0.45, 0.45, 0.45);
 
   // Odometry class for tracking robot pose
   MecanumDrivePoseEstimator m_poseEstimator =

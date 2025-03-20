@@ -43,6 +43,7 @@ public final class Constants {
 
     public static final int kEncoderCPR = 2048;
     public static final double kWheelDiameterMeters = 0.1016;
+    public static final double kWheelDistanceFromCenter = Math.sqrt((kWheelBase * kWheelBase)+(kTrackWidth * kTrackWidth))/2;
     public static final double kEncoderDistancePerPulse =
         // Assumes the encoders are directly mounted on the wheel shafts
         (kWheelDiameterMeters * Math.PI) / kEncoderCPR;
@@ -53,6 +54,7 @@ public final class Constants {
     public static final double kMetersPerRotation = kWheelDiameterMeters * Math.PI * 0.15;
     public static final double kForwardVoltsPerMeterPerSecond = (kKrakenVoltsPerRPM * 60) / (kMetersPerRotation);
     public static final double kStrafeVoltsPerMeterPerSecond = kForwardVoltsPerMeterPerSecond * kStrafeMultiplier;
+    public static final double kVoltsPerDegreePerSecond = (kForwardVoltsPerMeterPerSecond * 180)/(Math.sqrt(2) * Math.PI * kWheelDistanceFromCenter);
     public static final double kMaxAcceleration = 5.5; // Drive team traction limited accel
     public static final double kMinAcceleration = 3.5; // To prevent tipping when scissor lift extended
   }
