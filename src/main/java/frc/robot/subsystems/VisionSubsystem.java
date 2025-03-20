@@ -50,6 +50,8 @@ public class VisionSubsystem extends SubsystemBase {
   private AprilTagFieldLayout layout;
   private PhotonPoseEstimator poseEstimator;
 
+  // Constants for the maximum pose age and ambiguity
+  private final double maxPoseAge = 0.5;
   private final double maxAmbiguity = 0.2;
 
   // Transformation3d objects for the camera and robot
@@ -89,7 +91,6 @@ public class VisionSubsystem extends SubsystemBase {
     camera = new PhotonCamera(camera_name);
 
     initializeSubsystem();
-
     initializeShuffleboard();
 
     try {
@@ -116,6 +117,7 @@ public class VisionSubsystem extends SubsystemBase {
     }
   }
 
+  // Method to check if the camera is connected
   public boolean isCameraConnected() {
     return cameraConnected;
   }
@@ -154,75 +156,67 @@ public class VisionSubsystem extends SubsystemBase {
     zEntry = visionTab.add("Z", 0.0).getEntry();
   }
 
+  // Gets the target yaw
   public double getTargetYaw(int id) {
-    var tagPose = layout.getTagPose(id);
+    double yawValue = Double.NaN; // Default to NaN
 
+    var tagPose = layout.getTagPose(id);
     if (tagPose.isPresent()) {
       Pose2d tagPose2d = tagPose.get().toPose2d();
       Optional<Pose2d> robotPose = getRobotPose();
 
       if (robotPose.isPresent()) {
         Rotation2d returnYaw = PhotonUtils.getYawToPose(robotPose.get(), tagPose2d);
-        return returnYaw.getDegrees();
-      }
-    }
-    return Double.NaN;
-  }
-
-  // Basically useless (repetitive)
-  public boolean isTargetVisible(int id) { // Change parameter type to int
-    if (!cameraConnected || allUnreadResults.isEmpty()) {
-      return false;
-    }
-
-    var latestResult = allUnreadResults.get(allUnreadResults.size() - 1);
-    if (!latestResult.hasTargets()) {
-      return false;
-    }
-
-    for (var target : latestResult.getTargets()) {
-      if (target.getFiducialId() == id) {
-        return true;
+        yawValue = returnYaw.getDegrees();
+        SmartDashboard.putNumber("Raw Target Yaw", yawValue);
       }
     }
 
-    return false;
+    return yawValue;
   }
 
-  // Command to get the target range
-  public double getTargetRange(int id) {
+  // for the DriveTargetCommand but still kinda useless
+  public boolean isTargetVisible(int id) {
+    boolean targetIsVisible = false;
 
-    double returnRange = -1.0;
-    if (!allUnreadResults.isEmpty() && isTargetVisible(id)) {
+    if (cameraConnected && !allUnreadResults.isEmpty()) {
       var latestResult = allUnreadResults.get(allUnreadResults.size() - 1);
 
-      for (var target : latestResult.getTargets()) {
-        double tagID = target.getFiducialId();
-
-        if (id == tagID) {
-          var tagPose = layout.getTagPose(target.getFiducialId());
-
-          if (tagPose.isPresent()) {
-            Optional<Pose2d> robotPose = getRobotPose();
-            if (robotPose.isPresent()) {
-              returnRange = PhotonUtils.getDistanceToPose(robotPose.get(), tagPose.get().toPose2d());
-            }
-            // PhotonUtils.calculateDistanceToTargetMeters(0.228, // Measured with a tape
-            // measure or in
-            // // CAD.
-            // tagPose.get().getTranslation().getZ(),
-            // Units.degreesToRadians(0), // Measured with a protractor, or in CAD.
-            // Units.degreesToRadians(target.getPitch()));
-
+      if (latestResult.hasTargets()) {
+        for (var target : latestResult.getTargets()) {
+          if (target.getFiducialId() == id) {
+            targetIsVisible = true;
             break;
           }
         }
       }
     }
-    return returnRange;
+
+    return targetIsVisible;
   }
 
+  // Gets the target range
+  public double getTargetRange(int id) {
+
+    double rangeValue = Double.NaN; // Default to NaN
+    var tagPose = layout.getTagPose(id);
+
+    if (tagPose.isPresent()) {
+      Optional<Pose2d> robotPose = getRobotPose();
+
+      if (robotPose.isPresent()) {
+        rangeValue = PhotonUtils.getDistanceToPose(
+            robotPose.get(),
+            tagPose.get().toPose2d());
+        SmartDashboard.putNumber("Raw Target Range", rangeValue);
+      }
+    }
+    return rangeValue;
+  }
+
+  // Updates the robot pose using the pose estimator (periodic)
   private void updateRobotPoseEstimate() {
+
     // Start from most recent result
     for (int resultsIndex = allUnreadResults.size() - 1; resultsIndex >= 0; resultsIndex--) {
       var result = allUnreadResults.get(resultsIndex);
@@ -231,6 +225,7 @@ public class VisionSubsystem extends SubsystemBase {
         boolean hasValidTags = false;
         for (var target : result.getTargets()) {
 
+          // Target has to have a certain ambiguity and a valid tag pose
           if (layout.getTagPose(target.getFiducialId()).isPresent() &&
               target.getPoseAmbiguity() < maxAmbiguity) {
             hasValidTags = true;
@@ -247,6 +242,7 @@ public class VisionSubsystem extends SubsystemBase {
             Pose2d pose = estimatedRobotPose.get().estimatedPose.toPose2d();
             SmartDashboard.putNumber("Robot Pose X", pose.getX());
             SmartDashboard.putNumber("Robot Pose Y", pose.getY());
+            SmartDashboard.putNumber("Robot Pose Heading", pose.getRotation().getDegrees());
           }
           break;
         }
@@ -254,13 +250,15 @@ public class VisionSubsystem extends SubsystemBase {
     }
   }
 
+  // Used to ensure that the pose is not stale
   public boolean isFreshPose() {
-    if (!storedEstimatedPose.isPresent())
+    if (!storedEstimatedPose.isPresent()) {
       return false;
+    }
 
     double currentTime = edu.wpi.first.wpilibj.Timer.getFPGATimestamp();
     double poseTime = storedEstimatedPose.get().timestampSeconds;
-    return (currentTime - poseTime) < 0.5; // 500ms max age
+    return (currentTime - poseTime) < maxPoseAge;
   }
 
   // Converts 3d pose to 2d pose and gets it
@@ -268,6 +266,7 @@ public class VisionSubsystem extends SubsystemBase {
     if (storedEstimatedPose.isPresent()) {
       return Optional.of(storedEstimatedPose.get().estimatedPose.toPose2d());
     }
+
     return Optional.empty();
   }
 
@@ -290,7 +289,6 @@ public class VisionSubsystem extends SubsystemBase {
     // This method will be called once per scheduler run
     if (cameraConnected) {
       allUnreadResults = camera.getAllUnreadResults();
-
       // Update the robot pose estimate using the estimator
       updateRobotPoseEstimate();
 
@@ -324,6 +322,15 @@ public class VisionSubsystem extends SubsystemBase {
           SmartDashboard.putBoolean("Has Valid Pose", storedEstimatedPose.isPresent());
           SmartDashboard.putNumber("Pose Timestamp", getTimestamp());
 
+          // Updates using the fresh pose in SmartDashboard when present
+          if (isFreshPose()) {
+            Pose2d pose = getRobotPose().orElse(new Pose2d());
+            SmartDashboard.putNumber("Fresh Pose X", pose.getX());
+            SmartDashboard.putNumber("Fresh Pose Y", pose.getY());
+            SmartDashboard.putNumber("Fresh Pose Heading", pose.getRotation().getDegrees());
+          } else {
+            SmartDashboard.putString("Pose Status", "Stale Pose");
+          }
 
         }
       }
