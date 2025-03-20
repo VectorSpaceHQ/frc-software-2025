@@ -113,7 +113,7 @@ public class DriveTargetCommand extends Command {
 
       // Check if target has been specified
       // && (visionSubsystem.isTargetVisible(targetID))
-      if ((targetID != AprilTags.None.getId()) && (visionSubsystem.isTargetVisible(targetID))) {
+      if ((targetID != AprilTags.None.getId()) && (visionSubsystem.isTargetVisible((int) targetID))) {
         // If the camera is connected, get the target yaw and drive towards it
         targetYaw = visionSubsystem.getTargetYaw((int) targetID);
         tagRange = visionSubsystem.getTargetRange((int) targetID);

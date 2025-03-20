@@ -55,12 +55,12 @@ public class VisionSubsystem extends SubsystemBase {
   // Transformation3d objects for the camera and robot
 
   // Distance from the camera to the robot
-private static final Transform3d cameraToRobot = new Transform3d(
-    new Translation3d(0.0, 0.0, 0.0), 
-    new Rotation3d(0.0, Math.toRadians(0), 0.0)); 
+  private static final Transform3d cameraToRobot = new Transform3d(
+      new Translation3d(0.0, 0.0, 0.0),
+      new Rotation3d(0.0, Math.toRadians(0), 0.0));
 
-    // Distance from the robot to the camera
-private Transform3d robotToCamera = cameraToRobot.inverse();
+  // Distance from the robot to the camera
+  private Transform3d robotToCamera = cameraToRobot.inverse();
 
   // Status of the camera
   private boolean cameraConnected;
@@ -70,8 +70,6 @@ private Transform3d robotToCamera = cameraToRobot.inverse();
 
   // Getting All Unread Results
   private List<PhotonPipelineResult> allUnreadResults = new ArrayList<>();
-
-
 
   // Shuffleboard entries
   private ShuffleboardTab visionTab;
@@ -156,73 +154,71 @@ private Transform3d robotToCamera = cameraToRobot.inverse();
     zEntry = visionTab.add("Z", 0.0).getEntry();
   }
 
-  // Command to get the target yaw
   public double getTargetYaw(int id) {
-
-    Rotation2d returnYaw = new Rotation2d();
-    double returnYawDouble = 0.0;
     var tagPose = layout.getTagPose(id);
-    Pose2d tagPose2d = tagPose.get().toPose2d();
-    
-    Optional<Pose2d> robotPose = getRobotPose();
-    if (robotPose.isPresent()) {
-        returnYaw = PhotonUtils.getYawToPose(robotPose.get(), tagPose2d);
+
+    if (tagPose.isPresent()) {
+      Pose2d tagPose2d = tagPose.get().toPose2d();
+      Optional<Pose2d> robotPose = getRobotPose();
+
+      if (robotPose.isPresent()) {
+        Rotation2d returnYaw = PhotonUtils.getYawToPose(robotPose.get(), tagPose2d);
+        return returnYaw.getDegrees();
+      }
     }
-    returnYawDouble = returnYaw.getDegrees();
-            
-    return returnYawDouble;
-  
+    return Double.NaN;
   }
 
   // Basically useless (repetitive)
-  public boolean isTargetVisible(double id) {
-    boolean result = false;
+  public boolean isTargetVisible(int id) { // Change parameter type to int
+    if (!cameraConnected || allUnreadResults.isEmpty()) {
+      return false;
+    }
 
-    if (!allUnreadResults.isEmpty()) {
-      var latestResult = allUnreadResults.get(allUnreadResults.size() - 1);
+    var latestResult = allUnreadResults.get(allUnreadResults.size() - 1);
+    if (!latestResult.hasTargets()) {
+      return false;
+    }
 
-      if (latestResult.hasTargets()) {
-        for (var target : latestResult.getTargets()) {
-          double tagID = target.getFiducialId();
-          if (tagID == id) {
-            result = true;
-            break;
-          }
-        }
+    for (var target : latestResult.getTargets()) {
+      if (target.getFiducialId() == id) {
+        return true;
       }
     }
-    return result;
+
+    return false;
   }
 
   // Command to get the target range
-  public double getTargetRange(double id) {
+  public double getTargetRange(int id) {
 
     double returnRange = -1.0;
     if (!allUnreadResults.isEmpty() && isTargetVisible(id)) {
       var latestResult = allUnreadResults.get(allUnreadResults.size() - 1);
 
-        for (var target : latestResult.getTargets()) {
-          double tagID = target.getFiducialId();
+      for (var target : latestResult.getTargets()) {
+        double tagID = target.getFiducialId();
 
-          if (id == tagID) {
-            var tagPose = layout.getTagPose(target.getFiducialId());
-            Pose2d tagPose2d = tagPose.get().toPose2d();
-            if (tagPose.isPresent()) {
-              Optional<Pose2d> robotPose = getRobotPose();
-              if (robotPose.isPresent()) {
-                returnRange = PhotonUtils.getDistanceToPose(robotPose.get(), tagPose2d);
-              }
-              // PhotonUtils.calculateDistanceToTargetMeters(0.228, // Measured with a tape measure or in
-              //                                                                  // CAD.
-              //     tagPose.get().getTranslation().getZ(),
-              //     Units.degreesToRadians(0), // Measured with a protractor, or in CAD.
-              //     Units.degreesToRadians(target.getPitch()));
+        if (id == tagID) {
+          var tagPose = layout.getTagPose(target.getFiducialId());
 
-              break;
+          if (tagPose.isPresent()) {
+            Optional<Pose2d> robotPose = getRobotPose();
+            if (robotPose.isPresent()) {
+              returnRange = PhotonUtils.getDistanceToPose(robotPose.get(), tagPose.get().toPose2d());
             }
+            // PhotonUtils.calculateDistanceToTargetMeters(0.228, // Measured with a tape
+            // measure or in
+            // // CAD.
+            // tagPose.get().getTranslation().getZ(),
+            // Units.degreesToRadians(0), // Measured with a protractor, or in CAD.
+            // Units.degreesToRadians(target.getPitch()));
+
+            break;
           }
         }
       }
+    }
     return returnRange;
   }
 
@@ -258,27 +254,22 @@ private Transform3d robotToCamera = cameraToRobot.inverse();
     }
   }
 
+  public boolean isFreshPose() {
+    if (!storedEstimatedPose.isPresent())
+      return false;
+
+    double currentTime = edu.wpi.first.wpilibj.Timer.getFPGATimestamp();
+    double poseTime = storedEstimatedPose.get().timestampSeconds;
+    return (currentTime - poseTime) < 0.5; // 500ms max age
+  }
 
   // Converts 3d pose to 2d pose and gets it
   public Optional<Pose2d> getRobotPose() {
-    var result = camera.getLatestResult();
-
-    if (result.hasTargets()) {
-        var target = result.getBestTarget();
-        var tagPose = layout.getTagPose(target.getFiducialId());
-
-        if (tagPose.isPresent()) {
-            Optional<EstimatedRobotPose> optionalPose = poseEstimator.update(result);
-            if (optionalPose.isPresent()) {
-                EstimatedRobotPose estimatedRobotPose = optionalPose.get();
-                Pose3d estimatedRobotPose3d = estimatedRobotPose.estimatedPose;
-                Pose2d estimatedRobotPose2d = estimatedRobotPose3d.toPose2d();
-                return Optional.of(estimatedRobotPose2d);
-            }
-        }
+    if (storedEstimatedPose.isPresent()) {
+      return Optional.of(storedEstimatedPose.get().estimatedPose.toPose2d());
     }
     return Optional.empty();
-}
+  }
 
   // Method to get the timestamp of the latest pose
   public double getTimestamp() {
@@ -289,7 +280,7 @@ private Transform3d robotToCamera = cameraToRobot.inverse();
       EstimatedRobotPose estimatedRobotPose = storedEstimatedPose.get();
       timestamp = estimatedRobotPose.timestampSeconds;
     }
-    
+
     return timestamp;
   }
 
@@ -328,6 +319,11 @@ private Transform3d robotToCamera = cameraToRobot.inverse();
           xEntry.setDouble(x);
           yEntry.setDouble(y);
           zEntry.setDouble(z);
+
+          // To lazy to make this shufflboard entries
+          SmartDashboard.putBoolean("Has Valid Pose", storedEstimatedPose.isPresent());
+          SmartDashboard.putNumber("Pose Timestamp", getTimestamp());
+
 
         }
       }
