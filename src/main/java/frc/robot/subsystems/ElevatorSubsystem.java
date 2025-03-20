@@ -92,7 +92,8 @@ public class ElevatorSubsystem extends SubsystemBase{
   @Override
   public void periodic() {
     ElevatorLogger();
-    r_currentRotations = (encoder.getPosition() + encoder2.getPosition()) / 2;
+    //r_currentRotations = (encoder.getPosition() + encoder2.getPosition()) / 2;
+    r_currentRotations = encoder.getPosition();
     calculateCurrentHeight();
   }
 
@@ -101,6 +102,15 @@ public class ElevatorSubsystem extends SubsystemBase{
     prevLimitBottom = limitBottom;
     limitTop = !l_top.get();
     limitBottom = !l_bottom.get();
+
+    // Adam------------
+    // Reset counts every time bottom limit is hit. The momentum of the scissor is causing counts to become inaccurate.
+    if (limitBottom){
+      encoder.setPosition(0);
+      r_currentRotations = 0;
+    }
+    //----------------
+
     if (limitBottom && !limitBottomOnceTrue) {
       limitBottomOnceTrue = true;
     }
@@ -113,6 +123,7 @@ public class ElevatorSubsystem extends SubsystemBase{
   private void ElevatorLogger(){
     SmartDashboard.putNumber("Scissor Lift Speed", scissor_speed);
     SmartDashboard.putBoolean("Scissor Bottom Limit", limitBottom);
+    SmartDashboard.putBoolean("Scissor Bottom Limit Initialized", limitBottomOnceTrue);
     SmartDashboard.putBoolean("Scissor Top Limit", limitTop);
     SmartDashboard.putNumber("Scissor Motor1 Current", motor1.getOutputCurrent());
     SmartDashboard.putNumber("Scissor Motor2 Current", motor2.getOutputCurrent());

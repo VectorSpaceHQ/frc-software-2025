@@ -27,8 +27,8 @@ public class AlgaeSubsystem extends SubsystemBase {
 
     public AlgaeSubsystem() {
         //config.follow(CANIDs.kAlgaeSubsystemLeft,true);
-        leftConfig.smartCurrentLimit(10, 10);
-        rightConfig.smartCurrentLimit(10, 10);
+        leftConfig.smartCurrentLimit(30, 20);
+        rightConfig.smartCurrentLimit(30, 20);
         rightConfig.inverted(true);
 
         motor_right.configure(rightConfig, null, null);
@@ -37,19 +37,22 @@ public class AlgaeSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        
+        limitSwitchLeft = !l_Left.get();
+        limitSwitchRight = !l_Right.get();
     }
 
     private void update(){
         // True when limit switch is pressed.
-        limitSwitchLeft = !l_Left.get();
-        limitSwitchRight = !l_Right.get();
+        // limitSwitchLeft = !l_Left.get();
+        // limitSwitchRight = !l_Right.get();
     }
 
     private void AlgaeLogger(){
       SmartDashboard.putNumber("Algae motor speed", speed);
       //SmartDashboard.putNumber("Algae Left Motor Current", motorspeed);
       //SmartDashboard.putNumber("Algae Right Motor Current", motorspeed);
+      SmartDashboard.putNumber("claw motor_left Current", motor_left.getOutputCurrent());
+      SmartDashboard.putNumber("claw motor_right Current", motor_right.getOutputCurrent());
       SmartDashboard.putBoolean("Algae Left Motor Limit", limitSwitchLeft);
       SmartDashboard.putBoolean("Algae Right Motor Limit", limitSwitchRight);
     }
