@@ -53,12 +53,14 @@ public class VisionSubsystem extends SubsystemBase {
   private final double maxAmbiguity = 0.2;
 
   // Transformation3d objects for the camera and robot
-  private static final Transform3d cameraToRobot = new Transform3d(
-      new Translation3d(0.0, 0.0, 0.0), // Translation from camera to robot center
-      new Rotation3d(0.0, 0.0, 0.0)); // Rotation from camera to robot center
 
-  // Inverse transform of cameraToRobot
-  private Transform3d robotToCamera = cameraToRobot.inverse();
+  // Distance from the camera to the robot
+private static final Transform3d cameraToRobot = new Transform3d(
+    new Translation3d(0.0, 0.0, 0.0), 
+    new Rotation3d(0.0, Math.toRadians(0), 0.0)); 
+
+    // Distance from the robot to the camera
+private Transform3d robotToCamera = cameraToRobot.inverse();
 
   // Status of the camera
   private boolean cameraConnected;
@@ -162,7 +164,10 @@ public class VisionSubsystem extends SubsystemBase {
     var tagPose = layout.getTagPose(id);
     Pose2d tagPose2d = tagPose.get().toPose2d();
     
-    returnYaw = PhotonUtils.getYawToPose(getRobotPose(), tagPose2d);
+    Optional<Pose2d> robotPose = getRobotPose();
+    if (robotPose.isPresent()) {
+        returnYaw = PhotonUtils.getYawToPose(robotPose.get(), tagPose2d);
+    }
     returnYawDouble = returnYaw.getDegrees();
             
     return returnYawDouble;
@@ -203,7 +208,10 @@ public class VisionSubsystem extends SubsystemBase {
             var tagPose = layout.getTagPose(target.getFiducialId());
             Pose2d tagPose2d = tagPose.get().toPose2d();
             if (tagPose.isPresent()) {
-              returnRange = PhotonUtils.getDistanceToPose(getRobotPose(), tagPose2d);
+              Optional<Pose2d> robotPose = getRobotPose();
+              if (robotPose.isPresent()) {
+                returnRange = PhotonUtils.getDistanceToPose(robotPose.get(), tagPose2d);
+              }
               // PhotonUtils.calculateDistanceToTargetMeters(0.228, // Measured with a tape measure or in
               //                                                                  // CAD.
               //     tagPose.get().getTranslation().getZ(),
@@ -252,18 +260,25 @@ public class VisionSubsystem extends SubsystemBase {
 
 
   // Converts 3d pose to 2d pose and gets it
-  public Pose2d getRobotPose() {
+  public Optional<Pose2d> getRobotPose() {
+    var result = camera.getLatestResult();
 
-    Pose2d estimatedPose2d = new Pose2d();
+    if (result.hasTargets()) {
+        var target = result.getBestTarget();
+        var tagPose = layout.getTagPose(target.getFiducialId());
 
-    if (storedEstimatedPose.isPresent()) {
-      EstimatedRobotPose estimatedRobotPose = storedEstimatedPose.get();
-      Pose3d estimatedRobotPose3d = estimatedRobotPose.estimatedPose;
-      estimatedPose2d = estimatedRobotPose3d.toPose2d();
+        if (tagPose.isPresent()) {
+            Optional<EstimatedRobotPose> optionalPose = poseEstimator.update(result);
+            if (optionalPose.isPresent()) {
+                EstimatedRobotPose estimatedRobotPose = optionalPose.get();
+                Pose3d estimatedRobotPose3d = estimatedRobotPose.estimatedPose;
+                Pose2d estimatedRobotPose2d = estimatedRobotPose3d.toPose2d();
+                return Optional.of(estimatedRobotPose2d);
+            }
+        }
     }
-
-    return estimatedPose2d;
-  }
+    return Optional.empty();
+}
 
   // Method to get the timestamp of the latest pose
   public double getTimestamp() {
