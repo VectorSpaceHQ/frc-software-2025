@@ -93,11 +93,11 @@ public class DriveTargetCommand extends Command {
     // AutoConstants.kMaxAngularSpeedRadiansPerSecond);
     linearAccelerationLimit = table.get(elevatorSubsystem.getElevatorHeight());
 
-    forwardPWM = driverController.getLeftY() * speedscalar;
+    forwardPWM = -driverController.getLeftY() * speedscalar;
     forwardVoltage = forwardPWM * DriveConstants.kDefaultBusVoltage;
     forwardLinearSpeed = forwardVoltage / DriveConstants.kForwardVoltsPerMeterPerSecond;
 
-    strafePWM = driverController.getLeftX() * speedscalar;
+    strafePWM = -driverController.getLeftX() * speedscalar;
     strafeVoltage = strafePWM * DriveConstants.kDefaultBusVoltage;
     strafeLinearSpeed = strafeVoltage / DriveConstants.kStrafeVoltsPerMeterPerSecond;
 

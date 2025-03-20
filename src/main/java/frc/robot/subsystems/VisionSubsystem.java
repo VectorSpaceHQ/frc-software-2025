@@ -5,8 +5,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
@@ -50,6 +52,12 @@ public class VisionSubsystem extends SubsystemBase {
   private AprilTagFieldLayout layout;
   private PhotonPoseEstimator poseEstimator;
 
+  // A hashmap that stores key (id) and value (target/range) pairs. Used to check
+  // if the last valid value is valid so that the driveTargetCommand works every
+  // cycle
+  private Map<Integer, Double> lastValidYaw = new HashMap<>();
+  private Map<Integer, Double> lastValidRange = new HashMap<>();
+
   // Constants for the maximum pose age and ambiguity
   private final double maxPoseAge = 0.5;
   private final double maxAmbiguity = 0.2;
@@ -57,7 +65,7 @@ public class VisionSubsystem extends SubsystemBase {
   // Transformation3d objects for the camera and robot
 
   // Distance from the camera to the robot
-  private static final Transform3d cameraToRobot = new Transform3d(
+  private static final Transform3d cameraToRobot = new Transform3d( // Will change before next deploy
       new Translation3d(0.0, 0.0, 0.0),
       new Rotation3d(0.0, Math.toRadians(0), 0.0));
 
@@ -169,9 +177,20 @@ public class VisionSubsystem extends SubsystemBase {
         Rotation2d returnYaw = PhotonUtils.getYawToPose(robotPose.get(), tagPose2d);
         yawValue = returnYaw.getDegrees();
         SmartDashboard.putNumber("Raw Target Yaw", yawValue);
+
+        // Store valid measurement
+        if (!Double.isNaN(yawValue)) {
+          lastValidYaw.put(id, yawValue);
+
+        }
       }
     }
 
+    // If current calculation is NaN but we have a previous value, use that
+    if (Double.isNaN(yawValue) && lastValidYaw.containsKey(id)) {
+      yawValue = lastValidYaw.get(id);
+      SmartDashboard.putString("Yaw Status", "Using Last Valid");
+    }
     return yawValue;
   }
 
@@ -210,6 +229,16 @@ public class VisionSubsystem extends SubsystemBase {
             tagPose.get().toPose2d());
         SmartDashboard.putNumber("Raw Target Range", rangeValue);
       }
+      // Store valid measurement
+      if (!Double.isNaN(rangeValue)) {
+        lastValidRange.put(id, rangeValue);
+      }
+    }
+
+    // If current calculation is NaN but we have a previous value, use that
+    if (Double.isNaN(rangeValue) && lastValidRange.containsKey(id)) {
+      rangeValue = lastValidRange.get(id);
+      SmartDashboard.putString("Range Status", "Using Last Valid");
     }
     return rangeValue;
   }
