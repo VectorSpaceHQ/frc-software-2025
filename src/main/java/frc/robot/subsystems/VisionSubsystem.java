@@ -23,14 +23,9 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.numbers.N1;
-import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.Matrix;
-import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
@@ -66,8 +61,8 @@ public class VisionSubsystem extends SubsystemBase {
 
   // Distance from the camera to the robot
   private static final Transform3d cameraToRobot = new Transform3d( // Will change before next deploy
-      new Translation3d(0.0, 0.0, 0.0),
-      new Rotation3d(0.0, Math.toRadians(0), 0.0));
+      new Translation3d(0.1, 0.2, 0.1),
+      new Rotation3d(0.0, Math.toRadians(-20), 0.0));
 
   // Distance from the robot to the camera
   private Transform3d robotToCamera = cameraToRobot.inverse();
@@ -243,8 +238,8 @@ public class VisionSubsystem extends SubsystemBase {
     return rangeValue;
   }
 
-  // Updates the robot pose using the pose estimator (periodic)
-  private void updateRobotPoseEstimate() {
+  // Updates the vision pose using the pose estimator (periodic)
+  private void updateVisionPoseEstimate() {
 
     // Start from most recent result
     for (int resultsIndex = allUnreadResults.size() - 1; resultsIndex >= 0; resultsIndex--) {
@@ -263,23 +258,32 @@ public class VisionSubsystem extends SubsystemBase {
         }
 
         if (hasValidTags) {
-          Optional<EstimatedRobotPose> estimatedRobotPose = poseEstimator.update(result);
+          Optional<EstimatedRobotPose> estimatedVisionPose = poseEstimator.update(result);
 
-          if (estimatedRobotPose.isPresent()) {
-            // Stores pose and logs
-            storedEstimatedPose = estimatedRobotPose;
-            Pose2d pose = estimatedRobotPose.get().estimatedPose.toPose2d();
-            SmartDashboard.putNumber("Robot Pose X", pose.getX());
-            SmartDashboard.putNumber("Robot Pose Y", pose.getY());
-            SmartDashboard.putNumber("Robot Pose Heading", pose.getRotation().getDegrees());
+          if (estimatedVisionPose.isPresent()) {
+            // Stores vision pose and logs
+            storedEstimatedPose = estimatedVisionPose;
+            Pose2d pose = estimatedVisionPose.get().estimatedPose.toPose2d();
+            SmartDashboard.putNumber("Vision Pose X", pose.getX());
+            SmartDashboard.putNumber("Vision Pose Y", pose.getY());
+            SmartDashboard.putNumber("Vision Pose Heading", pose.getRotation().getDegrees());
           }
           break;
         }
       }
     }
+
   }
 
-  // Used to ensure that the pose is not stale
+  // Gets the tag pose
+  public Optional<Pose3d> getTagPose(int id) {
+    if (layout != null) {
+      return layout.getTagPose(id);
+    }
+    return Optional.empty();
+  }
+
+  // Used to ensure that the vision pose is not stale
   public boolean isFreshPose() {
     if (!storedEstimatedPose.isPresent()) {
       return false;
@@ -290,7 +294,7 @@ public class VisionSubsystem extends SubsystemBase {
     return (currentTime - poseTime) < maxPoseAge;
   }
 
-  // Converts 3d pose to 2d pose and gets it
+  // Converts 3d vision pose to 2d vision pose and gets it
   public Optional<Pose2d> getRobotPose() {
     if (storedEstimatedPose.isPresent()) {
       return Optional.of(storedEstimatedPose.get().estimatedPose.toPose2d());
@@ -299,7 +303,7 @@ public class VisionSubsystem extends SubsystemBase {
     return Optional.empty();
   }
 
-  // Method to get the timestamp of the latest pose
+  // Method to get the timestamp of the latest vision pose
   public double getTimestamp() {
 
     double timestamp = -1;
@@ -319,7 +323,7 @@ public class VisionSubsystem extends SubsystemBase {
     if (cameraConnected) {
       allUnreadResults = camera.getAllUnreadResults();
       // Update the robot pose estimate using the estimator
-      updateRobotPoseEstimate();
+      updateVisionPoseEstimate();
 
       if (!allUnreadResults.isEmpty() && allUnreadResults.get(allUnreadResults.size() - 1).hasTargets()) {
         var latestResult = allUnreadResults.get(allUnreadResults.size() - 1);
@@ -350,16 +354,6 @@ public class VisionSubsystem extends SubsystemBase {
           // To lazy to make this shufflboard entries
           SmartDashboard.putBoolean("Has Valid Pose", storedEstimatedPose.isPresent());
           SmartDashboard.putNumber("Pose Timestamp", getTimestamp());
-
-          // Updates using the fresh pose in SmartDashboard when present
-          if (isFreshPose()) {
-            Pose2d pose = getRobotPose().orElse(new Pose2d());
-            SmartDashboard.putNumber("Fresh Pose X", pose.getX());
-            SmartDashboard.putNumber("Fresh Pose Y", pose.getY());
-            SmartDashboard.putNumber("Fresh Pose Heading", pose.getRotation().getDegrees());
-          } else {
-            SmartDashboard.putString("Pose Status", "Stale Pose");
-          }
 
         }
       }

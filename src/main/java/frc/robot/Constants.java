@@ -17,6 +17,17 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
  * constants are needed, to reduce verbosity.
  */
 public final class Constants {
+  public static final class FeatureToggles {
+    public static final boolean enableScissorLift = false;
+    public static final boolean enableAlgae = false;
+    public static final boolean enableMecanum = false;
+    public static final boolean enableVision = true;
+    public static final boolean enableCoral = false;
+    public static final boolean enableIMU = true;
+    public static final boolean enableRuntimeParams = true;
+    public static final boolean enablePoseEstimator = true;
+  }
+
   public static final class DriveConstants {
     public static final int kFrontLeftMotorPort = 0;
     public static final int kRearLeftMotorPort = 1;
