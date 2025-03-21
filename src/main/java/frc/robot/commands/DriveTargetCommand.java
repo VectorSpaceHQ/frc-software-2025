@@ -56,9 +56,9 @@ public class DriveTargetCommand extends Command {
   private double targetYaw = 0;
   private double tagRange = 0;
   private double targetID = AprilTags.None.getId(); // Initialize targetID to None
-  private PIDController forwardPIDController = new PIDController(0.01, 0, 0);
-  private PIDController strafePIDController = new PIDController(0.01, 0, 0);
-  private PIDController turnPIDController = new PIDController(1, 0, 0);
+  private PIDController forwardPIDController = new PIDController(0.4, 0, 0);
+  private PIDController strafePIDController = new PIDController(0.4, 0, 0);
+  private PIDController turnPIDController = new PIDController(0.05, 0, 0);
 
   private final double desiredYaw = 0.0;
   private final double desiredYOffset = 0.3;
@@ -93,11 +93,11 @@ public class DriveTargetCommand extends Command {
     // AutoConstants.kMaxAngularSpeedRadiansPerSecond);
     linearAccelerationLimit = table.get(elevatorSubsystem.getElevatorHeight());
 
-    forwardPWM = -driverController.getLeftY() * speedscalar;
+    forwardPWM = driverController.getLeftY() * speedscalar;
     forwardVoltage = forwardPWM * DriveConstants.kDefaultBusVoltage;
     forwardLinearSpeed = forwardVoltage / DriveConstants.kForwardVoltsPerMeterPerSecond;
 
-    strafePWM = -driverController.getLeftX() * speedscalar;
+    strafePWM = driverController.getLeftX() * speedscalar;
     strafeVoltage = strafePWM * DriveConstants.kDefaultBusVoltage;
     strafeLinearSpeed = strafeVoltage / DriveConstants.kStrafeVoltsPerMeterPerSecond;
 
@@ -170,7 +170,7 @@ public class DriveTargetCommand extends Command {
 
     DriveTargetCommandLogger();
     // Drive robot with values calculated above
-    // driveSubsystem.drive(forward, -strafe, turn, false);
+    driveSubsystem.drive(forward, -strafe, turn, false);
   }
 
   // Ends the drivetarget command
