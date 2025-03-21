@@ -175,10 +175,10 @@ public class ElevatorSubsystem extends SubsystemBase{
     if ((r_currentRotations < 1) && limitBottomOnceTrue) {
       speed = Math.max(0, speed);
     }
-    if((speed < 0) && r_currentRotations < 5)
-    {
-      speed = 0.2 * speed;
-    }
+    // if((speed < 0) && r_currentRotations < 5)
+    // {
+    //   speed = 0.2 * speed;
+    // }
 
     motor1.set(speed);
 
@@ -232,7 +232,7 @@ public class ElevatorSubsystem extends SubsystemBase{
         // RT Up
         double Raise = m_operatorController.getRightTriggerAxis();
         // DT Down
-        double Lower = 0.8 * m_operatorController.getLeftTriggerAxis();
+        double Lower = m_operatorController.getLeftTriggerAxis();
         this.setSpeed(Raise - Lower);
       },
       interrupted -> {
