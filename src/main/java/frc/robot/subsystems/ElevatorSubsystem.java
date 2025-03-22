@@ -232,7 +232,7 @@ public class ElevatorSubsystem extends SubsystemBase{
         // RT Up
         double Raise = m_operatorController.getRightTriggerAxis();
         // DT Down
-        double Lower = m_operatorController.getLeftTriggerAxis();
+        double Lower = 0.65 * m_operatorController.getLeftTriggerAxis();
         this.setSpeed(Raise - Lower);
       },
       interrupted -> {

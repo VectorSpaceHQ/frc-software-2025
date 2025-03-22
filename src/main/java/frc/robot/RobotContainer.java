@@ -246,7 +246,7 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getSimpleAutonomousCommand() {
-    return m_robotDrive.run(() -> m_robotDrive.drive(-0.2, 0, 0 ,false)).withTimeout(2);
+    return m_robotDrive.run(() -> m_robotDrive.drive(-0.18, 0, 0 ,false)).withTimeout(15);
   }
 
   public Command getComplexReef5Command() {
