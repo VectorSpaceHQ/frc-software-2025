@@ -76,16 +76,8 @@ public class DriveSubsystem extends SubsystemBase {
   private final CurrentLimitsConfigs rearLeftCurrentConfigs = new CurrentLimitsConfigs();
 
   
-
-  // Odometry class for tracking robot pose
-  MecanumDriveOdometry m_odometry =
-      new MecanumDriveOdometry(
-          DriveConstants.kDriveKinematics,
-          m_gyro.getRotation2d(),
-          new MecanumDriveWheelPositions());
-
   MecanumDrivePoseEstimator m_mecanumDrivePoseEstimator =
-      new MecanumDrivePoseEstimator(DriveConstants.kDriveKinematics, m_gyro.getRotation2d(), getCurrentWheelDistances(), getPose());
+      new MecanumDrivePoseEstimator(DriveConstants.kDriveKinematics, m_gyro.getRotation2d(), getCurrentWheelDistances(), getInitialPose());
   
     // Mutable holder for unit-safe voltage values, persisted to avoid reallocation.
   private final MutVoltage m_appliedVoltage = Volts.mutable(0);
@@ -176,7 +168,7 @@ public class DriveSubsystem extends SubsystemBase {
     m_rearLeftEncoder = m_rearLeft.getPosition().getValue().magnitude();
     m_frontRightEncoder = m_frontRight.getPosition().getValue().magnitude();
     m_rearRightEncoder = m_rearRight.getPosition().getValue().magnitude();
-    m_odometry.update(m_gyro.getRotation2d(), getCurrentWheelDistances());
+    m_mecanumDrivePoseEstimator.update(m_gyro.getRotation2d(), getCurrentWheelDistances());
     faultChecks();
   }
 
@@ -222,22 +214,17 @@ public class DriveSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("rear right drive current", m_rearRight.getStatorCurrent().getValueAsDouble());
   
   }
-  /**
-   * Returns the currently-estimated pose of the robot.
-   *
-   * @return The pose.
-   */
-  public Pose2d getPose() {
-    return m_odometry.getPoseMeters();
-  }
 
+  private Pose2d getInitialPose() {
+    return new Pose2d();
+  }
   /**
    * Resets the odometry to the specified pose.
    *
    * @param pose The pose to which to set the odometry.
    */
   public void resetOdometry(Pose2d pose) {
-    m_odometry.resetPosition(m_gyro.getRotation2d(), getCurrentWheelDistances(), pose);
+    m_mecanumDrivePoseEstimator.resetPosition(m_gyro.getRotation2d(), getCurrentWheelDistances(), pose);
   }
 
   /**
