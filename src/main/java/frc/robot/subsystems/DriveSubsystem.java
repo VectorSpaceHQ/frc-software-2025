@@ -4,13 +4,22 @@
 
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.Volts;
+
+import edu.wpi.first.units.measure.MutDistance;
+import edu.wpi.first.units.measure.MutLinearVelocity;
+import edu.wpi.first.units.measure.MutVoltage;
 import edu.wpi.first.math.estimator.MecanumDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.MecanumDriveOdometry;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelPositions;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.CANIDs;
@@ -24,7 +33,9 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.studica.frc.AHRS;
 
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 
 
@@ -41,6 +52,7 @@ public class DriveSubsystem extends SubsystemBase {
   private double m_rearLeftEncoder = 0;
   private double m_frontRightEncoder = 0;
   private double m_rearRightEncoder = 0;
+
   private final MecanumDrive m_drive =
      new MecanumDrive(m_frontLeft::set, m_rearLeft::set, m_frontRight::set, m_rearRight::set);
 
@@ -74,6 +86,50 @@ public class DriveSubsystem extends SubsystemBase {
 
   MecanumDrivePoseEstimator m_mecanumDrivePoseEstimator =
       new MecanumDrivePoseEstimator(DriveConstants.kDriveKinematics, m_gyro.getRotation2d(), getCurrentWheelDistances(), getPose());
+  
+    // Mutable holder for unit-safe voltage values, persisted to avoid reallocation.
+  private final MutVoltage m_appliedVoltage = Volts.mutable(0);
+  // Mutable holder for unit-safe linear distance values, persisted to avoid reallocation.
+  private final MutDistance m_distance = Meters.mutable(0);
+  // Mutable holder for unit-safe linear velocity values, persisted to avoid reallocation.
+  private final MutLinearVelocity m_velocity = MetersPerSecond.mutable(0);
+
+  SysIdRoutine routine = new SysIdRoutine(
+    new SysIdRoutine.Config(),
+    new SysIdRoutine.Mechanism(this::voltageDrive, log -> {
+                log.motor("drive-frontLeft")
+                    .voltage(
+                        m_appliedVoltage.mut_replace(
+                            m_frontLeft.get() * RobotController.getBatteryVoltage(), Volts))
+                    .linearPosition(m_distance.mut_replace(m_frontLeftEncoder, Meters))
+                    .linearVelocity(
+                        m_velocity.mut_replace(m_frontLeft.getVelocity().getValue().magnitude(), MetersPerSecond));
+
+                log.motor("drive-rearLeft")
+                    .voltage(
+                        m_appliedVoltage.mut_replace(
+                            m_rearLeft.get() * RobotController.getBatteryVoltage(), Volts))
+                    .linearPosition(m_distance.mut_replace(m_rearLeftEncoder, Meters))
+                    .linearVelocity(
+                        m_velocity.mut_replace(m_rearLeft.getVelocity().getValue().magnitude(), MetersPerSecond));
+
+                log.motor("drive-frontRight")
+                    .voltage(
+                        m_appliedVoltage.mut_replace(
+                            m_frontRight.get() * RobotController.getBatteryVoltage(), Volts))
+                    .linearPosition(m_distance.mut_replace(m_frontRightEncoder, Meters))
+                    .linearVelocity(
+                        m_velocity.mut_replace(m_frontRight.getVelocity().getValue().magnitude(), MetersPerSecond));
+
+                log.motor("drive-rearRight")
+                    .voltage(
+                        m_appliedVoltage.mut_replace(
+                            m_rearRight.get() * RobotController.getBatteryVoltage(), Volts))
+                    .linearPosition(m_distance.mut_replace(m_rearRightEncoder, Meters))
+                    .linearVelocity(
+                        m_velocity.mut_replace(m_rearRight.getVelocity().getValue().magnitude(), MetersPerSecond));
+              }, this)
+  );
 
   /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
@@ -82,16 +138,6 @@ public class DriveSubsystem extends SubsystemBase {
     SendableRegistry.addChild(m_drive, m_frontRight);
     SendableRegistry.addChild(m_drive, m_rearRight);
 
-    // Sets the distance per pulse for the encoders (most likely won't be used but was in original template)
-    // m_frontLeftEncoder.setDistancePerPulse(DriveConstants.kEncoderDistancePerPulse);
-    // m_rearLeftEncoder.setDistancePerPulse(DriveConstants.kEncoderDistancePerPulse);
-    // m_frontRightEncoder.setDistancePerPulse(DriveConstants.kEncoderDistancePerPulse);
-    // m_rearRightEncoder.setDistancePerPulse(DriveConstants.kEncoderDistancePerPulse);
-    // We need to invert one side of the drivetrain so that positive voltages
-    // result in both sides moving forward. Depending on how your robot's
-    // gearbox is constructed, you might have to invert the left side instead.
-
-    
     // Inversion of two motors
     frontRightMotorConfigs.Inverted = InvertedValue.Clockwise_Positive;
     rearRightMotorConfigs.Inverted = InvertedValue.Clockwise_Positive;
@@ -302,5 +348,21 @@ public class DriveSubsystem extends SubsystemBase {
    */
   public double getTurnRate() {
     return -m_gyro.getRate();
+  }
+
+  public void voltageDrive(Voltage volt) {
+    double volts = volt.magnitude();
+    m_frontLeft.setVoltage(volts);
+    m_rearLeft.setVoltage(volts);
+    m_frontRight.setVoltage(volts);
+    m_rearRight.setVoltage(volts);
+  }
+
+  public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+    return routine.quasistatic(direction);
+  } 
+
+  public Command sysIdDynamic(SysIdRoutine.Direction direction) {
+    return routine.dynamic(direction);
   }
 }

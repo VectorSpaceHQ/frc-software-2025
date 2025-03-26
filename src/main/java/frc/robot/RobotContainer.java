@@ -20,6 +20,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+
 import java.util.Map;
 import java.util.Optional;
 
@@ -45,6 +47,8 @@ public class RobotContainer {
   private final FieldTagMap fieldTagMap = new FieldTagMap();
   
   Map<String, AprilTags> fieldMap = fieldTagMap.getRedMap();
+
+  private boolean SysIDToggler = true;
 
   // The driver's controller
   CommandXboxController m_driverController = new CommandXboxController(OIConstants.kDriverControllerPort);
@@ -88,12 +92,28 @@ public class RobotContainer {
    * {@link JoystickButton}.
    */
   private void configureButtonBindings() {
-
+    
     m_driverController
         .leftBumper()
         .onTrue(new InstantCommand(() -> aimTarget.setSpeedScalar(0.3)))
         .onFalse(new InstantCommand(() -> aimTarget.setSpeedScalar(1)));
-
+    if (SysIDToggler){
+    m_driverController
+        .a()
+        .whileTrue(m_robotDrive.sysIdQuasistatic(Direction.kForward));
+    
+    m_driverController
+        .b()
+        .whileTrue(m_robotDrive.sysIdQuasistatic(Direction.kReverse));
+    
+    m_driverController
+        .x()
+        .whileTrue(m_robotDrive.sysIdDynamic(Direction.kForward));
+    
+    m_driverController
+        .y()
+        .whileTrue(m_robotDrive.sysIdDynamic(Direction.kReverse));
+    }
     // m_operatorController
     //     .b()
     //     .onTrue(m_robotElevator.GoTo(Level.L2));
@@ -144,54 +164,54 @@ public class RobotContainer {
         // .whileTrue(m_robotElevator.ElevatorRaiseCommand());
 
     // Go To Dispenser 1 (Left) - Add CMD in Feature Branch
-    m_driverController
-        .leftStick()
-        .and(m_driverController.leftBumper().negate())
-        .and(m_driverController.rightBumper().negate())
-        .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("coral1"))));
+    // m_driverController
+    //     .leftStick()
+    //     .and(m_driverController.leftBumper().negate())
+    //     .and(m_driverController.rightBumper().negate())
+    //     .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("coral1"))));
     
-    // Go To Dispenser 2 (Right) - Add CMD in Feature Branch
-    m_driverController 
-        .rightStick()
-        .and(m_driverController.leftBumper().negate())
-        .and(m_driverController.rightBumper().negate())
-        .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("coral2"))));
+    // // Go To Dispenser 2 (Right) - Add CMD in Feature Branch
+    // m_driverController 
+    //     .rightStick()
+    //     .and(m_driverController.leftBumper().negate())
+    //     .and(m_driverController.rightBumper().negate())
+    //     .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("coral2"))));
 
-    // Go To Reef 1
-    m_driverController
-        .leftBumper()
-        .and(m_driverController.a())
-        .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef1"))));
+    // // Go To Reef 1
+    // m_driverController
+    //     .leftBumper()
+    //     .and(m_driverController.a())
+    //     .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef1"))));
     
-    // Go To Reef 2
-    m_driverController
-        .leftBumper()
-        .and(m_driverController.b())
-        .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef2"))));
+    // // Go To Reef 2
+    // m_driverController
+    //     .leftBumper()
+    //     .and(m_driverController.b())
+    //     .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef2"))));
     
-    // Go To Reef 3
-    m_driverController
-        .leftBumper()
-        .and(m_driverController.x())
-        .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef3"))));
+    // // Go To Reef 3
+    // m_driverController
+    //     .leftBumper()
+    //     .and(m_driverController.x())
+    //     .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef3"))));
 
-    // Go To Reef 4
-    m_driverController
-        .leftBumper()
-        .and(m_driverController.y())
-        .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef4"))));
+    // // Go To Reef 4
+    // m_driverController
+    //     .leftBumper()
+    //     .and(m_driverController.y())
+    //     .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef4"))));
     
-    // Go To Reef 5
-    m_driverController
-        .leftBumper()
-        .and(m_driverController.back())
-        .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef5"))));
+    // // Go To Reef 5
+    // m_driverController
+    //     .leftBumper()
+    //     .and(m_driverController.back())
+    //     .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef5"))));
     
-    // Go To Reef 6
-    m_driverController
-    .leftBumper()
-    .and(m_driverController.start())
-    .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef6"))));
+    // // Go To Reef 6
+    // m_driverController
+    // .leftBumper()
+    // .and(m_driverController.start())
+    // .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef6"))));
 
     // Go To Reef 7
     m_driverController

@@ -69,6 +69,8 @@ public class VisionSubsystem extends SubsystemBase {
   private GenericEntry pose3dEntry;
   private GenericEntry pose2dEntry;
 
+  private Pose2d estimatedRobotPose2d = null;
+
   // Vision Subsystem constructor
   public VisionSubsystem() {
     // Initialize camera with name matching PhotonVision GUI (HAS TO MATCH)
@@ -199,7 +201,7 @@ public class VisionSubsystem extends SubsystemBase {
 
           EstimatedRobotPose estimatedRobotPose = optionalPose.get();
           Pose3d estimatedRobotPose3d = estimatedRobotPose.estimatedPose;
-          Pose2d estimatedRobotPose2d = estimatedRobotPose3d.toPose2d();
+          estimatedRobotPose2d = estimatedRobotPose3d.toPose2d();
           // Use this 2d pose as the added vision measurement for the pose estimator
 
         }
@@ -208,6 +210,10 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     return Optional.empty();
+  }
+
+  public Pose2d getPose2d() {
+    return estimatedRobotPose2d;
   }
 
   @Override
