@@ -121,8 +121,7 @@ public class RobotContainer {
     m_operatorController
         .y()
         .and(m_driverController.leftBumper().negate())
-        .and(m_driverController.rightBumper().negate())
-        .onTrue(m_robotElevator.GoTo(Level.L4));
+        .and(m_driverController.rightBumper().negate());
 
     // Manually Raise Elevator - Add Function in Feature Branch
     m_operatorController
