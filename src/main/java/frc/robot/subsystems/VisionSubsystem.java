@@ -11,6 +11,7 @@ import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonUtils;
+import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
@@ -71,6 +72,8 @@ public class VisionSubsystem extends SubsystemBase {
 
   private Pose2d estimatedRobotPose2d = null;
 
+  List<PhotonPipelineResult> cameraResults;
+  PhotonPipelineResult latestResult;
   // Vision Subsystem constructor
   public VisionSubsystem() {
     // Initialize camera with name matching PhotonVision GUI (HAS TO MATCH)
@@ -143,12 +146,10 @@ public class VisionSubsystem extends SubsystemBase {
 
   // Command to get the target yaw
   public double getTargetYaw(int id) {
-    var results = camera.getAllUnreadResults();
+    var results = cameraResults;
     double returnYaw = 0.0;
 
     if (!results.isEmpty()) {
-      var latestResult = results.get(results.size() - 1);
-
       if (latestResult.hasTargets()) {
         for (var target : latestResult.getTargets()) {
           if (target.getFiducialId() == id) {
@@ -158,17 +159,15 @@ public class VisionSubsystem extends SubsystemBase {
         }
       }
     }
+    
     return returnYaw;
   }
 
   // Command to get the target range
   public double getTargetRange(int id) {
-    var results = camera.getAllUnreadResults();
     double returnRange = 0.0;
 
-    if (!results.isEmpty()) {
-      var latestResult = results.get(results.size() - 1);
-
+    if (!cameraResults.isEmpty()) {
       if (latestResult.hasTargets()) {
         for (var target : latestResult.getTargets()) {
           if (target.getFiducialId() == id) {
@@ -188,7 +187,7 @@ public class VisionSubsystem extends SubsystemBase {
 
   // Converts 3d pose to 2d pose
   public Optional<Pose2d> getRobotPose() {
-    var result = camera.getLatestResult();
+    var result = latestResult;
 
     if (result.hasTargets()) {
       var target = result.getBestTarget();
@@ -220,13 +219,21 @@ public class VisionSubsystem extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
     if (cameraConnected) {
-      var results = camera.getLatestResult();
-      List<PhotonTrackedTarget> targets = results.getTargets();
+      cameraResults = camera.getAllUnreadResults();
+      
+      if (!cameraResults.isEmpty()) {
+        latestResult = cameraResults.get(cameraResults.size() - 1);
+      }
+      else {
+        latestResult = null;
+      }
 
-      if (results.hasTargets()) {
+      List<PhotonTrackedTarget> targets = latestResult.getTargets();
+
+      if (latestResult.hasTargets()) {
         for (PhotonTrackedTarget target : targets) {
 
-          if (results.hasTargets()) {
+          if (latestResult.hasTargets()) {
             double yaw = target.getYaw();
             double pitch = target.getPitch();
             double area = target.getArea();
@@ -241,10 +248,9 @@ public class VisionSubsystem extends SubsystemBase {
             yawEntry.setDouble(yaw);
             Optional<Pose3d> tagPose = layout.getTagPose(target.getFiducialId());
             if (tagPose.isPresent()) {
-              Optional<EstimatedRobotPose> estimatedRobotPose = poseEstimator.update(results);
+              Optional<EstimatedRobotPose> estimatedRobotPose = poseEstimator.update(latestResult);
 
               if (estimatedRobotPose.isPresent()) {
-
                 Pose3d estimatedRobotPose3d = estimatedRobotPose.get().estimatedPose;
                 Pose2d estimatedRobotPose2d = estimatedRobotPose3d.toPose2d();
 
