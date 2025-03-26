@@ -72,8 +72,8 @@ public class VisionSubsystem extends SubsystemBase {
 
   private Pose2d estimatedRobotPose2d = null;
 
-  List<PhotonPipelineResult> cameraResults;
-  PhotonPipelineResult latestResult;
+  List<PhotonPipelineResult> cameraResults = null;
+  PhotonPipelineResult latestResult = null;
   // Vision Subsystem constructor
   public VisionSubsystem() {
     // Initialize camera with name matching PhotonVision GUI (HAS TO MATCH)
@@ -188,7 +188,7 @@ public class VisionSubsystem extends SubsystemBase {
   // Converts 3d pose to 2d pose
   public Optional<Pose2d> getRobotPose() {
     var result = latestResult;
-
+    if (result != null) {
     if (result.hasTargets()) {
       var target = result.getBestTarget();
       var tagPose = layout.getTagPose(target.getFiducialId());
@@ -201,18 +201,13 @@ public class VisionSubsystem extends SubsystemBase {
           EstimatedRobotPose estimatedRobotPose = optionalPose.get();
           Pose3d estimatedRobotPose3d = estimatedRobotPose.estimatedPose;
           estimatedRobotPose2d = estimatedRobotPose3d.toPose2d();
-          // Use this 2d pose as the added vision measurement for the pose estimator
-
+          return Optional.of(estimatedRobotPose2d);
         }
 
       }
     }
-
-    return Optional.empty();
   }
-
-  public Pose2d getPose2d() {
-    return estimatedRobotPose2d;
+    return Optional.empty();
   }
 
   @Override

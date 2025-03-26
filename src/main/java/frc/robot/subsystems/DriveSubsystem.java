@@ -292,6 +292,9 @@ public class DriveSubsystem extends SubsystemBase {
     return m_rearRightEncoder;
   }
 
+  public void addVisionUpdate(Pose2d visionPose , double Time) {
+    m_mecanumDrivePoseEstimator.addVisionMeasurement(visionPose, Time);
+  }
   /**
    * Gets the current wheel speeds.
    *
@@ -305,11 +308,6 @@ public class DriveSubsystem extends SubsystemBase {
         m_rearRight.getVelocity().getValue().magnitude());
   }
 
-  /**
-   * Gets the current wheel distance measurements.
-   *
-   * @return the current wheel distance measurements in a MecanumDriveWheelPositions object.
-   */
   public MecanumDriveWheelPositions getCurrentWheelDistances() {
     return new MecanumDriveWheelPositions(
         m_frontLeftEncoder,

@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
@@ -70,9 +71,9 @@ public class DriveTargetCommand extends Command {
   // Executes the drivetarget command (periodic)
   @Override
   public void execute() {
-    // forward =  x_rate.calculate(driverController.getLeftY() * speedscalar );
-    // strafe =  y_rate.calculate(-driverController.getLeftX() * speedscalar );
-    // turn = theta_rate.calculate(-0.3 * driverController.getRightX() * AutoConstants.kMaxAngularSpeedRadiansPerSecond);
+    if (visionSubsystem.getRobotPose().isPresent()) {
+    driveSubsystem.addVisionUpdate(visionSubsystem.getRobotPose().get(), Timer.getFPGATimestamp());
+    }
     linearAccelerationLimit = table.get(elevatorSubsystem.getElevatorHeight());
 
     forwardPWM = driverController.getLeftY() * speedscalar;
