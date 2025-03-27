@@ -11,9 +11,10 @@ import static edu.wpi.first.units.Units.Volts;
 import edu.wpi.first.units.measure.MutDistance;
 import edu.wpi.first.units.measure.MutLinearVelocity;
 import edu.wpi.first.units.measure.MutVoltage;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.MecanumDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.kinematics.MecanumDriveOdometry;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelPositions;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds;
 import edu.wpi.first.units.measure.Voltage;
@@ -25,6 +26,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Gyro;
 import frc.robot.Constants.CANIDs;
 import frc.robot.Constants.DriveConstants;
+import frc.robot.commands.Trajectories;
 
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -48,15 +50,16 @@ public class DriveSubsystem extends SubsystemBase {
   private final TalonFX m_frontRight = new TalonFX(CANIDs.kDriveSubsystemFrontRight);
   private final TalonFX m_rearRight = new TalonFX(CANIDs.kDriveSubsystemRearRight);
 
-
   private double m_frontLeftEncoder = 0;
   private double m_rearLeftEncoder = 0;
   private double m_frontRightEncoder = 0;
   private double m_rearRightEncoder = 0;
 
-  private final MecanumDrive m_drive =
-     new MecanumDrive(m_frontLeft::set, m_rearLeft::set, m_frontRight::set, m_rearRight::set);
+  private final PIDController xController = new PIDController(10.0, 0.0, 0.0);
+  private final PIDController yController = new PIDController(10.0, 0.0, 0.0);
+  private final PIDController headingController = new PIDController(7.5, 0.0, 0.0);
 
+ 
   // The gyro sensor
   private final AHRS m_gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
 
@@ -75,8 +78,10 @@ public class DriveSubsystem extends SubsystemBase {
   private final CurrentLimitsConfigs rearRightCurrentConfigs = new CurrentLimitsConfigs();
   private final CurrentLimitsConfigs frontLeftCurrentConfigs = new CurrentLimitsConfigs();
   private final CurrentLimitsConfigs rearLeftCurrentConfigs = new CurrentLimitsConfigs();
-
   
+  private final MecanumDrive m_drive =
+    new MecanumDrive(m_frontLeft::set, m_rearLeft::set, m_frontRight::set, m_rearRight::set);
+
   MecanumDrivePoseEstimator m_mecanumDrivePoseEstimator =
       new MecanumDrivePoseEstimator(DriveConstants.kDriveKinematics, m_gyro.getRotation2d(), getCurrentWheelDistances(), getInitialPose());
   
@@ -242,14 +247,19 @@ public class DriveSubsystem extends SubsystemBase {
   public void drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative) {
     SmartDashboard.putNumber("x speed", xSpeed);
     if (fieldRelative) {
-      m_drive.driveCartesian(xSpeed, ySpeed, rot, m_gyro.getRotation2d());
+      m_drive.driveCartesian(xSpeed, ySpeed, rot, m_mecanumDrivePoseEstimator.getEstimatedPosition().getRotation());
     } else {
       m_drive.driveCartesian(xSpeed, ySpeed, rot);
     }
   }
 
-  
+  public void driveFieldRelative(ChassisSpeeds speeds) {
+    this.drive(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond, true);
+  }
 
+  public Pose2d getPose(){
+    return m_mecanumDrivePoseEstimator.getEstimatedPosition();
+  }
   
   public double getFrontLeftEncoder() {
     return m_frontLeftEncoder;
@@ -345,6 +355,21 @@ public class DriveSubsystem extends SubsystemBase {
     m_frontRight.setVoltage(volts);
     m_rearRight.setVoltage(volts);
   }
+
+  // public void followTrajectory(Trajectories sample) {
+  //         // Get the current pose of the robot
+  //         Pose2d pose = getPose();
+
+  //         // Generate the next speeds for the robot
+  //         ChassisSpeeds speeds = new ChassisSpeeds(
+  //             sample.vxMetersPerSecond + xController.calculate(pose.getX(), sample.x),
+  //             sample.vyMetersPerSecond + yController.calculate(pose.getY(), sample.y),
+  //             sample.omegaRadiansPerSecond + headingController.calculate(pose.getRotation().getRadians(), sample.heading)
+  //         );
+
+  //         // Apply the generated speeds
+  //         driveFieldRelative(speeds);
+  // }
 
   public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
     return routine.quasistatic(direction);
