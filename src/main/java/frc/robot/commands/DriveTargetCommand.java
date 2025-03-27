@@ -45,7 +45,6 @@ public class DriveTargetCommand extends Command {
   private double linearAccelerationLimit;
   private DynamicSlewRateLimiter x_rate = new DynamicSlewRateLimiter(DriveConstants.kMaxAcceleration);
   private DynamicSlewRateLimiter y_rate = new DynamicSlewRateLimiter(DriveConstants.kMaxAcceleration);
-  private DynamicSlewRateLimiter theta_rate = new DynamicSlewRateLimiter(AutoConstants.kMaxAngularSpeedRadiansPerSecondSquared);
   private InterpolatingDoubleTreeMap table = new InterpolatingDoubleTreeMap();
 
   // Sets the drivetarget constructor
@@ -92,36 +91,8 @@ public class DriveTargetCommand extends Command {
     
     forward = forwardAdjustedPWM;
     strafe = strafeAdjustedPWM;
-    // forward =  (driverController.getLeftY() * speedscalar );
-    // strafe =  (-driverController.getLeftX() * speedscalar );
-    turn = theta_rate.calculate(-0.3 * driverController.getRightX());
-    // Check if the camera is connected and displays the aiming and camera status
-    if (visionSubsystem.isCameraConnected() && autoDriveFeatureToggle) {
-      SmartDashboard.putString("Aiming Status", "Camera Connected");
+    turn = (-0.3 * driverController.getRightX());
 
-      // Check if target has been specified
-      if (targetID != AprilTags.None.getId()) {
-        // If the camera is connected, get the target yaw and drive towards it
-        double targetYaw = visionSubsystem.getTargetYaw((int) targetID);
-        double targetRange = visionSubsystem.getTargetRange((int) targetID);
-
-        // Check if the target yaw is valid and displays the aiming status and yaw
-        if (!Double.isNaN(targetYaw)) {
-          turn = -targetYaw * 0.01 * AutoConstants.kMaxAngularSpeedRadiansPerSecond;
-          SmartDashboard.putString("Aiming Status", "Aiming");
-          SmartDashboard.putNumber("Target Yaw", targetYaw);
-          // Reset the odometry if the estimated pose has targets
-        }
-
-        if (!Double.isNaN(targetRange)) {
-          forward = (visionThingy - targetRange * 0.01 * AutoConstants.kMaxSpeedMetersPerSecond);
-          SmartDashboard.putString("Aiming Status", "Aiming");
-          SmartDashboard.putNumber("Target Yaw", targetYaw);
-        }
-      }
-    } else {
-      SmartDashboard.putString("Aiming Status", "Camera Not Connected");
-    }
     DriveTargetCommandLogger();
     driveSubsystem.drive(forward, strafe, turn, true);
   }

@@ -294,6 +294,9 @@ public class DriveSubsystem extends SubsystemBase {
 
   public void addVisionUpdate(Pose2d visionPose , double Time) {
     m_mecanumDrivePoseEstimator.addVisionMeasurement(visionPose, Time);
+    SmartDashboard.putNumber("Time Vision Update Added", Time);
+    SmartDashboard.putNumber("Vision Pose X", visionPose.getX());
+    SmartDashboard.putNumber("Vision Pose y", visionPose.getY());
   }
   /**
    * Gets the current wheel speeds.
