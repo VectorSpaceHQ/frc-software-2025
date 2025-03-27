@@ -94,6 +94,9 @@ public class IMUImpl implements Gyro {
       SmartDashboard.putNumber("IMU_Byte_Count", m_gyro.getByteCount());
       SmartDashboard.putNumber("IMU_Update_Count", m_gyro.getUpdateCount());
     }
+    else {
+      SmartDashboard.putBoolean("IMU DNE", true);
+    }
   }
 
   public Rotation2d getRotation2d(){

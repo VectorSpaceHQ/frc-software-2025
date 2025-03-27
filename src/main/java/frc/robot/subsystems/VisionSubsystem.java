@@ -35,7 +35,7 @@ public class VisionSubsystem extends SubsystemBase {
   public static final PhotonPoseEstimator.PoseStrategy MULTI_TAG_PNP_ON_PROCESSOR = PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR;
 
   // Constants for the camera name and field layout path
-  private static final String camera_name = "Front_Camera_Robot";
+  private static final String camera_name = "Team10257_Front_Camera";
   private String field_layout_path = new File(Filesystem.getDeployDirectory(), "2025-reefscape.json")
       .getAbsolutePath();
 
@@ -168,6 +168,7 @@ public class VisionSubsystem extends SubsystemBase {
     double returnRange = 0.0;
 
     if (!cameraResults.isEmpty()) {
+      if (latestResult != null){
       if (latestResult.hasTargets()) {
         for (var target : latestResult.getTargets()) {
           if (target.getFiducialId() == id) {
@@ -181,6 +182,7 @@ public class VisionSubsystem extends SubsystemBase {
           }
         }
       }
+    }
     }
     return returnRange;
   }
@@ -223,8 +225,9 @@ public class VisionSubsystem extends SubsystemBase {
         latestResult = null;
       }
 
-      List<PhotonTrackedTarget> targets = latestResult.getTargets();
-
+      
+      if (latestResult != null){
+        List<PhotonTrackedTarget> targets = latestResult.getTargets();
       if (latestResult.hasTargets()) {
         for (PhotonTrackedTarget target : targets) {
 
@@ -269,6 +272,7 @@ public class VisionSubsystem extends SubsystemBase {
           }
         }
       }
+    }
     }
   }
 }

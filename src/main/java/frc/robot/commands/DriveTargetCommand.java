@@ -123,7 +123,7 @@ public class DriveTargetCommand extends Command {
       SmartDashboard.putString("Aiming Status", "Camera Not Connected");
     }
     DriveTargetCommandLogger();
-    driveSubsystem.drive(forward, strafe, turn, false);
+    driveSubsystem.drive(forward, strafe, turn, true);
   }
 
   // Ends the drivetarget command

@@ -28,9 +28,6 @@ import java.util.Optional;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-
-
-
 /*
  * This class is where the bulk of the robot should be declared.  Since Command-based is a
  * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
@@ -77,11 +74,14 @@ public class RobotContainer {
     if (ally.isPresent()) {
         if (ally.get() == Alliance.Red) {
             fieldMap = fieldTagMap.getRedMap();
+            SmartDashboard.putBoolean("IsRed", true);
         }
         if (ally.get() == Alliance.Blue) {
             fieldMap = fieldTagMap.getBlueMap();
+            SmartDashboard.putBoolean("IsRed", false);
         }
     }
+
     
  }
 

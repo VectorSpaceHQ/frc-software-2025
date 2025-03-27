@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.Gyro;
 import frc.robot.Constants.CANIDs;
 import frc.robot.Constants.DriveConstants;
 
@@ -212,7 +213,9 @@ public class DriveSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("front right drive current", m_frontRight.getStatorCurrent().getValueAsDouble());
     SmartDashboard.putNumber("rear left drive current", m_rearLeft.getStatorCurrent().getValueAsDouble());
     SmartDashboard.putNumber("rear right drive current", m_rearRight.getStatorCurrent().getValueAsDouble());
-  
+    SmartDashboard.putNumber("pose estimate x", m_mecanumDrivePoseEstimator.getEstimatedPosition().getX());
+    SmartDashboard.putNumber("pose estimate y", m_mecanumDrivePoseEstimator.getEstimatedPosition().getY());
+    SmartDashboard.putNumber("pose estimate Rotation(Degrees)", m_mecanumDrivePoseEstimator.getEstimatedPosition().getRotation().getDegrees());
   }
 
   private Pose2d getInitialPose() {
