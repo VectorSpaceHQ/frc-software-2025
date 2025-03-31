@@ -254,7 +254,7 @@ public class DriveTargetCommand extends Command {
 
     DriveTargetCommandLogger();
     // Drive robot with values calculated above
-    driveSubsystem.drive(forward, -strafe, turn, false);
+    // driveSubsystem.drive(forward, -strafe, turn, false);
   }
 
   // Ends the drivetarget command

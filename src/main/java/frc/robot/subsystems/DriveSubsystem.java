@@ -112,16 +112,6 @@ public class DriveSubsystem extends SubsystemBase {
 
   public void setGyro(Gyro gyro) {
     this.m_gyro = gyro;
-
-    if (this.m_gyro != null) {
-      m_poseEstimator = new MecanumDrivePoseEstimator(
-          DriveConstants.kDriveKinematics,
-          m_gyro.getRotation2d(),
-          getCurrentWheelDistances(),
-          new Pose2d()
-      );
-      SmartDashboard.putBoolean("Pose Estimator Initialized", true);
-    }
   }
 
   /**
@@ -140,12 +130,7 @@ public class DriveSubsystem extends SubsystemBase {
     m_frontRightEncoder = m_frontRight.getPosition().getValue().magnitude();
     m_rearRightEncoder = m_rearRight.getPosition().getValue().magnitude();
     
-    // Only update pose estimator if gyro and pose estimator are initialized
-    if (m_gyro != null && m_poseEstimator != null) {
-      m_poseEstimator.update(m_gyro.getRotation2d(), getCurrentWheelDistances());
-    }
-    
-    faultChecks();
+  
     
     // Only display IMU data if gyro is initialized
     if (m_gyro != null) {

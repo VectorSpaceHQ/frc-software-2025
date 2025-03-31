@@ -22,6 +22,7 @@ public class RobotPoseEstimatorSubsystem extends SubsystemBase {
   // The main pose estimator
   private final MecanumDrivePoseEstimator poseEstimator;
 
+  // Standard deviations
   private Matrix<N3, N1> stateStdDevs = VecBuilder.fill(0.02, 0.02, 0.01); // For odometry (placeholder values)
   private Matrix<N3, N1> visionStdDevs = VecBuilder.fill(0.45, 0.45, 0.45); // For vision (default values)
 
@@ -55,6 +56,7 @@ public class RobotPoseEstimatorSubsystem extends SubsystemBase {
   public void periodic() {
 
     try {
+      
       // Update with odometry data
       poseEstimator.update(
           gyro.getRotation2d(),
@@ -71,7 +73,8 @@ public class RobotPoseEstimatorSubsystem extends SubsystemBase {
         if (visionPose.isPresent() && timestamp > 0) {
 
           try {
-            // Add the vision measurement
+            // Add the vision measurement 
+            
             poseEstimator.addVisionMeasurement(visionPose.get(), timestamp);
             visionUpdateThisCycle = true; 
             SmartDashboard.putNumber("Last Vision Update", Timer.getFPGATimestamp());
@@ -98,7 +101,7 @@ public class RobotPoseEstimatorSubsystem extends SubsystemBase {
 
     } catch (Exception e) {
       // Log any errors during periodic updates
-      SmartDashboard.putString("Pose Estimator Periodic Error", e.getMessage());
+      SmartDashboard.putString("Pose Estimator Periodic Error", e.getMessage()); // To fix
     }
   }
 

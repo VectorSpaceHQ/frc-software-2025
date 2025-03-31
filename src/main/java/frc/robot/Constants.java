@@ -18,9 +18,9 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
  */
 public final class Constants {
   public static final class FeatureToggles {
-    public static final boolean enableScissorLift = false;
-    public static final boolean enableAlgae = false;
-    public static final boolean enableMecanum = false;
+    public static final boolean enableScissorLift = true;
+    public static final boolean enableAlgae = true;
+    public static final boolean enableMecanum = true;
     public static final boolean enableVision = true;
     public static final boolean enableCoral = false;
     public static final boolean enableIMU = true;

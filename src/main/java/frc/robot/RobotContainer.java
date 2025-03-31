@@ -33,7 +33,7 @@ public class RobotContainer {
   private AlgaeSubsystem m_robotAlgae = null;
   private FieldTagMap fieldTagMap = null;
   private IMUImpl m_IMU = null;
-  private RuntimeParameters m_Parameters = null;
+  private RuntimeParameters m_Parameters;
   private Map<String, AprilTags> fieldMap = null;
   private RobotPoseEstimatorSubsystem m_poseEstimator = null;
 
@@ -41,13 +41,17 @@ public class RobotContainer {
   CommandXboxController m_driverController = null;
   CommandXboxController m_operatorController = null;
 
-  private DriveTargetCommand aimTarget = null;
+  private DriveTargetCommand aimTarget;
   private final SendableChooser<Command> m_chooser = new SendableChooser<>();
 
   public RobotContainer() {
-    // Initialize IMU first since the pose estimator and drive subsystem need it
+    // Initialize IMU because errors occur otherwise for some reason
     m_IMU = new IMUImpl();
-
+    
+    // Create controllers 
+    m_driverController = new CommandXboxController(OIConstants.kDriverControllerPort);
+    m_operatorController = new CommandXboxController(OIConstants.kOperatorControllerPort);
+    
     // Initialize subsystems (using feature toggles)
     if (Constants.FeatureToggles.enableMecanum) {
       m_robotDrive = new DriveSubsystem();
@@ -99,7 +103,10 @@ public class RobotContainer {
 
     // Initialize FieldTagMap
     fieldTagMap = new FieldTagMap();
-
+    
+    // Determine alliance and set appropriate field map
+    determineAlliance();
+    
     // Configure controller bindings
     configureButtonBindings();
 
@@ -108,10 +115,7 @@ public class RobotContainer {
 
     // Setup autonomous command chooser
     setupAutonomousCommands();
-
-    // Determine alliance and set appropriate field map
-    determineAlliance();
-  }
+}
 
   // Default commands
   private void setupDefaultCommands() {
@@ -140,14 +144,20 @@ public class RobotContainer {
     }
   }
 
-  // Autonomous command chooser
   private void setupAutonomousCommands() {
-    m_chooser.setDefaultOption("Simple Auto", getSimpleAutonomousCommand());
-    m_chooser.addOption("Reef5", getReef5Command());
-    m_chooser.addOption("Complex Auto", getComplexReef5Command());
-    SmartDashboard.putData(m_chooser);
-  }
 
+    if (m_robotDrive != null) {
+        m_chooser.setDefaultOption("Simple Auto", getSimpleAutonomousCommand());
+        m_chooser.addOption("Reef5", getReef5Command());
+        m_chooser.addOption("Complex Auto", getComplexReef5Command());
+        SmartDashboard.putData(m_chooser);
+    } else {
+        // Add a dummy command when drive isn't available
+        m_chooser.setDefaultOption("No Drive Available", new InstantCommand());
+        SmartDashboard.putData(m_chooser);
+    }
+}
+  // Determine the appropriate alliance
   private void determineAlliance() {
     // Default to red alliance
     fieldMap = fieldTagMap.getRedMap();

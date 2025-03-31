@@ -37,8 +37,9 @@ public class VisionSubsystem extends SubsystemBase {
   // teams
   public static final PhotonPoseEstimator.PoseStrategy MULTI_TAG_PNP_ON_PROCESSOR = PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR;
 
+
   // Constants for the camera name and field layout path
-  private static final String camera_name = "Front_Camera_Robot2";
+  private static final String camera_name = "Team10257_Front_Camera";
   private String field_layout_path = new File(Filesystem.getDeployDirectory(), "2025-reefscape.json")
       .getAbsolutePath();
 
@@ -138,6 +139,7 @@ public class VisionSubsystem extends SubsystemBase {
 
       // Initialize pose estimator
       poseEstimator = new PhotonPoseEstimator(layout, MULTI_TAG_PNP_ON_PROCESSOR, robotToCamera);
+      poseEstimator.setMultiTagFallbackStrategy(PhotonPoseEstimator.PoseStrategy.LOWEST_AMBIGUITY);
     } catch (IOException e) {
       System.err.println("Error initializing AprilTag field layout: " + e.getMessage());
       cameraConnected = false;
