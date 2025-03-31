@@ -1,10 +1,11 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot.subsystems;
 
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.estimator.MecanumDrivePoseEstimator;
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.MecanumDriveOdometry;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelPositions;
@@ -15,6 +16,7 @@ import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.CANIDs;
 import frc.robot.Constants.DriveConstants;
+import edu.wpi.first.wpilibj.Timer;
 
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -22,32 +24,28 @@ import com.ctre.phoenix6.configs.TalonFXConfigurator;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
-import com.studica.frc.AHRS;
+import frc.robot.Gyro;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-
+// Temporary: for vision measurements
+// import frc.robot.subsystems.VisionSubsystem;
 
 public class DriveSubsystem extends SubsystemBase {
-
-  
   private final TalonFX m_frontLeft = new TalonFX(CANIDs.kDriveSubsystemFrontLeft);
   private final TalonFX m_rearLeft = new TalonFX(CANIDs.kDriveSubsystemRearLeft);
   private final TalonFX m_frontRight = new TalonFX(CANIDs.kDriveSubsystemFrontRight);
   private final TalonFX m_rearRight = new TalonFX(CANIDs.kDriveSubsystemRearRight);
 
-
   private double m_frontLeftEncoder = 0;
   private double m_rearLeftEncoder = 0;
   private double m_frontRightEncoder = 0;
   private double m_rearRightEncoder = 0;
+  
   private final MecanumDrive m_drive =
      new MecanumDrive(m_frontLeft::set, m_rearLeft::set, m_frontRight::set, m_rearRight::set);
 
-  // The gyro sensor
-  private final AHRS m_gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
-
-   //using default frontR rearR inverted right now
+  //using default frontR rearR inverted right now
   private final TalonFXConfigurator frontRightConfigurator = m_frontRight.getConfigurator();
   private final TalonFXConfigurator rearRightConfigurator = m_rearRight.getConfigurator();
   private final TalonFXConfigurator frontLeftConfigurator = m_frontLeft.getConfigurator();
@@ -63,17 +61,8 @@ public class DriveSubsystem extends SubsystemBase {
   private final CurrentLimitsConfigs frontLeftCurrentConfigs = new CurrentLimitsConfigs();
   private final CurrentLimitsConfigs rearLeftCurrentConfigs = new CurrentLimitsConfigs();
 
-  
-
-  // Odometry class for tracking robot pose
-  MecanumDriveOdometry m_odometry =
-      new MecanumDriveOdometry(
-          DriveConstants.kDriveKinematics,
-          m_gyro.getRotation2d(),
-          new MecanumDriveWheelPositions());
-
-  MecanumDrivePoseEstimator m_mecanumDrivePoseEstimator =
-      new MecanumDrivePoseEstimator(DriveConstants.kDriveKinematics, m_gyro.getRotation2d(), getCurrentWheelDistances(), getPose());
+  private Gyro m_gyro = null;
+  private MecanumDrivePoseEstimator m_poseEstimator = null;
 
   /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
@@ -90,7 +79,6 @@ public class DriveSubsystem extends SubsystemBase {
     // We need to invert one side of the drivetrain so that positive voltages
     // result in both sides moving forward. Depending on how your robot's
     // gearbox is constructed, you might have to invert the left side instead.
-
     
     // Inversion of two motors
     frontRightMotorConfigs.Inverted = InvertedValue.Clockwise_Positive;
@@ -99,7 +87,6 @@ public class DriveSubsystem extends SubsystemBase {
     // Current Limits
     frontRightCurrentConfigs.withSupplyCurrentLimit(40);
     frontRightCurrentConfigs.withStatorCurrentLimit(100);
-    
 
     rearRightCurrentConfigs.withSupplyCurrentLimit(40);
     rearRightCurrentConfigs.withStatorCurrentLimit(100);
@@ -123,6 +110,18 @@ public class DriveSubsystem extends SubsystemBase {
     // m_drive.setMaxOutput(0.3);
   }
 
+  public void setGyro(Gyro gyro) {
+    this.m_gyro = gyro;
+  }
+
+  /**
+   * Gets the gyro used by this drive subsystem
+   * @return The gyro
+   */
+  public Gyro getGyro() {
+    return m_gyro;
+  }
+
   @Override
   public void periodic() {
     // Update the odometry in the periodic block
@@ -130,8 +129,13 @@ public class DriveSubsystem extends SubsystemBase {
     m_rearLeftEncoder = m_rearLeft.getPosition().getValue().magnitude();
     m_frontRightEncoder = m_frontRight.getPosition().getValue().magnitude();
     m_rearRightEncoder = m_rearRight.getPosition().getValue().magnitude();
-    m_odometry.update(m_gyro.getRotation2d(), getCurrentWheelDistances());
-    faultChecks();
+    
+  
+    
+    // Only display IMU data if gyro is initialized
+    if (m_gyro != null) {
+      m_gyro.DisplayIMUData();
+    }
   }
 
   // Runs motor fault checks for logging purposes
@@ -182,16 +186,18 @@ public class DriveSubsystem extends SubsystemBase {
    * @return The pose.
    */
   public Pose2d getPose() {
-    return m_odometry.getPoseMeters();
+    if (m_poseEstimator != null) {
+      return m_poseEstimator.getEstimatedPosition();
+    }
+    return new Pose2d(); // Return default pose if estimator is not initialized
   }
 
-  /**
-   * Resets the odometry to the specified pose.
-   *
-   * @param pose The pose to which to set the odometry.
-   */
+ 
+  // Resets the odometry to the specified pose.
   public void resetOdometry(Pose2d pose) {
-    m_odometry.resetPosition(m_gyro.getRotation2d(), getCurrentWheelDistances(), pose);
+    if (m_poseEstimator != null && m_gyro != null) {
+      m_poseEstimator.resetPosition(m_gyro.getRotation2d(), getCurrentWheelDistances(), pose);
+    }
   }
 
   /**
@@ -205,15 +211,12 @@ public class DriveSubsystem extends SubsystemBase {
    */
   public void drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative) {
     SmartDashboard.putNumber("x speed", xSpeed);
-    if (fieldRelative) {
+    if (fieldRelative && m_gyro != null) {
       m_drive.driveCartesian(xSpeed, ySpeed, rot, m_gyro.getRotation2d());
     } else {
       m_drive.driveCartesian(xSpeed, ySpeed, rot);
     }
   }
-
-  
-
   
   public double getFrontLeftEncoder() {
     return m_frontLeftEncoder;
@@ -283,7 +286,9 @@ public class DriveSubsystem extends SubsystemBase {
 
   /** Zeroes the heading of the robot. */
   public void zeroHeading() {
-    m_gyro.reset();
+    if (m_gyro != null) {
+      m_gyro.reset();
+    }
   }
 
   /**
@@ -292,7 +297,10 @@ public class DriveSubsystem extends SubsystemBase {
    * @return the robot's heading in degrees, from -180 to 180
    */
   public double getHeading() {
-    return m_gyro.getRotation2d().getDegrees();
+    if (m_gyro != null) {
+      return m_gyro.getRotation2d().getDegrees();
+    }
+    return 0.0; // Default heading if gyro is not initialized
   }
 
   /**
@@ -301,6 +309,9 @@ public class DriveSubsystem extends SubsystemBase {
    * @return The turn rate of the robot, in degrees per second
    */
   public double getTurnRate() {
-    return -m_gyro.getRate();
+    if (m_gyro != null) {
+      return -m_gyro.getRate();
+    }
+    return 0.0; // Default turn rate if gyro is not initialized
   }
 }
