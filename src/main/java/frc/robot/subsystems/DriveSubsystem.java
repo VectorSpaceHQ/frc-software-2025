@@ -14,7 +14,9 @@ import edu.wpi.first.units.measure.MutVoltage;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.MecanumDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.MecanumDriveKinematics;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelPositions;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds;
 import edu.wpi.first.units.measure.Voltage;
@@ -23,10 +25,8 @@ import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.Gyro;
 import frc.robot.Constants.CANIDs;
 import frc.robot.Constants.DriveConstants;
-import frc.robot.commands.Trajectories;
 
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -54,11 +54,6 @@ public class DriveSubsystem extends SubsystemBase {
   private double m_rearLeftEncoder = 0;
   private double m_frontRightEncoder = 0;
   private double m_rearRightEncoder = 0;
-
-  private final PIDController xController = new PIDController(10.0, 0.0, 0.0);
-  private final PIDController yController = new PIDController(10.0, 0.0, 0.0);
-  private final PIDController headingController = new PIDController(7.5, 0.0, 0.0);
-
  
   // The gyro sensor
   private final AHRS m_gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
@@ -81,6 +76,7 @@ public class DriveSubsystem extends SubsystemBase {
   
   private final MecanumDrive m_drive =
     new MecanumDrive(m_frontLeft::set, m_rearLeft::set, m_frontRight::set, m_rearRight::set);
+
 
   MecanumDrivePoseEstimator m_mecanumDrivePoseEstimator =
       new MecanumDrivePoseEstimator(DriveConstants.kDriveKinematics, m_gyro.getRotation2d(), getCurrentWheelDistances(), getInitialPose());
@@ -218,9 +214,7 @@ public class DriveSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("front right drive current", m_frontRight.getStatorCurrent().getValueAsDouble());
     SmartDashboard.putNumber("rear left drive current", m_rearLeft.getStatorCurrent().getValueAsDouble());
     SmartDashboard.putNumber("rear right drive current", m_rearRight.getStatorCurrent().getValueAsDouble());
-    SmartDashboard.putNumber("pose estimate x", m_mecanumDrivePoseEstimator.getEstimatedPosition().getX());
-    SmartDashboard.putNumber("pose estimate y", m_mecanumDrivePoseEstimator.getEstimatedPosition().getY());
-    SmartDashboard.putNumber("pose estimate Rotation(Degrees)", m_mecanumDrivePoseEstimator.getEstimatedPosition().getRotation().getDegrees());
+  
   }
 
   private Pose2d getInitialPose() {
@@ -294,9 +288,6 @@ public class DriveSubsystem extends SubsystemBase {
 
   public void addVisionUpdate(Pose2d visionPose , double Time) {
     m_mecanumDrivePoseEstimator.addVisionMeasurement(visionPose, Time);
-    SmartDashboard.putNumber("Time Vision Update Added", Time);
-    SmartDashboard.putNumber("Vision Pose X", visionPose.getX());
-    SmartDashboard.putNumber("Vision Pose y", visionPose.getY());
   }
   /**
    * Gets the current wheel speeds.
@@ -317,6 +308,10 @@ public class DriveSubsystem extends SubsystemBase {
         m_rearLeftEncoder,
         m_frontRightEncoder,
         m_rearRightEncoder);
+  }
+
+  public MecanumDriveKinematics getMecanumDriveKinematics() {
+    return new MecanumDriveKinematics(new Translation2d(0., 0.), new Translation2d(0., 0.), new Translation2d(0., 0.), new Translation2d(0., 0.));
   }
 
   /**
@@ -358,21 +353,6 @@ public class DriveSubsystem extends SubsystemBase {
     m_frontRight.setVoltage(volts);
     m_rearRight.setVoltage(volts);
   }
-
-  // public void followTrajectory(Trajectories sample) {
-  //         // Get the current pose of the robot
-  //         Pose2d pose = getPose();
-
-  //         // Generate the next speeds for the robot
-  //         ChassisSpeeds speeds = new ChassisSpeeds(
-  //             sample.vxMetersPerSecond + xController.calculate(pose.getX(), sample.x),
-  //             sample.vyMetersPerSecond + yController.calculate(pose.getY(), sample.y),
-  //             sample.omegaRadiansPerSecond + headingController.calculate(pose.getRotation().getRadians(), sample.heading)
-  //         );
-
-  //         // Apply the generated speeds
-  //         driveFieldRelative(speeds);
-  // }
 
   public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
     return routine.quasistatic(direction);
