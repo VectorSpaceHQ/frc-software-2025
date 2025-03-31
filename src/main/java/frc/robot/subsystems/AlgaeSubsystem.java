@@ -63,8 +63,8 @@ public class AlgaeSubsystem extends SubsystemBase {
         double right_speed = speed;
 
         // limit the opening speeds
-        left_speed = Math.max(left_speed, -0.2);
-        right_speed = Math.max(right_speed, -0.2);
+        left_speed = Math.max(left_speed, -0.30);
+        right_speed = Math.max(right_speed, -0.30);
 
         if(limitSwitchLeft){
             left_speed = Math.max(0, speed);
@@ -88,7 +88,7 @@ public class AlgaeSubsystem extends SubsystemBase {
             () -> {
                 update();
                 speed = m_operatorcontroller.getRightY();
-                speed = 0.2 * speed;
+                speed = 0.3 * speed;
                 //motor_left.set(speed);
                 setSpeed(speed);
                 AlgaeLogger();

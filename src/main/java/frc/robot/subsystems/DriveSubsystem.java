@@ -1,18 +1,11 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.Volts;
-
-import edu.wpi.first.units.measure.MutDistance;
-import edu.wpi.first.units.measure.MutLinearVelocity;
-import edu.wpi.first.units.measure.MutVoltage;
-import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.estimator.MecanumDrivePoseEstimator;
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -27,6 +20,7 @@ import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.CANIDs;
 import frc.robot.Constants.DriveConstants;
+import edu.wpi.first.wpilibj.Timer;
 
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -34,17 +28,16 @@ import com.ctre.phoenix6.configs.TalonFXConfigurator;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
-import com.studica.frc.AHRS;
+import frc.robot.Gyro;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
-
+// Temporary: for vision measurements
+// import frc.robot.subsystems.VisionSubsystem;
 
 public class DriveSubsystem extends SubsystemBase {
-
-  
   private final TalonFX m_frontLeft = new TalonFX(CANIDs.kDriveSubsystemFrontLeft);
   private final TalonFX m_rearLeft = new TalonFX(CANIDs.kDriveSubsystemRearLeft);
   private final TalonFX m_frontRight = new TalonFX(CANIDs.kDriveSubsystemFrontRight);
@@ -54,11 +47,11 @@ public class DriveSubsystem extends SubsystemBase {
   private double m_rearLeftEncoder = 0;
   private double m_frontRightEncoder = 0;
   private double m_rearRightEncoder = 0;
- 
-  // The gyro sensor
-  private final AHRS m_gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
+  
+  private final MecanumDrive m_drive =
+     new MecanumDrive(m_frontLeft::set, m_rearLeft::set, m_frontRight::set, m_rearRight::set);
 
-   //using default frontR rearR inverted right now
+  //using default frontR rearR inverted right now
   private final TalonFXConfigurator frontRightConfigurator = m_frontRight.getConfigurator();
   private final TalonFXConfigurator rearRightConfigurator = m_rearRight.getConfigurator();
   private final TalonFXConfigurator frontLeftConfigurator = m_frontLeft.getConfigurator();
@@ -73,57 +66,9 @@ public class DriveSubsystem extends SubsystemBase {
   private final CurrentLimitsConfigs rearRightCurrentConfigs = new CurrentLimitsConfigs();
   private final CurrentLimitsConfigs frontLeftCurrentConfigs = new CurrentLimitsConfigs();
   private final CurrentLimitsConfigs rearLeftCurrentConfigs = new CurrentLimitsConfigs();
-  
-  private final MecanumDrive m_drive =
-    new MecanumDrive(m_frontLeft::set, m_rearLeft::set, m_frontRight::set, m_rearRight::set);
 
-
-  MecanumDrivePoseEstimator m_mecanumDrivePoseEstimator =
-      new MecanumDrivePoseEstimator(DriveConstants.kDriveKinematics, m_gyro.getRotation2d(), getCurrentWheelDistances(), getInitialPose());
-  
-    // Mutable holder for unit-safe voltage values, persisted to avoid reallocation.
-  private final MutVoltage m_appliedVoltage = Volts.mutable(0);
-  // Mutable holder for unit-safe linear distance values, persisted to avoid reallocation.
-  private final MutDistance m_distance = Meters.mutable(0);
-  // Mutable holder for unit-safe linear velocity values, persisted to avoid reallocation.
-  private final MutLinearVelocity m_velocity = MetersPerSecond.mutable(0);
-
-  SysIdRoutine routine = new SysIdRoutine(
-    new SysIdRoutine.Config(),
-    new SysIdRoutine.Mechanism(this::voltageDrive, log -> {
-                log.motor("drive-frontLeft")
-                    .voltage(
-                        m_appliedVoltage.mut_replace(
-                            m_frontLeft.get() * RobotController.getBatteryVoltage(), Volts))
-                    .linearPosition(m_distance.mut_replace(m_frontLeftEncoder, Meters))
-                    .linearVelocity(
-                        m_velocity.mut_replace(m_frontLeft.getVelocity().getValue().magnitude(), MetersPerSecond));
-
-                log.motor("drive-rearLeft")
-                    .voltage(
-                        m_appliedVoltage.mut_replace(
-                            m_rearLeft.get() * RobotController.getBatteryVoltage(), Volts))
-                    .linearPosition(m_distance.mut_replace(m_rearLeftEncoder, Meters))
-                    .linearVelocity(
-                        m_velocity.mut_replace(m_rearLeft.getVelocity().getValue().magnitude(), MetersPerSecond));
-
-                log.motor("drive-frontRight")
-                    .voltage(
-                        m_appliedVoltage.mut_replace(
-                            m_frontRight.get() * RobotController.getBatteryVoltage(), Volts))
-                    .linearPosition(m_distance.mut_replace(m_frontRightEncoder, Meters))
-                    .linearVelocity(
-                        m_velocity.mut_replace(m_frontRight.getVelocity().getValue().magnitude(), MetersPerSecond));
-
-                log.motor("drive-rearRight")
-                    .voltage(
-                        m_appliedVoltage.mut_replace(
-                            m_rearRight.get() * RobotController.getBatteryVoltage(), Volts))
-                    .linearPosition(m_distance.mut_replace(m_rearRightEncoder, Meters))
-                    .linearVelocity(
-                        m_velocity.mut_replace(m_rearRight.getVelocity().getValue().magnitude(), MetersPerSecond));
-              }, this)
-  );
+  private Gyro m_gyro = null;
+  private MecanumDrivePoseEstimator m_poseEstimator = null;
 
   /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
@@ -132,6 +77,16 @@ public class DriveSubsystem extends SubsystemBase {
     SendableRegistry.addChild(m_drive, m_frontRight);
     SendableRegistry.addChild(m_drive, m_rearRight);
 
+
+    // Sets the distance per pulse for the encoders (most likely won't be used but was in original template)
+    // m_frontLeftEncoder.setDistancePerPulse(DriveConstants.kEncoderDistancePerPulse);
+    // m_rearLeftEncoder.setDistancePerPulse(DriveConstants.kEncoderDistancePerPulse);
+    // m_frontRightEncoder.setDistancePerPulse(DriveConstants.kEncoderDistancePerPulse);
+    // m_rearRightEncoder.setDistancePerPulse(DriveConstants.kEncoderDistancePerPulse);
+    // We need to invert one side of the drivetrain so that positive voltages
+    // result in both sides moving forward. Depending on how your robot's
+    // gearbox is constructed, you might have to invert the left side instead.
+    
     // Inversion of two motors
     frontRightMotorConfigs.Inverted = InvertedValue.Clockwise_Positive;
     rearRightMotorConfigs.Inverted = InvertedValue.Clockwise_Positive;
@@ -139,7 +94,6 @@ public class DriveSubsystem extends SubsystemBase {
     // Current Limits
     frontRightCurrentConfigs.withSupplyCurrentLimit(40);
     frontRightCurrentConfigs.withStatorCurrentLimit(100);
-    
 
     rearRightCurrentConfigs.withSupplyCurrentLimit(40);
     rearRightCurrentConfigs.withStatorCurrentLimit(100);
@@ -160,7 +114,20 @@ public class DriveSubsystem extends SubsystemBase {
     frontLeftConfigurator.apply(frontLeftCurrentConfigs);
     rearLeftConfigurator.apply(rearLeftCurrentConfigs);
 
+    m_mecanumDrivePoseEstimator = new MecanumDrivePoseEstimator(DriveConstants.kDriveKinematics, m_gyro.getRotation2d(), getCurrentWheelDistances(), getInitialPose());
     // m_drive.setMaxOutput(0.3);
+  }
+
+  public void setGyro(Gyro gyro) {
+    this.m_gyro = gyro;
+  }
+
+  /**
+   * Gets the gyro used by this drive subsystem
+   * @return The gyro
+   */
+  public Gyro getGyro() {
+    return m_gyro;
   }
 
   @Override
@@ -170,8 +137,13 @@ public class DriveSubsystem extends SubsystemBase {
     m_rearLeftEncoder = m_rearLeft.getPosition().getValue().magnitude();
     m_frontRightEncoder = m_frontRight.getPosition().getValue().magnitude();
     m_rearRightEncoder = m_rearRight.getPosition().getValue().magnitude();
-    m_mecanumDrivePoseEstimator.update(m_gyro.getRotation2d(), getCurrentWheelDistances());
-    faultChecks();
+    
+  
+    
+    // Only display IMU data if gyro is initialized
+    if (m_gyro != null) {
+      m_gyro.DisplayIMUData();
+    }
   }
 
   // Runs motor fault checks for logging purposes
@@ -219,14 +191,24 @@ public class DriveSubsystem extends SubsystemBase {
 
   private Pose2d getInitialPose() {
     return new Pose2d();
-  }
   /**
-   * Resets the odometry to the specified pose.
+   * Returns the currently-estimated pose of the robot.
    *
-   * @param pose The pose to which to set the odometry.
+   * @return The pose.
    */
+  public Pose2d getPose() {
+    if (m_poseEstimator != null) {
+      return m_poseEstimator.getEstimatedPosition();
+    }
+    return new Pose2d(); // Return default pose if estimator is not initialized
+  }
+
+ 
+  // Resets the odometry to the specified pose.
   public void resetOdometry(Pose2d pose) {
-    m_mecanumDrivePoseEstimator.resetPosition(m_gyro.getRotation2d(), getCurrentWheelDistances(), pose);
+    if (m_poseEstimator != null && m_gyro != null) {
+      m_poseEstimator.resetPosition(m_gyro.getRotation2d(), getCurrentWheelDistances(), pose);
+    }
   }
 
   /**
@@ -242,6 +224,8 @@ public class DriveSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("x speed", xSpeed);
     if (fieldRelative) {
       m_drive.driveCartesian(xSpeed, ySpeed, rot, m_mecanumDrivePoseEstimator.getEstimatedPosition().getRotation());
+    if (fieldRelative && m_gyro != null) {
+      m_drive.driveCartesian(xSpeed, ySpeed, rot, m_gyro.getRotation2d());
     } else {
       m_drive.driveCartesian(xSpeed, ySpeed, rot);
     }
@@ -325,7 +309,9 @@ public class DriveSubsystem extends SubsystemBase {
 
   /** Zeroes the heading of the robot. */
   public void zeroHeading() {
-    m_gyro.reset();
+    if (m_gyro != null) {
+      m_gyro.reset();
+    }
   }
 
   /**
@@ -334,7 +320,10 @@ public class DriveSubsystem extends SubsystemBase {
    * @return the robot's heading in degrees, from -180 to 180
    */
   public double getHeading() {
-    return m_gyro.getRotation2d().getDegrees();
+    if (m_gyro != null) {
+      return m_gyro.getRotation2d().getDegrees();
+    }
+    return 0.0; // Default heading if gyro is not initialized
   }
 
   /**
@@ -343,7 +332,10 @@ public class DriveSubsystem extends SubsystemBase {
    * @return The turn rate of the robot, in degrees per second
    */
   public double getTurnRate() {
-    return -m_gyro.getRate();
+    if (m_gyro != null) {
+      return -m_gyro.getRate();
+    }
+    return 0.0; // Default turn rate if gyro is not initialized
   }
 
   public void voltageDrive(Voltage volt) {

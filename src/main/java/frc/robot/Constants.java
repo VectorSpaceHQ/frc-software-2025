@@ -17,6 +17,17 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
  * constants are needed, to reduce verbosity.
  */
 public final class Constants {
+  public static final class FeatureToggles {
+    public static final boolean enableScissorLift = true;
+    public static final boolean enableAlgae = true;
+    public static final boolean enableMecanum = true;
+    public static final boolean enableVision = true;
+    public static final boolean enableCoral = false;
+    public static final boolean enableIMU = true;
+    public static final boolean enableRuntimeParams = true;
+    public static final boolean enablePoseEstimator = true;
+  }
+
   public static final class DriveConstants {
     public static final int kFrontLeftMotorPort = 0;
     public static final int kRearLeftMotorPort = 1;
@@ -43,6 +54,7 @@ public final class Constants {
 
     public static final int kEncoderCPR = 2048;
     public static final double kWheelDiameterMeters = 0.1016;
+    public static final double kWheelDistanceFromCenter = Math.sqrt((kWheelBase * kWheelBase)+(kTrackWidth * kTrackWidth))/2;
     public static final double kEncoderDistancePerPulse =
         // Assumes the encoders are directly mounted on the wheel shafts
         (kWheelDiameterMeters * Math.PI) / kEncoderCPR;
@@ -53,6 +65,7 @@ public final class Constants {
     public static final double kMetersPerRotation = kWheelDiameterMeters * Math.PI * 0.15;
     public static final double kForwardVoltsPerMeterPerSecond = (kKrakenVoltsPerRPM * 60) / (kMetersPerRotation);
     public static final double kStrafeVoltsPerMeterPerSecond = kForwardVoltsPerMeterPerSecond * kStrafeMultiplier;
+    public static final double kVoltsPerDegreePerSecond = (kForwardVoltsPerMeterPerSecond) * 180/(Math.sqrt(2) * Math.PI * kWheelDistanceFromCenter)/100;//todomake right
     public static final double kMaxAcceleration = 5.5; // Drive team traction limited accel should be 5.5
     public static final double kMinAcceleration = 2.5; // To prevent tipping when scissor lift extended should be 3.5
   }

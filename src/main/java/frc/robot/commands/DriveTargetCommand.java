@@ -7,28 +7,27 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.DynamicSlewRateLimiter;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.ElevatorSubsystem;
+import frc.robot.subsystems.RobotPoseEstimatorSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.AprilTags;
 
 public class DriveTargetCommand extends Command {
-  private final double visionThingy = 1.25;
 
   private DriveSubsystem driveSubsystem;
   private VisionSubsystem visionSubsystem;
   private ElevatorSubsystem elevatorSubsystem;
   private CommandXboxController driverController;
+  private RobotPoseEstimatorSubsystem poseEstimator;
+
 
   private double speedscalar = 1;
-  private double targetID = 0;
   private double forward =  0;
   private double strafe =  0;
   private double turn = 0;
-  private boolean autoDriveFeatureToggle = false;
 
   private double forwardPWM;
   private double strafePWM;
@@ -46,33 +45,33 @@ public class DriveTargetCommand extends Command {
   private DynamicSlewRateLimiter x_rate = new DynamicSlewRateLimiter(DriveConstants.kMaxAcceleration);
   private DynamicSlewRateLimiter y_rate = new DynamicSlewRateLimiter(DriveConstants.kMaxAcceleration);
   private InterpolatingDoubleTreeMap table = new InterpolatingDoubleTreeMap();
+  private double targetID = AprilTags.None.getId(); // Initialize targetID to None
+  
+  public void setTargetID(AprilTags tagId) {
+    this.targetID = tagId.getId(); // Set targetID based on the provided AprilTags enum value
+  }
 
   // Sets the drivetarget constructor
   public DriveTargetCommand(
       DriveSubsystem driveSubsystem,
-      VisionSubsystem visionSubsystem,
       CommandXboxController driverController,
       ElevatorSubsystem elevatorSubsystem) {
-    this.visionSubsystem = visionSubsystem;
     this.driveSubsystem = driveSubsystem;
     this.driverController = driverController;
     this.elevatorSubsystem = elevatorSubsystem;
     table.put(elevatorSubsystem.getMinHeight(), DriveConstants.kMaxAcceleration);
     table.put(elevatorSubsystem.getMaxHeight(), DriveConstants.kMinAcceleration);
-    addRequirements(visionSubsystem, driveSubsystem);
+    addRequirements(driveSubsystem);
     setTargetID(AprilTags.None);
   }
-
-  public void setTargetID(AprilTags tagId) {
-    targetID = tagId.getId();
+  public void setPoseEstimator(RobotPoseEstimatorSubsystem estimator) {
+    this.poseEstimator = estimator;
   }
 
   // Executes the drivetarget command (periodic)
   @Override
   public void execute() {
-    if (visionSubsystem.getRobotPose().isPresent()) {
-    driveSubsystem.addVisionUpdate(visionSubsystem.getRobotPose().get(), Timer.getFPGATimestamp());
-    }
+
     linearAccelerationLimit = table.get(elevatorSubsystem.getElevatorHeight());
 
     forwardPWM = driverController.getLeftY() * speedscalar;
@@ -92,7 +91,6 @@ public class DriveTargetCommand extends Command {
     forward = forwardAdjustedPWM;
     strafe = strafeAdjustedPWM;
     turn = (-0.3 * driverController.getRightX());
-
     DriveTargetCommandLogger();
     driveSubsystem.drive(forward, strafe, turn, true);
   }
