@@ -16,7 +16,6 @@ import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonUtils;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
-import org.photonvision.targeting.PhotonPipelineResult;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
@@ -302,7 +301,6 @@ public class VisionSubsystem extends SubsystemBase {
     if (storedEstimatedPose.isPresent()) {
       return Optional.of(storedEstimatedPose.get().estimatedPose.toPose2d());
     }
-  }
     return Optional.empty();
   }
 

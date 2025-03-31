@@ -114,7 +114,7 @@ public class DriveSubsystem extends SubsystemBase {
     frontLeftConfigurator.apply(frontLeftCurrentConfigs);
     rearLeftConfigurator.apply(rearLeftCurrentConfigs);
 
-    m_mecanumDrivePoseEstimator = new MecanumDrivePoseEstimator(DriveConstants.kDriveKinematics, m_gyro.getRotation2d(), getCurrentWheelDistances(), getInitialPose());
+    m_poseEstimator = new MecanumDrivePoseEstimator(DriveConstants.kDriveKinematics, m_gyro.getRotation2d(), getCurrentWheelDistances(), getInitialPose());
     // m_drive.setMaxOutput(0.3);
   }
 
@@ -144,6 +144,7 @@ public class DriveSubsystem extends SubsystemBase {
     if (m_gyro != null) {
       m_gyro.DisplayIMUData();
     }
+    faultChecks();
   }
 
   // Runs motor fault checks for logging purposes
@@ -191,6 +192,7 @@ public class DriveSubsystem extends SubsystemBase {
 
   private Pose2d getInitialPose() {
     return new Pose2d();
+  }
   /**
    * Returns the currently-estimated pose of the robot.
    *
@@ -200,7 +202,7 @@ public class DriveSubsystem extends SubsystemBase {
     if (m_poseEstimator != null) {
       return m_poseEstimator.getEstimatedPosition();
     }
-    return new Pose2d(); // Return default pose if estimator is not initialized
+    return getInitialPose(); // Return default pose if estimator is not initialized
   }
 
  
@@ -222,10 +224,8 @@ public class DriveSubsystem extends SubsystemBase {
    */
   public void drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative) {
     SmartDashboard.putNumber("x speed", xSpeed);
-    if (fieldRelative) {
-      m_drive.driveCartesian(xSpeed, ySpeed, rot, m_mecanumDrivePoseEstimator.getEstimatedPosition().getRotation());
     if (fieldRelative && m_gyro != null) {
-      m_drive.driveCartesian(xSpeed, ySpeed, rot, m_gyro.getRotation2d());
+      m_drive.driveCartesian(xSpeed, ySpeed, rot, m_poseEstimator.getEstimatedPosition().getRotation());
     } else {
       m_drive.driveCartesian(xSpeed, ySpeed, rot);
     }
@@ -235,10 +235,6 @@ public class DriveSubsystem extends SubsystemBase {
     this.drive(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond, true);
   }
 
-  public Pose2d getPose(){
-    return m_mecanumDrivePoseEstimator.getEstimatedPosition();
-  }
-  
   public double getFrontLeftEncoder() {
     return m_frontLeftEncoder;
   }
@@ -271,7 +267,7 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   public void addVisionUpdate(Pose2d visionPose , double Time) {
-    m_mecanumDrivePoseEstimator.addVisionMeasurement(visionPose, Time);
+    m_poseEstimator.addVisionMeasurement(visionPose, Time);
   }
   /**
    * Gets the current wheel speeds.
@@ -344,13 +340,5 @@ public class DriveSubsystem extends SubsystemBase {
     m_rearLeft.setVoltage(volts);
     m_frontRight.setVoltage(volts);
     m_rearRight.setVoltage(volts);
-  }
-
-  public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
-    return routine.quasistatic(direction);
-  } 
-
-  public Command sysIdDynamic(SysIdRoutine.Direction direction) {
-    return routine.dynamic(direction);
   }
 }

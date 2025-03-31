@@ -324,6 +324,7 @@ public class RobotContainer {
         .start()
         .and(m_operatorController.leftBumper().negate())
         .and(m_operatorController.rightBumper().negate());
+  }
  
   // Autonomous commands
   public Command getSimpleAutonomousCommand() {
