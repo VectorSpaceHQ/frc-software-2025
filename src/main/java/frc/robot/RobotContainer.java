@@ -121,7 +121,7 @@ public class RobotContainer {
   private void setupDefaultCommands() {
     // Setup DriveTargetCommand as default (will change to a binding later)
     if (m_robotDrive != null && m_robotVision != null && m_driverController != null) {
-      aimTarget = new DriveTargetCommand(m_robotDrive, m_robotVision, m_driverController, m_robotElevator);
+      aimTarget = new DriveTargetCommand(m_robotDrive, m_driverController, m_robotElevator);
 
       // Connect pose estimator
       if (m_poseEstimator != null) {
@@ -298,7 +298,7 @@ public class RobotContainer {
 
   // Autonomous commands
   public Command getSimpleAutonomousCommand() {
-    return m_robotDrive.run(() -> m_robotDrive.drive(-0.18, 0, 0 ,false)).withTimeout(15);
+    return m_robotDrive.run(() -> m_robotDrive.drive(-0.2, 0, 0, false)).withTimeout(2);
   }
 
   public Command getComplexReef5Command() {
