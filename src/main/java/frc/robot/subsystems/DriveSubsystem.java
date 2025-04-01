@@ -291,7 +291,7 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   public MecanumDriveKinematics getMecanumDriveKinematics() {
-    return new MecanumDriveKinematics(new Translation2d(0., 0.), new Translation2d(0., 0.), new Translation2d(0., 0.), new Translation2d(0., 0.));
+    return new MecanumDriveKinematics(new Translation2d(-.314, 0.292), new Translation2d(.314, 0.292), new Translation2d(-.314, -0.292), new Translation2d(.314, -0.292));
   }
 
   /**
