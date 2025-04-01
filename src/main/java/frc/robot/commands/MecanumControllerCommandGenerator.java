@@ -12,24 +12,26 @@ import frc.robot.subsystems.DriveSubsystem;
 public class MecanumControllerCommandGenerator {
     
     DriveSubsystem mDriveSubsystem = null;
-
     MecanumDriveKinematics mDriveKinematics = null;
+    Trajectory mTrajectory = null;
 
 
     private final PIDController xController = new PIDController(2.0, 0.0, 0.0);
     private final PIDController yController = new PIDController(2.0, 0.0, 0.0);
-    private final ProfiledPIDController headingController = new ProfiledPIDController(2, 0.0, 0.0, new Constraints(30, 4));
+    private final ProfiledPIDController headingController = new ProfiledPIDController(1, 0.0, 0.0, new Constraints(360, 360));
     private final double maxWheelVelocityMetersPerSecond = 4.6;
 
     public MecanumControllerCommandGenerator(Trajectory traj, DriveSubsystem m_RobotDrive) {
         mDriveSubsystem = m_RobotDrive;
-
+        mTrajectory = traj;
+        mDriveKinematics = mDriveSubsystem.getMecanumDriveKinematics();
         headingController.enableContinuousInput(0, 360);
     }
 
     public MecanumControllerCommand getCommand() {
-        return null;
+        return new MecanumControllerCommand(mTrajectory, () -> mDriveSubsystem.getPose(), mDriveKinematics, xController, yController, headingController, null, maxWheelVelocityMetersPerSecond, mDriveSubsystem::driveMecanumWheelSpeeds, mDriveSubsystem);
     }
+
 
     
 

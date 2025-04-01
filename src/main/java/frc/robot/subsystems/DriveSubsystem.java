@@ -69,6 +69,8 @@ public class DriveSubsystem extends SubsystemBase {
 
   private Gyro m_gyro = null;
   private MecanumDrivePoseEstimator m_poseEstimator = null;
+  
+  private MecanumDriveKinematics m_Kinematics = new MecanumDriveKinematics(new Translation2d(-.314, 0.292), new Translation2d(.314, 0.292), new Translation2d(-.314, -0.292), new Translation2d(.314, -0.292));
 
   /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
@@ -235,6 +237,14 @@ public class DriveSubsystem extends SubsystemBase {
     this.drive(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond, true);
   }
 
+  public void driveChassisSpeeds(ChassisSpeeds speeds) {
+    this.drive(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond, true);
+  }
+
+  public void driveMecanumWheelSpeeds(MecanumDriveWheelSpeeds speeds) {
+    driveFieldRelative(m_Kinematics.toChassisSpeeds(speeds));
+  }
+
   public double getFrontLeftEncoder() {
     return m_frontLeftEncoder;
   }
@@ -291,7 +301,7 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   public MecanumDriveKinematics getMecanumDriveKinematics() {
-    return new MecanumDriveKinematics(new Translation2d(-.314, 0.292), new Translation2d(.314, 0.292), new Translation2d(-.314, -0.292), new Translation2d(.314, -0.292));
+    return m_Kinematics;
   }
 
   /**
