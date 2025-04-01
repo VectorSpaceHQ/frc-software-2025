@@ -85,7 +85,7 @@ public class ElevatorSubsystem extends SubsystemBase{
     config2.smartCurrentLimit(95);
     config2.follow(CANIDs.kElevatorSubsystemMain);
     motor2.configure(config2, null, null);
-
+    
   }
 
 

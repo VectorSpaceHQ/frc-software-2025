@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import com.pathplanner.lib.config.RobotConfig;
+
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.MecanumDriveKinematics;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
@@ -29,6 +31,7 @@ public final class Constants {
   }
 
   public static final class DriveConstants {
+    public static RobotConfig config = null;
     public static final int kFrontLeftMotorPort = 0;
     public static final int kRearLeftMotorPort = 1;
     public static final int kFrontRightMotorPort = 2;
@@ -61,6 +64,15 @@ public final class Constants {
     public static final double kVoltsPerDegreePerSecond = (kForwardVoltsPerMeterPerSecond) * 180/(Math.sqrt(2) * Math.PI * kWheelDistanceFromCenter)/100;//todomake right
     public static final double kMaxAcceleration = 5.5; // Drive team traction limited accel should be 5.5
     public static final double kMinAcceleration = 2.5; // To prevent tipping when scissor lift extended should be 3.5
+
+    public static void initConfig() {
+      try{
+        config = RobotConfig.fromGUISettings();
+      } catch (Exception e) {
+      // Handle exception as needed
+      e.printStackTrace();
+      }
+    }
   }
 
   public static final class OIConstants {

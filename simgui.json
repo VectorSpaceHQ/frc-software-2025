@@ -2,6 +2,7 @@
   "NTProvider": {
     "types": {
       "/FMSInfo": "FMSInfo",
+      "/SmartDashboard/PathPlanner": "Alerts",
       "/SmartDashboard/SendableChooser[0]": "String Chooser"
     }
   },

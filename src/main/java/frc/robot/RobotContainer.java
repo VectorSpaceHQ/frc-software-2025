@@ -23,6 +23,8 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import java.util.Map;
 import java.util.Optional;
 
+import com.pathplanner.lib.path.PathPlannerPath;
+
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -39,6 +41,8 @@ public class RobotContainer {
   private Map<String, AprilTags> fieldMap = null;
   private RobotPoseEstimatorSubsystem m_poseEstimator = null;
 
+  private PathPlannerPath examplePath = null;
+  
   // The driver's controller
   CommandXboxController m_driverController = null;
   CommandXboxController m_operatorController = null;
@@ -117,6 +121,8 @@ public class RobotContainer {
 
     // Setup autonomous command chooser
     setupAutonomousCommands();
+
+    loadPaths();
 }
 
   // Default commands
@@ -344,6 +350,15 @@ public class RobotContainer {
       return m_chooser.getSelected();
     } else {
       return new InstantCommand(); // Return a default command if m_robotDrive is null
+    }
+  }
+
+  private void loadPaths() {
+    try {
+    examplePath = PathPlannerPath.fromPathFile("Example Path");
+    }
+    catch(Exception e) {
+      DriverStation.reportError(e.getMessage(), e.getStackTrace());
     }
   }
 }

@@ -15,6 +15,7 @@ import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -28,6 +29,11 @@ import com.ctre.phoenix6.configs.TalonFXConfigurator;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+
 import frc.robot.Gyro;
 
 import edu.wpi.first.wpilibj2.command.Command;
@@ -115,13 +121,15 @@ public class DriveSubsystem extends SubsystemBase {
     rearRightConfigurator.apply(rearRightCurrentConfigs);
     frontLeftConfigurator.apply(frontLeftCurrentConfigs);
     rearLeftConfigurator.apply(rearLeftCurrentConfigs);
-
+    
+    if(m_gyro != null){
     m_poseEstimator = new MecanumDrivePoseEstimator(m_Kinematics, m_gyro.getRotation2d(), getCurrentWheelDistances(), getInitialPose());
-    // m_drive.setMaxOutput(0.3);
+    }
   }
 
   public void setGyro(Gyro gyro) {
     this.m_gyro = gyro;
+    m_poseEstimator = new MecanumDrivePoseEstimator(m_Kinematics, m_gyro.getRotation2d(), getCurrentWheelDistances(), getInitialPose());
   }
 
   /**
@@ -189,7 +197,42 @@ public class DriveSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("front right drive current", m_frontRight.getStatorCurrent().getValueAsDouble());
     SmartDashboard.putNumber("rear left drive current", m_rearLeft.getStatorCurrent().getValueAsDouble());
     SmartDashboard.putNumber("rear right drive current", m_rearRight.getStatorCurrent().getValueAsDouble());
-  
+    
+    RobotConfig config;
+    try{
+      config = RobotConfig.fromGUISettings();
+    } catch (Exception e) {
+      // Handle exception as needed
+      e.printStackTrace();
+    }
+
+    // Configure AutoBuilder last
+    if (DriveConstants.config != null){
+        // taken from PathPlanner Examples will edit based on needs
+          AutoBuilder.configure(
+            this::getPose, // Robot pose supplier
+            this::resetOdometry,
+            this::getChassisSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
+            (speeds, feedforwards) -> driveRobotChassisSpeeds(speeds), // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds. Also optionally outputs individual module feedforwards
+            new PPHolonomicDriveController( // PPHolonomicController is the built in path following controller for holonomic drive trains
+                    new PIDConstants(5.0, 0.0, 0.0), // Translation PID constants
+                    new PIDConstants(5.0, 0.0, 0.0) // Rotation PID constants
+            ),
+            DriveConstants.config, // The robot configuration
+            () -> {
+              // Boolean supplier that controls when the path will be mirrored for the red alliance
+              // This will flip the path being followed to the red side of the field.
+              // THE ORIGIN WILL REMAIN ON THE BLUE SIDE
+
+              var alliance = DriverStation.getAlliance();
+              if (alliance.isPresent()) {
+                return alliance.get() == DriverStation.Alliance.Red;
+              }
+              return false;
+            },
+            this // Reference to this subsystem to set requirements
+          );
+    }
   }
 
   private Pose2d getInitialPose() {
@@ -215,6 +258,12 @@ public class DriveSubsystem extends SubsystemBase {
     }
   }
 
+  public void resetOdometry() {
+    if (m_poseEstimator != null && m_gyro != null) {
+      m_poseEstimator.resetPosition(m_gyro.getRotation2d(), getCurrentWheelDistances(), new Pose2d(0, 0, m_gyro.getRotation2d()));
+    }
+  }
+
   /**
    * Drives the robot at given x, y and theta speeds. Speeds range from [-1, 1] and the linear
    * speeds have no effect on the angular speed.
@@ -237,8 +286,12 @@ public class DriveSubsystem extends SubsystemBase {
     this.drive(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond, true);
   }
 
-  public void driveChassisSpeeds(ChassisSpeeds speeds) {
+  public void driveFieldChassisSpeeds(ChassisSpeeds speeds) {
     this.drive(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond, true);
+  }
+
+  public void driveRobotChassisSpeeds(ChassisSpeeds speeds) {
+    this.drive(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond, false);
   }
 
   public void driveMecanumWheelSpeeds(MecanumDriveWheelSpeeds speeds) {
@@ -290,6 +343,10 @@ public class DriveSubsystem extends SubsystemBase {
         m_rearLeft.getVelocity().getValue().magnitude(),
         m_frontRight.getVelocity().getValue().magnitude(),
         m_rearRight.getVelocity().getValue().magnitude());
+  }
+
+  public ChassisSpeeds getChassisSpeeds() {
+    return m_Kinematics.toChassisSpeeds(getCurrentWheelSpeeds());
   }
 
   public MecanumDriveWheelPositions getCurrentWheelDistances() {
