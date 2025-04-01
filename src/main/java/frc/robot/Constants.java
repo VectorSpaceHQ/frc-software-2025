@@ -45,13 +45,6 @@ public final class Constants {
     public static final double kWheelBase = 0.5842;
     // Distance between centers of front and back wheels on robot
 
-    public static final MecanumDriveKinematics kDriveKinematics =
-        new MecanumDriveKinematics(
-            new Translation2d(kWheelBase / 2, kTrackWidth / 2),
-            new Translation2d(kWheelBase / 2, -kTrackWidth / 2),
-            new Translation2d(-kWheelBase / 2, kTrackWidth / 2),
-            new Translation2d(-kWheelBase / 2, -kTrackWidth / 2));
-
     public static final int kEncoderCPR = 2048;
     public static final double kWheelDiameterMeters = 0.1016;
     public static final double kWheelDistanceFromCenter = Math.sqrt((kWheelBase * kWheelBase)+(kTrackWidth * kTrackWidth))/2;

@@ -37,7 +37,7 @@ public class RobotPoseEstimatorSubsystem extends SubsystemBase {
 
     try {
       poseEstimator = new MecanumDrivePoseEstimator(
-          DriveConstants.kDriveKinematics,
+          driveSubsystem.getMecanumDriveKinematics(),
           gyro.getRotation2d(),
           driveSubsystem.getCurrentWheelDistances(),
           new Pose2d(),

@@ -1,5 +1,7 @@
 package frc.robot.commands;
 
+import java.sql.ResultSet;
+
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.kinematics.MecanumDriveKinematics;
@@ -29,7 +31,9 @@ public class MecanumControllerCommandGenerator {
     }
 
     public MecanumControllerCommand getCommand() {
-        return new MecanumControllerCommand(mTrajectory, () -> mDriveSubsystem.getPose(), mDriveKinematics, xController, yController, headingController, null, maxWheelVelocityMetersPerSecond, mDriveSubsystem::driveMecanumWheelSpeeds, mDriveSubsystem);
+        MecanumControllerCommand result = new MecanumControllerCommand(mTrajectory, () -> mDriveSubsystem.getPose(), mDriveKinematics, xController, yController, headingController, maxWheelVelocityMetersPerSecond, mDriveSubsystem::driveMecanumWheelSpeeds, mDriveSubsystem);
+        result.addRequirements(mDriveSubsystem);
+        return result;
     }
 
 

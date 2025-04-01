@@ -116,7 +116,7 @@ public class DriveSubsystem extends SubsystemBase {
     frontLeftConfigurator.apply(frontLeftCurrentConfigs);
     rearLeftConfigurator.apply(rearLeftCurrentConfigs);
 
-    m_poseEstimator = new MecanumDrivePoseEstimator(DriveConstants.kDriveKinematics, m_gyro.getRotation2d(), getCurrentWheelDistances(), getInitialPose());
+    m_poseEstimator = new MecanumDrivePoseEstimator(m_Kinematics, m_gyro.getRotation2d(), getCurrentWheelDistances(), getInitialPose());
     // m_drive.setMaxOutput(0.3);
   }
 
