@@ -1,10 +1,10 @@
 package frc.robot;
 
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.Constants.OIConstants;
-import frc.robot.commands.ComplexAuto;
 import frc.robot.commands.DriveTargetCommand;
 import frc.robot.commands.GetAlgaeCommand;
 import frc.robot.subsystems.DriveSubsystem;
@@ -157,7 +157,6 @@ public class RobotContainer {
     if (m_robotDrive != null) {
         m_chooser.setDefaultOption("Simple Auto", getSimpleAutonomousCommand());
         m_chooser.addOption("Reef5", getReef5Command());
-        m_chooser.addOption("Complex Auto", getComplexReef5Command());
         SmartDashboard.putData(m_chooser);
     } else {
         // Add a dummy command when drive isn't available
@@ -249,15 +248,13 @@ public class RobotContainer {
     m_driverController
         .leftStick()
         .and(m_driverController.leftBumper().negate())
-        .and(m_driverController.rightBumper().negate())
-        .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("coral1"))));
+        .and(m_driverController.rightBumper().negate());
     
     // Go To Dispenser 2 (Right) - Add CMD in Feature Branch
     m_driverController 
         .rightStick()
         .and(m_driverController.leftBumper().negate())
-        .and(m_driverController.rightBumper().negate())
-        .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("coral2"))));
+        .and(m_driverController.rightBumper().negate());
 
     // // Go To Reef 1
     // m_driverController
@@ -274,26 +271,22 @@ public class RobotContainer {
     // Go To Reef 3
     m_driverController
         .leftBumper()
-        .and(m_driverController.x())
-        .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef3"))));
+        .and(m_driverController.x());
 
     // Go To Reef 4
     m_driverController
         .leftBumper()
-        .and(m_driverController.y())
-        .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef4"))));
+        .and(m_driverController.y());
     
     // Go To Reef 5
     m_driverController
         .leftBumper()
-        .and(m_driverController.back())
-        .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef5"))));
+        .and(m_driverController.back());
     
     // Go To Reef 6
     m_driverController
     .leftBumper()
-    .and(m_driverController.start())
-    .onTrue(new InstantCommand(() -> aimTarget.setTargetID(fieldMap.get("reef6"))));
+    .and(m_driverController.start());
 
     // Go To Reef 7
     m_driverController
@@ -334,11 +327,7 @@ public class RobotContainer {
  
   // Autonomous commands
   public Command getSimpleAutonomousCommand() {
-    return m_robotDrive.run(() -> m_robotDrive.drive(-0.2, 0, 0, false)).withTimeout(2);
-  }
-
-  public Command getComplexReef5Command() {
-    return new ComplexAuto(m_robotAlgae, m_robotElevator, aimTarget, fieldMap.get("reef5"));
+    return m_robotDrive.run(() -> m_robotDrive.driveRobotChassisSpeeds(new ChassisSpeeds(.75, 0, 0))).withTimeout(2);
   }
 
   public Command getReef5Command() {

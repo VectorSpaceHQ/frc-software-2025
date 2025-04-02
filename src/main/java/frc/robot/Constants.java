@@ -55,15 +55,20 @@ public final class Constants {
         // Assumes the encoders are directly mounted on the wheel shafts
         (kWheelDiameterMeters * Math.PI) / kEncoderCPR;
 
+    public static final double kGearRatio = 60/9; // Drive gear ratio
     public static final double kKrakenVoltsPerRPM = 1 / 502.1;
+    public static final double kKrakenVoltsPerRPS = 60 / 502.1;
     public static final double kDefaultBusVoltage = 12;
     public static final double kStrafeMultiplier = 1 / Math.sqrt(2);
-    public static final double kMetersPerRotation = kWheelDiameterMeters * Math.PI * 0.15;
-    public static final double kForwardVoltsPerMeterPerSecond = (kKrakenVoltsPerRPM * 60) / (kMetersPerRotation);
+    public static final double kMetersPerMotorRotation = kWheelDiameterMeters * Math.PI / kGearRatio;
+    public static final double kForwardVoltsPerMeterPerSecond = (kKrakenVoltsPerRPM * 60) / (kMetersPerMotorRotation);
     public static final double kStrafeVoltsPerMeterPerSecond = kForwardVoltsPerMeterPerSecond * kStrafeMultiplier;
     public static final double kVoltsPerDegreePerSecond = (kForwardVoltsPerMeterPerSecond) * 180/(Math.sqrt(2) * Math.PI * kWheelDistanceFromCenter)/100;//todomake right
     public static final double kMaxAcceleration = 5.5; // Drive team traction limited accel should be 5.5
     public static final double kMinAcceleration = 2.5; // To prevent tipping when scissor lift extended should be 3.5
+    public static final double kForwardDriverVelocityScalar = 3.6; // m/s
+    public static final double kStrafeDriverVelocityScalar = 3.6; // m/s
+    public static final double kRotationalDriverVelocityScalar = 1; // rad/s
 
     public static void initConfig() {
       try{

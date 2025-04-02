@@ -5,13 +5,11 @@ import edu.wpi.first.wpilibj2.command.Command;
 
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 
-import com.pathplanner.lib.path.PathPlannerPath;
 
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
-import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.DriveConstants;
-import frc.robot.DynamicSlewRateLimiter;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.RobotPoseEstimatorSubsystem;
@@ -28,31 +26,13 @@ public class DriveTargetCommand extends Command {
 
 
   private double speedscalar = 1;
-  private double forward =  0;
-  private double strafe =  0;
-  private double turn = 0;
+  private double turnPWM = 0;
 
   private double forwardPWM;
   private double strafePWM;
-  private double forwardVoltage;
-  private double strafeVoltage;
-  private double forwardLinearSpeed;
-  private double strafeLinearSpeed;
-  private double forwardAdjustedLinearSpeed;
-  private double strafeAdjustedLinearSpeed;
-  private double forwardAdjustedVoltage;
-  private double strafeAdjustedVoltage;
-  private double forwardAdjustedPWM;
-  private double strafeAdjustedPWM;
-  private double linearAccelerationLimit;
-  private DynamicSlewRateLimiter x_rate = new DynamicSlewRateLimiter(DriveConstants.kMaxAcceleration);
-  private DynamicSlewRateLimiter y_rate = new DynamicSlewRateLimiter(DriveConstants.kMaxAcceleration);
+  // private DynamicSlewRateLimiter x_rate = new DynamicSlewRateLimiter(DriveConstants.kMaxAcceleration);
+  // private DynamicSlewRateLimiter y_rate = new DynamicSlewRateLimiter(DriveConstants.kMaxAcceleration);
   private InterpolatingDoubleTreeMap table = new InterpolatingDoubleTreeMap();
-  private double targetID = AprilTags.None.getId(); // Initialize targetID to None
-
-  public void setTargetID(AprilTags tagId) {
-    this.targetID = tagId.getId(); // Set targetID based on the provided AprilTags enum value
-  }
 
   // Sets the drivetarget constructor
   public DriveTargetCommand(
@@ -65,8 +45,8 @@ public class DriveTargetCommand extends Command {
     table.put(elevatorSubsystem.getMinHeight(), DriveConstants.kMaxAcceleration);
     table.put(elevatorSubsystem.getMaxHeight(), DriveConstants.kMinAcceleration);
     addRequirements(driveSubsystem);
-    setTargetID(AprilTags.None);
   }
+
   public void setPoseEstimator(RobotPoseEstimatorSubsystem estimator) {
     this.poseEstimator = estimator;
   }
@@ -74,34 +54,37 @@ public class DriveTargetCommand extends Command {
   // Executes the drivetarget command (periodic)
   @Override
   public void execute() {
-
-    linearAccelerationLimit = table.get(elevatorSubsystem.getElevatorHeight());
-
+    // linearAccelerationLimit = table.get(elevatorSubsystem.getElevatorHeight());
     forwardPWM = driverController.getLeftY() * speedscalar;
-    forwardVoltage = forwardPWM * DriveConstants.kDefaultBusVoltage;
-    forwardLinearSpeed = forwardVoltage / DriveConstants.kForwardVoltsPerMeterPerSecond;
-    forwardAdjustedLinearSpeed = x_rate.calculate(forwardLinearSpeed, linearAccelerationLimit);
-    forwardAdjustedVoltage = forwardAdjustedLinearSpeed * DriveConstants.kForwardVoltsPerMeterPerSecond;
-    forwardAdjustedPWM = forwardAdjustedVoltage / DriveConstants.kDefaultBusVoltage;
-
     strafePWM = -driverController.getLeftX() * speedscalar;
-    strafeVoltage = strafePWM * DriveConstants.kDefaultBusVoltage;
-    strafeLinearSpeed = strafeVoltage / DriveConstants.kStrafeVoltsPerMeterPerSecond;
-    strafeAdjustedLinearSpeed = y_rate.calculate(strafeLinearSpeed, linearAccelerationLimit);
-    strafeAdjustedVoltage = strafeAdjustedLinearSpeed * DriveConstants.kStrafeVoltsPerMeterPerSecond;
-    strafeAdjustedPWM = strafeAdjustedVoltage / DriveConstants.kDefaultBusVoltage;
+    turnPWM = (-driverController.getRightX());
+    var ChassisSpeeds = driveSubsystem.PWMInputToChassisSpeeds(forwardPWM, strafePWM, turnPWM);
+    driveSubsystem.driveRobotChassisSpeeds(ChassisSpeeds);
+
+    // forwardPWM = driverController.getLeftY() * speedscalar;
+    // forwardVoltage = forwardPWM * DriveConstants.kDefaultBusVoltage;
+    // forwardLinearSpeed = forwardVoltage / DriveConstants.kForwardVoltsPerMeterPerSecond;
+    // forwardAdjustedLinearSpeed = x_rate.calculate(forwardLinearSpeed, linearAccelerationLimit);
+    // forwardAdjustedVoltage = forwardAdjustedLinearSpeed * DriveConstants.kForwardVoltsPerMeterPerSecond;
+    // forwardAdjustedPWM = forwardAdjustedVoltage / DriveConstants.kDefaultBusVoltage;
+
+    // strafePWM = -driverController.getLeftX() * speedscalar;
+    // strafeVoltage = strafePWM * DriveConstants.kDefaultBusVoltage;
+    // strafeLinearSpeed = strafeVoltage / DriveConstants.kStrafeVoltsPerMeterPerSecond;
+    // strafeAdjustedLinearSpeed = y_rate.calculate(strafeLinearSpeed, linearAccelerationLimit);
+    // strafeAdjustedVoltage = strafeAdjustedLinearSpeed * DriveConstants.kStrafeVoltsPerMeterPerSecond;
+    // strafeAdjustedPWM = strafeAdjustedVoltage / DriveConstants.kDefaultBusVoltage;
     
-    forward = forwardAdjustedPWM;
-    strafe = strafeAdjustedPWM;
-    turn = (-0.3 * driverController.getRightX());
+    // forward = forwardAdjustedPWM;
+    // strafe = strafeAdjustedPWM;
+    // turn = (-0.3 * driverController.getRightX());
     DriveTargetCommandLogger();
-    driveSubsystem.drive(forward, strafe, turn, true);
   }
 
   // Ends the drivetarget command
   @Override
   public void end(boolean interrupted) {
-    driveSubsystem.drive(0, 0, 0, true);
+    driveSubsystem.driveRobotChassisSpeeds(new ChassisSpeeds());
     SmartDashboard.putString("Aiming Status", "Command Ended");
   }
 
@@ -110,20 +93,21 @@ public class DriveTargetCommand extends Command {
   }
 
   private void DriveTargetCommandLogger() {
-    SmartDashboard.putNumber("Linear Acceleration Limit", linearAccelerationLimit);
-    SmartDashboard.putNumber("Forward", forward);
+    // SmartDashboard.putNumber("Linear Acceleration Limit", linearAccelerationLimit);
+    // SmartDashboard.putNumber("Forward", forward);
     SmartDashboard.putNumber("Forward PWM", forwardPWM);
-    SmartDashboard.putNumber("Forward Voltage", forwardVoltage);
-    SmartDashboard.putNumber("Forward Linear Speed", forwardLinearSpeed);
-    SmartDashboard.putNumber("Forward Adjusted Linear Speed", forwardAdjustedLinearSpeed);
-    SmartDashboard.putNumber("Forward Adjusted Voltage", forwardAdjustedVoltage);
-    SmartDashboard.putNumber("Forward Adjusted PWM", forwardAdjustedPWM);
-    SmartDashboard.putNumber("Strafe", strafe);
+    // SmartDashboard.putNumber("Forward Voltage", forwardVoltage);
+    // SmartDashboard.putNumber("Forward Linear Speed", forwardLinearSpeed);
+    // SmartDashboard.putNumber("Forward Adjusted Linear Speed", forwardAdjustedLinearSpeed);
+    // SmartDashboard.putNumber("Forward Adjusted Voltage", forwardAdjustedVoltage);
+    // SmartDashboard.putNumber("Forward Adjusted PWM", forwardAdjustedPWM);
+    // SmartDashboard.putNumber("Strafe", strafe);
     SmartDashboard.putNumber("Strafe PWM", strafePWM);
-    SmartDashboard.putNumber("Forward Voltage", strafeVoltage);
-    SmartDashboard.putNumber("strafe Linear Speed", strafeLinearSpeed);
-    SmartDashboard.putNumber("strafe Adjusted Linear Speed", strafeAdjustedLinearSpeed);
-    SmartDashboard.putNumber("strafe Adjusted Voltage", strafeAdjustedVoltage);
-    SmartDashboard.putNumber("strafe Adjusted PWM", strafeAdjustedPWM);
+    // SmartDashboard.putNumber("Forward Voltage", strafeVoltage);
+    // SmartDashboard.putNumber("strafe Linear Speed", strafeLinearSpeed);
+    // SmartDashboard.putNumber("strafe Adjusted Linear Speed", strafeAdjustedLinearSpeed);
+    // SmartDashboard.putNumber("strafe Adjusted Voltage", strafeAdjustedVoltage);
+    // SmartDashboard.putNumber("strafe Adjusted PWM", strafeAdjustedPWM);
+    SmartDashboard.putNumber("Turn PWM", turnPWM);
   }
 }
