@@ -55,29 +55,17 @@ public class DriveTargetCommand extends Command {
   @Override
   public void execute() {
     // linearAccelerationLimit = table.get(elevatorSubsystem.getElevatorHeight());
+    
     forwardPWM = driverController.getLeftY() * speedscalar;
     strafePWM = -driverController.getLeftX() * speedscalar;
     turnPWM = (-driverController.getRightX());
-    var ChassisSpeeds = driveSubsystem.PWMInputToChassisSpeeds(forwardPWM, strafePWM, turnPWM);
-    driveSubsystem.driveRobotChassisSpeeds(ChassisSpeeds);
+    var outputChassisSpeeds = driveSubsystem.PWMInputToChassisSpeeds(forwardPWM, strafePWM, turnPWM);
+    SmartDashboard.putNumber("Chassis Forward (m/s)", outputChassisSpeeds.vxMetersPerSecond);
+    SmartDashboard.putNumber("Chassis Strafe (m/s)", outputChassisSpeeds.vyMetersPerSecond);
+    SmartDashboard.putNumber("Chassis Rotation (rad/s)", outputChassisSpeeds.omegaRadiansPerSecond);
 
-    // forwardPWM = driverController.getLeftY() * speedscalar;
-    // forwardVoltage = forwardPWM * DriveConstants.kDefaultBusVoltage;
-    // forwardLinearSpeed = forwardVoltage / DriveConstants.kForwardVoltsPerMeterPerSecond;
-    // forwardAdjustedLinearSpeed = x_rate.calculate(forwardLinearSpeed, linearAccelerationLimit);
-    // forwardAdjustedVoltage = forwardAdjustedLinearSpeed * DriveConstants.kForwardVoltsPerMeterPerSecond;
-    // forwardAdjustedPWM = forwardAdjustedVoltage / DriveConstants.kDefaultBusVoltage;
-
-    // strafePWM = -driverController.getLeftX() * speedscalar;
-    // strafeVoltage = strafePWM * DriveConstants.kDefaultBusVoltage;
-    // strafeLinearSpeed = strafeVoltage / DriveConstants.kStrafeVoltsPerMeterPerSecond;
-    // strafeAdjustedLinearSpeed = y_rate.calculate(strafeLinearSpeed, linearAccelerationLimit);
-    // strafeAdjustedVoltage = strafeAdjustedLinearSpeed * DriveConstants.kStrafeVoltsPerMeterPerSecond;
-    // strafeAdjustedPWM = strafeAdjustedVoltage / DriveConstants.kDefaultBusVoltage;
-    
-    // forward = forwardAdjustedPWM;
-    // strafe = strafeAdjustedPWM;
-    // turn = (-0.3 * driverController.getRightX());
+    driveSubsystem.driveRobotChassisSpeeds(outputChassisSpeeds);
+    // Can add a field relative using ChassisSpeeds.fromFieldRelativeSpeeds()
     DriveTargetCommandLogger();
   }
 

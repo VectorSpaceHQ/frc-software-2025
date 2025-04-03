@@ -264,6 +264,10 @@ public class DriveSubsystem extends SubsystemBase {
     driveWheelSpeed(speeds.frontRightMetersPerSecond, m_frontRight);
     driveWheelSpeed(speeds.rearLeftMetersPerSecond, m_rearLeft);
     driveWheelSpeed(speeds.rearRightMetersPerSecond, m_rearRight);
+    SmartDashboard.putNumber("Front Left WheelSpeed Output", speeds.frontLeftMetersPerSecond);
+    SmartDashboard.putNumber("Front Right WheelSpeed Output", speeds.frontRightMetersPerSecond);
+    SmartDashboard.putNumber("Rear Left WheelSpeed Output", speeds.rearLeftMetersPerSecond);
+    SmartDashboard.putNumber("Rear Right WheelSpeed Output", speeds.rearRightMetersPerSecond);
   }
 
   private void driveWheelSpeed(double WheelSpeed, TalonFX MotorController){

@@ -5,9 +5,10 @@
 package frc.robot;
 
 import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.path.PathConstraints;
 
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.kinematics.MecanumDriveKinematics;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 
 /**
@@ -139,5 +140,14 @@ public final class Constants {
     
     public static final TrapezoidProfile.Constraints kLinearControllerConstraints =
         new TrapezoidProfile.Constraints(kMaxSpeedMetersPerSecond, kMaxAccelerationMetersPerSecondSquared);
+  }
+
+  public static class DrivePoses {
+    // Just a little bit of precision
+    public static final Pose2d BlueBargePose = new Pose2d(7.805382251739502, 6.705155849456787, new Rotation2d(0));
+  }
+
+  public static class PathLimitations{
+    public static final PathConstraints constraints = new PathConstraints(4, 3.6, Math.PI, Math.PI / 2);
   }
 }
