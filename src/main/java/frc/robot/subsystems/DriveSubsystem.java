@@ -44,8 +44,6 @@ public class DriveSubsystem extends SubsystemBase {
   private double m_frontRightEncoder = 0;
   private double m_rearRightEncoder = 0;
   
-  private final MecanumDrive m_drive =
-     new MecanumDrive(m_frontLeft::set, m_rearLeft::set, m_frontRight::set, m_rearRight::set);
 
   //using default frontR rearR inverted right now
   private final TalonFXConfigurator frontRightConfigurator = m_frontRight.getConfigurator();
@@ -65,15 +63,12 @@ public class DriveSubsystem extends SubsystemBase {
 
   private Gyro m_gyro = null;
   private MecanumDrivePoseEstimator m_poseEstimator = null;
-  private MecanumDriveWheelSpeeds m_WheelSpeeds = null;
+  private MecanumDriveWheelSpeeds m_WheelSpeeds = new MecanumDriveWheelSpeeds();
+  private ChassisSpeeds m_ChassisSpeeds = new ChassisSpeeds();
   private MecanumDriveKinematics m_Kinematics = new MecanumDriveKinematics(new Translation2d(-.314, 0.292), new Translation2d(.314, 0.292), new Translation2d(-.314, -0.292), new Translation2d(.314, -0.292));
 
   /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
-    SendableRegistry.addChild(m_drive, m_frontLeft);
-    SendableRegistry.addChild(m_drive, m_rearLeft);
-    SendableRegistry.addChild(m_drive, m_frontRight);
-    SendableRegistry.addChild(m_drive, m_rearRight);
 
 
     // Sets the distance per pulse for the encoders (most likely won't be used but was in original template)
@@ -145,7 +140,9 @@ public class DriveSubsystem extends SubsystemBase {
     if (m_gyro != null) {
       m_gyro.DisplayIMUData();
     }
+
     faultChecks();
+    driveLogging();
   }
 
   private void initConfig(){
@@ -215,11 +212,16 @@ public class DriveSubsystem extends SubsystemBase {
     if(m_rearRight.getFault_StatorCurrLimit().getValue()) {
       DataLogManager.log("Rear Right Stator Current Limit Hit");
     }
+  }
 
+  private void driveLogging() {
     SmartDashboard.putNumber("front left drive current", m_frontLeft.getStatorCurrent().getValueAsDouble());
     SmartDashboard.putNumber("front right drive current", m_frontRight.getStatorCurrent().getValueAsDouble());
     SmartDashboard.putNumber("rear left drive current", m_rearLeft.getStatorCurrent().getValueAsDouble());
     SmartDashboard.putNumber("rear right drive current", m_rearRight.getStatorCurrent().getValueAsDouble());
+    SmartDashboard.putNumber("Chassis Forward (m/s)", m_Kinematics.toChassisSpeeds(m_WheelSpeeds).vxMetersPerSecond);
+    SmartDashboard.putNumber("Chassis Strafe (m/s)", m_Kinematics.toChassisSpeeds(m_WheelSpeeds).vyMetersPerSecond);
+    SmartDashboard.putNumber("Chassis Rotation (rad/s)", m_Kinematics.toChassisSpeeds(m_WheelSpeeds).omegaRadiansPerSecond);
   }
 
   private Pose2d getInitialPose() {
@@ -271,7 +273,9 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   public ChassisSpeeds PWMInputToChassisSpeeds(double PWMInputForward, double PWMInputStrafe, double PWMInputRotational){
-    return new ChassisSpeeds(PWMInputForward * DriveConstants.kForwardDriverVelocityScalar, PWMInputStrafe * DriveConstants.kStrafeDriverVelocityScalar, PWMInputRotational * DriveConstants.kRotationalDriverVelocityScalar);
+    return new ChassisSpeeds(PWMInputForward * DriveConstants.kForwardDriverVelocityScalar, 
+    PWMInputStrafe * DriveConstants.kStrafeDriverVelocityScalar, 
+    PWMInputRotational * DriveConstants.kRotationalDriverVelocityScalar);
   }
 
   public double getFrontLeftEncoder() {
@@ -328,23 +332,14 @@ public class DriveSubsystem extends SubsystemBase {
 
   public MecanumDriveWheelPositions getCurrentWheelDistances() {
     return new MecanumDriveWheelPositions(
-        m_frontLeftEncoder,
-        m_rearLeftEncoder,
-        m_frontRightEncoder,
-        m_rearRightEncoder);
+        m_frontLeftEncoder * DriveConstants.kMetersPerMotorRotation,
+        m_rearLeftEncoder * DriveConstants.kMetersPerMotorRotation,
+        m_frontRightEncoder * DriveConstants.kMetersPerMotorRotation,
+        m_rearRightEncoder * DriveConstants.kMetersPerMotorRotation);
   }
 
   public MecanumDriveKinematics getMecanumDriveKinematics() {
     return m_Kinematics;
-  }
-
-  /**
-   * Sets the max output of the drive. Useful for scaling the drive to drive more slowly.
-   *
-   * @param maxOutput the maximum output to which the drive will be constrained
-   */
-  public void setMaxOutput(double maxOutput) {
-    m_drive.setMaxOutput(maxOutput);
   }
 
   /** Zeroes the heading of the robot. */

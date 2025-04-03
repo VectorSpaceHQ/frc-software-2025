@@ -319,7 +319,7 @@ public class VisionSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-
+    SmartDashboard.putBoolean("Is Camera Connected?", cameraConnected);
     // This method will be called once per scheduler run
     if (cameraConnected) {
       allUnreadResults = camera.getAllUnreadResults();
