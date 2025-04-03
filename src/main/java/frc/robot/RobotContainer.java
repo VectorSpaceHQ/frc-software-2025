@@ -19,6 +19,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import frc.robot.commands.PathFindingCommands;
 
 import java.util.Map;
 import java.util.Optional;
@@ -41,7 +42,7 @@ public class RobotContainer {
   private Map<String, AprilTags> fieldMap = null;
   private RobotPoseEstimatorSubsystem m_poseEstimator = null;
 
-  private PathPlannerPath examplePath = null;
+  private PathFindingCommands m_pathFindingCommands = null;
   
   // The driver's controller
   CommandXboxController m_driverController = null;
@@ -61,7 +62,7 @@ public class RobotContainer {
     // Initialize subsystems (using feature toggles)
     if (Constants.FeatureToggles.enableMecanum) {
       m_robotDrive = new DriveSubsystem();
-
+      m_pathFindingCommands = new PathFindingCommands(m_robotDrive);
       // Set the gyro on the drive subsystem if available
       if (m_IMU != null) {
         m_robotDrive.setGyro(m_IMU);
@@ -194,6 +195,9 @@ public class RobotContainer {
         .onTrue(new InstantCommand(() -> aimTarget.setSpeedScalar(0.3)))
         .onFalse(new InstantCommand(() -> aimTarget.setSpeedScalar(1)));
 
+    m_driverController
+        .a()
+        .onTrue(m_pathFindingCommands.GoToBlueBarge());
     // m_operatorController
     //     .b()
     //     .onTrue(m_robotElevator.GoTo(Level.L2));
@@ -343,11 +347,11 @@ public class RobotContainer {
   }
 
   private void loadPaths() {
-    try {
-    examplePath = PathPlannerPath.fromPathFile("Example Path");
-    }
-    catch(Exception e) {
-      DriverStation.reportError(e.getMessage(), e.getStackTrace());
-    }
+    // try {
+    // examplePath = PathPlannerPath.fromPathFile("Example Path");
+    // }
+    // catch(Exception e) {
+    //   DriverStation.reportError(e.getMessage(), e.getStackTrace());
+    // }
   }
 }
