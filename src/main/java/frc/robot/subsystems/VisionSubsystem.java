@@ -44,7 +44,7 @@ public class VisionSubsystem extends SubsystemBase {
       .getAbsolutePath();
 
   // Photon camera and april tag components
-  private final PhotonCamera camera;
+  private  PhotonCamera camera;
   private AprilTagFieldLayout layout;
   private PhotonPoseEstimator poseEstimator;
 
@@ -358,6 +358,10 @@ public class VisionSubsystem extends SubsystemBase {
 
         }
       }
+    }
+    else{
+      camera = new PhotonCamera(camera_name);
+      //SmartDashboard.putString("camerareconnect","true")
     }
   }
 }
