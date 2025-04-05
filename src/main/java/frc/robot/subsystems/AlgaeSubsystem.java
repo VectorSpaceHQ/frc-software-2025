@@ -3,7 +3,7 @@ package frc.robot.subsystems;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkMaxConfig;
-
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -29,6 +29,8 @@ public class AlgaeSubsystem extends SubsystemBase {
         //config.follow(CANIDs.kAlgaeSubsystemLeft,true);
         leftConfig.smartCurrentLimit(30, 20);
         rightConfig.smartCurrentLimit(30, 20);
+        leftConfig.idleMode(IdleMode.kBrake);
+        rightConfig.idleMode(IdleMode.kBrake);
         rightConfig.inverted(true);
 
         motor_right.configure(rightConfig, null, null);

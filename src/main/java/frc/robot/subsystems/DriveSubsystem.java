@@ -157,8 +157,8 @@ public class DriveSubsystem extends SubsystemBase {
             this::getChassisSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
             (speeds) -> driveRobotChassisSpeeds(speeds), // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds. Also optionally outputs individual module feedforwards
             new PPHolonomicDriveController( // PPHolonomicController is the built in path following controller for holonomic drive trains
-                    new PIDConstants(5.0, 0.0, 0.0), // Translation PID constants
-                    new PIDConstants(5.0, 0.0, 0.0) // Rotation PID constants
+                    new PIDConstants(1.0, 0.0, 0.0), // Translation PID constants
+                    new PIDConstants(1.0, 0.0, 0.0) // Rotation PID constants
             ),
             DriveConstants.config, // The robot configuration
             () -> {
@@ -256,6 +256,12 @@ public class DriveSubsystem extends SubsystemBase {
 
   public void driveRobotChassisSpeeds(ChassisSpeeds speeds) {
     m_WheelSpeeds = m_Kinematics.toWheelSpeeds(speeds);
+    driveMecanumWheelSpeeds(m_WheelSpeeds);
+  }
+
+  public void driveFieldChassisSpeeds(ChassisSpeeds speeds) {
+    ChassisSpeeds m_robotspeeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, m_poseEstimator.getEstimatedPosition().getRotation());
+    m_WheelSpeeds = m_Kinematics.toWheelSpeeds(m_robotspeeds);
     driveMecanumWheelSpeeds(m_WheelSpeeds);
   }
 

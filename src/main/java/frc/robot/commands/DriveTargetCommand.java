@@ -81,21 +81,8 @@ public class DriveTargetCommand extends Command {
   }
 
   private void DriveTargetCommandLogger() {
-    // SmartDashboard.putNumber("Linear Acceleration Limit", linearAccelerationLimit);
-    // SmartDashboard.putNumber("Forward", forward);
     SmartDashboard.putNumber("Forward PWM", forwardPWM);
-    // SmartDashboard.putNumber("Forward Voltage", forwardVoltage);
-    // SmartDashboard.putNumber("Forward Linear Speed", forwardLinearSpeed);
-    // SmartDashboard.putNumber("Forward Adjusted Linear Speed", forwardAdjustedLinearSpeed);
-    // SmartDashboard.putNumber("Forward Adjusted Voltage", forwardAdjustedVoltage);
-    // SmartDashboard.putNumber("Forward Adjusted PWM", forwardAdjustedPWM);
-    // SmartDashboard.putNumber("Strafe", strafe);
     SmartDashboard.putNumber("Strafe PWM", strafePWM);
-    // SmartDashboard.putNumber("Forward Voltage", strafeVoltage);
-    // SmartDashboard.putNumber("strafe Linear Speed", strafeLinearSpeed);
-    // SmartDashboard.putNumber("strafe Adjusted Linear Speed", strafeAdjustedLinearSpeed);
-    // SmartDashboard.putNumber("strafe Adjusted Voltage", strafeAdjustedVoltage);
-    // SmartDashboard.putNumber("strafe Adjusted PWM", strafeAdjustedPWM);
     SmartDashboard.putNumber("Turn PWM", turnPWM);
   }
 }
