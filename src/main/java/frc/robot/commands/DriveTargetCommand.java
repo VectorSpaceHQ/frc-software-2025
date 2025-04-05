@@ -28,8 +28,8 @@ public class DriveTargetCommand extends Command {
   private double speedscalar = 1;
   private double turnPWM = 0;
 
-  private double forwardPWM;
-  private double strafePWM;
+  private double forwardPWM = 0;
+  private double strafePWM = 0;
   // private DynamicSlewRateLimiter x_rate = new DynamicSlewRateLimiter(DriveConstants.kMaxAcceleration);
   // private DynamicSlewRateLimiter y_rate = new DynamicSlewRateLimiter(DriveConstants.kMaxAcceleration);
   private InterpolatingDoubleTreeMap table = new InterpolatingDoubleTreeMap();
@@ -56,9 +56,10 @@ public class DriveTargetCommand extends Command {
   public void execute() {
     // linearAccelerationLimit = table.get(elevatorSubsystem.getElevatorHeight());
     
-    forwardPWM = driverController.getLeftY() * speedscalar;
-    strafePWM = -driverController.getLeftX() * speedscalar;
-    turnPWM = (-driverController.getRightX());
+    forwardPWM = -driverController.getLeftY() * speedscalar;
+    strafePWM = driverController.getLeftX() * speedscalar;
+    turnPWM = driverController.getRightX();
+    
     var outputChassisSpeeds = driveSubsystem.PWMInputToChassisSpeeds(forwardPWM, strafePWM, turnPWM);
     SmartDashboard.putNumber("Chassis Forward (m/s)", outputChassisSpeeds.vxMetersPerSecond);
     SmartDashboard.putNumber("Chassis Strafe (m/s)", outputChassisSpeeds.vyMetersPerSecond);
@@ -84,5 +85,17 @@ public class DriveTargetCommand extends Command {
     SmartDashboard.putNumber("Forward PWM", forwardPWM);
     SmartDashboard.putNumber("Strafe PWM", strafePWM);
     SmartDashboard.putNumber("Turn PWM", turnPWM);
+  }
+
+  private void ApplyDeadband(double forward, double strafe, double rotation) {
+    if (forward < 0.04) {
+      forwardPWM = 0;
+    }
+    if (strafe < 0.04) {
+      strafePWM = 0;
+    }
+    if (rotation < 0.04) {
+      turnPWM = 0;
+    }
   }
 }

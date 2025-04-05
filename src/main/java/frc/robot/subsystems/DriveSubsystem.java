@@ -65,7 +65,7 @@ public class DriveSubsystem extends SubsystemBase {
   private MecanumDrivePoseEstimator m_poseEstimator = null;
   private MecanumDriveWheelSpeeds m_WheelSpeeds = new MecanumDriveWheelSpeeds();
   private ChassisSpeeds m_ChassisSpeeds = new ChassisSpeeds();
-  private MecanumDriveKinematics m_Kinematics = new MecanumDriveKinematics(new Translation2d(-.314, 0.292), new Translation2d(.314, 0.292), new Translation2d(-.314, -0.292), new Translation2d(.314, -0.292));
+  private MecanumDriveKinematics m_Kinematics = new MecanumDriveKinematics(new Translation2d(.314, 0.292), new Translation2d(.314, -0.292), new Translation2d(-.314, 0.292), new Translation2d(-.314, -0.292));
 
   /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
@@ -81,8 +81,10 @@ public class DriveSubsystem extends SubsystemBase {
     // gearbox is constructed, you might have to invert the left side instead.
     
     // Inversion of two motors
-    frontRightMotorConfigs.Inverted = InvertedValue.Clockwise_Positive;
-    rearRightMotorConfigs.Inverted = InvertedValue.Clockwise_Positive;
+    // frontRightMotorConfigs.Inverted = InvertedValue.Clockwise_Positive;
+    // rearRightMotorConfigs.Inverted = InvertedValue.Clockwise_Positive;
+    frontLeftMotorConfigs.Inverted = InvertedValue.Clockwise_Positive;
+    rearLeftMotorConfigs.Inverted = InvertedValue.Clockwise_Positive;
     
     // Current Limits
     frontRightCurrentConfigs.withSupplyCurrentLimit(40);
@@ -280,6 +282,7 @@ public class DriveSubsystem extends SubsystemBase {
     double MotorSpeed = WheelSpeed / DriveConstants.kMetersPerMotorRotation; // RPS
     double MotorVoltage = MotorSpeed * DriveConstants.kKrakenVoltsPerRPS;
     MotorController.setVoltage(MotorVoltage);
+    SmartDashboard.putNumber(MotorController.toString(), MotorSpeed);
   }
 
   public ChassisSpeeds PWMInputToChassisSpeeds(double PWMInputForward, double PWMInputStrafe, double PWMInputRotational){
