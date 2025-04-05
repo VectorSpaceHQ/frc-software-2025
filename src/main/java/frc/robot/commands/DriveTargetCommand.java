@@ -65,7 +65,8 @@ public class DriveTargetCommand extends Command {
     SmartDashboard.putNumber("Chassis Strafe (m/s)", outputChassisSpeeds.vyMetersPerSecond);
     SmartDashboard.putNumber("Chassis Rotation (rad/s)", outputChassisSpeeds.omegaRadiansPerSecond);
 
-    driveSubsystem.driveRobotChassisSpeeds(outputChassisSpeeds);
+    // driveSubsystem.driveRobotChassisSpeeds(outputChassisSpeeds);
+    driveSubsystem.driveFieldChassisSpeeds(outputChassisSpeeds);
     // Can add a field relative using ChassisSpeeds.fromFieldRelativeSpeeds()
     DriveTargetCommandLogger();
   }

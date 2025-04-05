@@ -156,7 +156,7 @@ public class DriveSubsystem extends SubsystemBase {
             (speeds) -> driveRobotChassisSpeeds(speeds), // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds. Also optionally outputs individual module feedforwards
             new PPHolonomicDriveController( // PPHolonomicController is the built in path following controller for holonomic drive trains
                     new PIDConstants(0.5, 0.0, 0.0), // Translation PID constants
-                    new PIDConstants(Math.PI / 2, 0.0, 0.0) // Rotation PID constants
+                    new PIDConstants(0, 0.0, 0.0) // Rotation PID constants
             ),
             DriveConstants.config, // The robot configuration
             () -> {
@@ -323,6 +323,11 @@ public class DriveSubsystem extends SubsystemBase {
    * @return the current wheel speeds in a MecanumDriveWheelSpeeds object.
    */
   public MecanumDriveWheelSpeeds getCurrentWheelSpeeds() {
+    SmartDashboard.putNumber("front Left wheel calculated speed",  m_frontLeft.getVelocity().getValue().magnitude() * DriveConstants.kMetersPerMotorRotation);
+    SmartDashboard.putNumber("rear Left wheel calculated speed",  m_rearLeft.getVelocity().getValue().magnitude() * DriveConstants.kMetersPerMotorRotation);
+    SmartDashboard.putNumber("front Right wheel calculated speed",  m_frontRight.getVelocity().getValue().magnitude() * DriveConstants.kMetersPerMotorRotation);
+    SmartDashboard.putNumber("rear Right wheel calculated speed",  m_rearRight.getVelocity().getValue().magnitude() * DriveConstants.kMetersPerMotorRotation);
+    
     return new MecanumDriveWheelSpeeds(
         m_frontLeft.getVelocity().getValue().magnitude() * DriveConstants.kMetersPerMotorRotation,
         m_rearLeft.getVelocity().getValue().magnitude() * DriveConstants.kMetersPerMotorRotation,
@@ -375,5 +380,9 @@ public class DriveSubsystem extends SubsystemBase {
       return -m_gyro.getRate();
     }
     return 0.0; // Default turn rate if gyro is not initialized
+  }
+
+  public void setPoseEstimator(RobotPoseEstimatorSubsystem estimator){
+    m_poseEstimator = estimator;
   }
 }

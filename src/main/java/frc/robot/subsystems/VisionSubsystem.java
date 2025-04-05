@@ -360,7 +360,7 @@ public class VisionSubsystem extends SubsystemBase {
       }
     }
     else{
-      camera = new PhotonCamera(camera_name);
+      // camera = new PhotonCamera(camera_name);
       //SmartDashboard.putString("camerareconnect","true")
     }
   }

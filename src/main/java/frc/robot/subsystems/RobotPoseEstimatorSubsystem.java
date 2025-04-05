@@ -44,6 +44,7 @@ public class RobotPoseEstimatorSubsystem extends SubsystemBase {
           stateStdDevs,
           visionStdDevs);
       SmartDashboard.putBoolean("Pose Estimator Constructor Success", true);
+      driveSubsystem.setPoseEstimator(this);
     } catch (Exception e) {
  
       SmartDashboard.putBoolean("Pose Estimator Constructor Success", false);
