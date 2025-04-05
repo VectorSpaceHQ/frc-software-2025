@@ -57,8 +57,8 @@ public class DriveTargetCommand extends Command {
     // linearAccelerationLimit = table.get(elevatorSubsystem.getElevatorHeight());
     
     forwardPWM = -driverController.getLeftY() * speedscalar;
-    strafePWM = driverController.getLeftX() * speedscalar;
-    turnPWM = driverController.getRightX();
+    strafePWM = -driverController.getLeftX() * speedscalar;
+    turnPWM = -driverController.getRightX();
     
     var outputChassisSpeeds = driveSubsystem.PWMInputToChassisSpeeds(forwardPWM, strafePWM, turnPWM);
     SmartDashboard.putNumber("Chassis Forward (m/s)", outputChassisSpeeds.vxMetersPerSecond);

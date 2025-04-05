@@ -69,7 +69,7 @@ public final class Constants {
     public static final double kMinAcceleration = 2.5; // To prevent tipping when scissor lift extended should be 3.5
     public static final double kForwardDriverVelocityScalar = 3.6; // m/s
     public static final double kStrafeDriverVelocityScalar = 3.6; // m/s
-    public static final double kRotationalDriverVelocityScalar = 1; // rad/s
+    public static final double kRotationalDriverVelocityScalar = Math.PI; // rad/s
 
     public static void initConfig() {
       try{
@@ -148,6 +148,6 @@ public final class Constants {
   }
 
   public static class PathLimitations{
-    public static final PathConstraints constraints = new PathConstraints(4, 3.6, Math.PI, Math.PI / 2);
+    public static final PathConstraints constraints = new PathConstraints(3, 3.6, Math.PI, Math.PI / 2);
   }
 }

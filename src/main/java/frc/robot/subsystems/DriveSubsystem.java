@@ -62,7 +62,7 @@ public class DriveSubsystem extends SubsystemBase {
   private final CurrentLimitsConfigs rearLeftCurrentConfigs = new CurrentLimitsConfigs();
 
   private Gyro m_gyro = null;
-  private MecanumDrivePoseEstimator m_poseEstimator = null;
+  private RobotPoseEstimatorSubsystem m_poseEstimator = null;
   private MecanumDriveWheelSpeeds m_WheelSpeeds = new MecanumDriveWheelSpeeds();
   private ChassisSpeeds m_ChassisSpeeds = new ChassisSpeeds();
   private MecanumDriveKinematics m_Kinematics = new MecanumDriveKinematics(new Translation2d(.314, 0.292), new Translation2d(.314, -0.292), new Translation2d(-.314, 0.292), new Translation2d(-.314, -0.292));
@@ -109,15 +109,11 @@ public class DriveSubsystem extends SubsystemBase {
     frontLeftConfigurator.apply(frontLeftCurrentConfigs);
     rearLeftConfigurator.apply(rearLeftCurrentConfigs);
     
-    if(m_gyro != null){
-    m_poseEstimator = new MecanumDrivePoseEstimator(m_Kinematics, m_gyro.getRotation2d(), getCurrentWheelDistances(), getInitialPose());
-    }
     initConfig();
   }
 
   public void setGyro(Gyro gyro) {
     this.m_gyro = gyro;
-    m_poseEstimator = new MecanumDrivePoseEstimator(m_Kinematics, m_gyro.getRotation2d(), getCurrentWheelDistances(), getInitialPose());
   }
 
   /**
@@ -159,8 +155,8 @@ public class DriveSubsystem extends SubsystemBase {
             this::getChassisSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
             (speeds) -> driveRobotChassisSpeeds(speeds), // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds. Also optionally outputs individual module feedforwards
             new PPHolonomicDriveController( // PPHolonomicController is the built in path following controller for holonomic drive trains
-                    new PIDConstants(1.0, 0.0, 0.0), // Translation PID constants
-                    new PIDConstants(1.0, 0.0, 0.0) // Rotation PID constants
+                    new PIDConstants(0.5, 0.0, 0.0), // Translation PID constants
+                    new PIDConstants(Math.PI / 2, 0.0, 0.0) // Rotation PID constants
             ),
             DriveConstants.config, // The robot configuration
             () -> {
@@ -182,38 +178,38 @@ public class DriveSubsystem extends SubsystemBase {
   // Runs motor fault checks for logging purposes
   private void faultChecks() {
     // Supply Limit Checks
-    if(m_frontLeft.getFault_SupplyCurrLimit().getValue()) {
-      DataLogManager.log("Front Left Supply Current Limit Hit");
-    }
+    // if(m_frontLeft.getFault_SupplyCurrLimit().getValue()) {
+    //   DataLogManager.log("Front Left Supply Current Limit Hit");
+    // }
 
-    if(m_rearLeft.getFault_SupplyCurrLimit().getValue()) {
-      DataLogManager.log("Rear Left Supply Current Limit Hit");
-    }
+    // if(m_rearLeft.getFault_SupplyCurrLimit().getValue()) {
+    //   DataLogManager.log("Rear Left Supply Current Limit Hit");
+    // }
 
-    if(m_frontRight.getFault_SupplyCurrLimit().getValue()) {
-      DataLogManager.log("Front Right Supply Current Limit Hit");
-    }
+    // if(m_frontRight.getFault_SupplyCurrLimit().getValue()) {
+    //   DataLogManager.log("Front Right Supply Current Limit Hit");
+    // }
 
-    if(m_rearRight.getFault_SupplyCurrLimit().getValue()) {
-      DataLogManager.log("Rear Right Supply Current Limit Hit");
-    }
+    // if(m_rearRight.getFault_SupplyCurrLimit().getValue()) {
+    //   DataLogManager.log("Rear Right Supply Current Limit Hit");
+    // }
 
-    // Stator Limit Checks
-    if(m_frontLeft.getFault_StatorCurrLimit().getValue()) {
-      DataLogManager.log("Front Left Stator Current Limit Hit");
-    }
+    // // Stator Limit Checks
+    // if(m_frontLeft.getFault_StatorCurrLimit().getValue()) {
+    //   DataLogManager.log("Front Left Stator Current Limit Hit");
+    // }
 
-    if(m_rearLeft.getFault_StatorCurrLimit().getValue()) {
-      DataLogManager.log("Rear Left Stator Current Limit Hit");
-    }
+    // if(m_rearLeft.getFault_StatorCurrLimit().getValue()) {
+    //   DataLogManager.log("Rear Left Stator Current Limit Hit");
+    // }
 
-    if(m_frontRight.getFault_StatorCurrLimit().getValue()) {
-      DataLogManager.log("Front Right Stator Current Limit Hit");
-    }
+    // if(m_frontRight.getFault_StatorCurrLimit().getValue()) {
+    //   DataLogManager.log("Front Right Stator Current Limit Hit");
+    // }
 
-    if(m_rearRight.getFault_StatorCurrLimit().getValue()) {
-      DataLogManager.log("Rear Right Stator Current Limit Hit");
-    }
+    // if(m_rearRight.getFault_StatorCurrLimit().getValue()) {
+    //   DataLogManager.log("Rear Right Stator Current Limit Hit");
+    // }
   }
 
   private void driveLogging() {
@@ -236,7 +232,7 @@ public class DriveSubsystem extends SubsystemBase {
    */
   public Pose2d getPose() {
     if (m_poseEstimator != null) {
-      return m_poseEstimator.getEstimatedPosition();
+      return m_poseEstimator.getPose();
     }
     return getInitialPose(); // Return default pose if estimator is not initialized
   }
@@ -244,14 +240,14 @@ public class DriveSubsystem extends SubsystemBase {
  
   // Resets the odometry to the specified pose.
   public void resetOdometry(Pose2d pose) {
-    if (m_poseEstimator != null && m_gyro != null) {
-      m_poseEstimator.resetPosition(m_gyro.getRotation2d(), getCurrentWheelDistances(), pose);
+    if (m_poseEstimator != null) {
+      m_poseEstimator.resetPose(pose);
     }
   }
 
   public void resetOdometry() {
     if (m_poseEstimator != null && m_gyro != null) {
-      m_poseEstimator.resetPosition(m_gyro.getRotation2d(), getCurrentWheelDistances(), new Pose2d(0, 0, m_gyro.getRotation2d()));
+      m_poseEstimator.resetPose(new Pose2d());
     }
   }
 
@@ -262,7 +258,7 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   public void driveFieldChassisSpeeds(ChassisSpeeds speeds) {
-    ChassisSpeeds m_robotspeeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, m_poseEstimator.getEstimatedPosition().getRotation());
+    ChassisSpeeds m_robotspeeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, m_poseEstimator.getPose().getRotation());
     m_WheelSpeeds = m_Kinematics.toWheelSpeeds(m_robotspeeds);
     driveMecanumWheelSpeeds(m_WheelSpeeds);
   }
@@ -321,11 +317,6 @@ public class DriveSubsystem extends SubsystemBase {
   public double getRearRightEncoder() {
     return m_rearRightEncoder;
   }
-
-  public void addVisionUpdate(Pose2d visionPose , double Time) {
-    m_poseEstimator.addVisionMeasurement(visionPose, Time);
-  }
-
   /**
    * Gets the current wheel speeds.
    *

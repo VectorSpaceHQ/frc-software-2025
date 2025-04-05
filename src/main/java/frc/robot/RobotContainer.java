@@ -202,6 +202,10 @@ public class RobotContainer {
     m_driverController
         .a()
         .onTrue(m_pathFindingCommands.GoToBlueBarge());
+
+    m_driverController
+      .b()
+      .onTrue(m_pathFindingCommands.forwardTest());
     // m_operatorController
     //     .b()
     //     .onTrue(m_robotElevator.GoTo(Level.L2));
