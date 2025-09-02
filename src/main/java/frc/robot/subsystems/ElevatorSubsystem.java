@@ -71,6 +71,8 @@ public class ElevatorSubsystem extends SubsystemBase{
   private double PIDFeedback = 0;
   private double scissor_speed = 0;
   private double y_stageHeight;
+  private double r_topSwitchRotations;
+  private boolean limitTopOnceTrue = false;
   private boolean limitBottomOnceTrue = false;
 
   public ElevatorSubsystem() {
@@ -110,6 +112,11 @@ public class ElevatorSubsystem extends SubsystemBase{
       r_currentRotations = 0;
     }
     //----------------
+
+    if (limitTop){
+      limitTopOnceTrue = true;
+      r_topSwitchRotations = encoder.getPosition();
+    }
 
     if (limitBottom && !limitBottomOnceTrue) {
       limitBottomOnceTrue = true;
@@ -175,6 +182,10 @@ public class ElevatorSubsystem extends SubsystemBase{
     if ((r_currentRotations < 1) && limitBottomOnceTrue) {
       speed = Math.max(0, speed);
     }
+    if ((r_currentRotations > r_topSwitchRotations) && limitTopOnceTrue){
+      speed = Math.min(speed, 0);
+    }
+
     // if((speed < 0) && r_currentRotations < 5)
     // {
     //   speed = 0.2 * speed;
