@@ -14,6 +14,8 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.CANIDs;
 import frc.robot.Constants.DigitalInputPorts;
 
+import edu.wpi.first.wpilibj.Timer;
+
 public class AlgaeSubsystem extends SubsystemBase {
     private double speed = 0;
     private final SparkMax motor_left = new SparkMax(CANIDs.kAlgaeSubsystemLeft, MotorType.kBrushless);
@@ -24,6 +26,8 @@ public class AlgaeSubsystem extends SubsystemBase {
     private final DigitalInput l_Right = new DigitalInput(DigitalInputPorts.kAlgaeSubsystemRight);
     private boolean limitSwitchLeft = l_Left.get();
     private boolean limitSwitchRight = l_Right.get();
+
+    private final Timer overheatTimer = new Timer();
 
     public AlgaeSubsystem() {
         //config.follow(CANIDs.kAlgaeSubsystemLeft,true);
@@ -58,32 +62,53 @@ public class AlgaeSubsystem extends SubsystemBase {
     }
 
     private void setSpeed(double speed){
-        // negative speed opens claws.
-        double left_speed = speed;
-        double right_speed = speed;
-
+        // positive speed opens claws.
+        double left_speed = -speed;
+        double right_speed = -speed;
+        //timer to stop motors if they have been running too long
+        //if they run for 25s straight, it turns off for 5s
+        if(overheatTimer.get() >= 30.0){
+            overheatTimer.reset();
+        }
+        if(speed == 0){
+            overheatTimer.reset();
+        } else if(overheatTimer.get() >= 25.0){
+            speed = 0;
+        }
         // limit the opening speeds
-        left_speed = Math.max(left_speed, -0.30);
-        right_speed = Math.max(right_speed, -0.30);
+        left_speed = Math.min(left_speed, 0.30);
+        right_speed = Math.min(right_speed, 0.30);
 
+        //limit the closing speeds w/ time to prevent overheat
+        //scales at 10s and 20s
+        if(overheatTimer.get() >= 10.0){
+        left_speed = Math.max(left_speed, -0.75);
+        right_speed = Math.max(right_speed, -0.75);
+        } else if(overheatTimer.get() >= 20.0){
+            left_speed = Math.max(left_speed, -0.50);
+            right_speed = Math.max(right_speed, -0.50);
+            }
+        
         if(limitSwitchLeft){
-            left_speed = Math.max(0, speed);
+            left_speed = Math.min(0, speed);
         }
 
-        if(limitSwitchRight)
-        {
-            right_speed = Math.max(0, speed);
+        if(limitSwitchRight){
+            right_speed = Math.min(0, speed);
         }
 
         motor_left.set(left_speed);
         motor_right.set(right_speed);
+        
+
     }
     
     // Sets both motors
     // Stops on either limit switch pressed
     public Command runClaws(CommandXboxController m_operatorcontroller) {
         return new FunctionalCommand(
-            () -> {                
+            () -> {
+                overheatTimer.start();
                 },
             () -> {
                 update();
