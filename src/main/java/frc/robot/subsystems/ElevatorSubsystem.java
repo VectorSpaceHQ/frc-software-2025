@@ -57,12 +57,14 @@ public class ElevatorSubsystem extends SubsystemBase{
   ProfiledPIDController pid = new ProfiledPIDController(PIDTunings.kElevatorKP, PIDTunings.kElevatorKI, PIDTunings.kElevatorKD, constraints);
   private DigitalInput l_top = new DigitalInput(DigitalInputPorts.kElevatorSubsystemUp);
   private DigitalInput l_bottom = new DigitalInput(DigitalInputPorts.kElevatorSubsystemDown);
+  private DigitalInput l_slow = new DigitalInput(DigitalInputPorts.kElevatorSubsystemSlow);
 
   // True when pressed
   private boolean limitTop = l_top.get();
-  private boolean prevLimitBottom;
-  // True when pressed
   private boolean limitBottom = l_bottom.get();
+  private boolean limitSlow = l_slow.get();
+  private boolean prevLimitBottom;
+
   private double y_currentHeight = 0;
   private double y_targetHeight = 21.875;
   private double r_currentRotations = 0;
@@ -72,8 +74,10 @@ public class ElevatorSubsystem extends SubsystemBase{
   private double scissor_speed = 0;
   private double y_stageHeight;
   private double r_topSwitchRotations;
+  private double r_slowSwitchRotations;
   private boolean limitTopOnceTrue = false;
   private boolean limitBottomOnceTrue = false;
+  private boolean limitSlowOnceTrue = false;
 
   public ElevatorSubsystem() {
     // Invert the SparkMax
@@ -104,26 +108,33 @@ public class ElevatorSubsystem extends SubsystemBase{
     prevLimitBottom = limitBottom;
     limitTop = !l_top.get();
     limitBottom = !l_bottom.get();
+    limitSlow = !l_slow.get();
 
     // Adam------------
     // Reset counts every time bottom limit is hit. The momentum of the scissor is causing counts to become inaccurate.
     if (limitBottom){
       encoder.setPosition(0);
       r_currentRotations = 0;
+      limitSlowOnceTrue = false;
+      limitTopOnceTrue = false;
     }
     //----------------
 
+    // To do: add a way to clear the status of the limit switches once toggled
     if (limitTop){
       limitTopOnceTrue = true;
       r_topSwitchRotations = encoder.getPosition();
     }
 
+    if (limitSlow){
+      limitSlowOnceTrue = true;
+      r_slowSwitchRotations = encoder.getPosition();
+    }
+
     if (limitBottom && !limitBottomOnceTrue) {
       limitBottomOnceTrue = true;
     }
-    if (limitBottom && !prevLimitBottom) {
-      encoder.setPosition(0);
-    }
+ 
 
   }
 
@@ -132,6 +143,7 @@ public class ElevatorSubsystem extends SubsystemBase{
     SmartDashboard.putBoolean("Scissor Bottom Limit", limitBottom);
     SmartDashboard.putBoolean("Scissor Bottom Limit Initialized", limitBottomOnceTrue);
     SmartDashboard.putBoolean("Scissor Top Limit", limitTop);
+    SmartDashboard.putBoolean("Scissor Slow Limit", limitSlow);
     SmartDashboard.putNumber("Scissor Motor1 Current", motor1.getOutputCurrent());
     SmartDashboard.putNumber("Scissor Motor2 Current", motor2.getOutputCurrent());
     SmartDashboard.putNumber("Target Height", y_targetHeight);
@@ -178,6 +190,11 @@ public class ElevatorSubsystem extends SubsystemBase{
     {
       speed = Math.min(speed, 0);
     }
+    if(limitSlow)
+    {
+      // Positive (going up, but really slow)
+      speed = Math.min(speed, 0.1);
+    }
     // software limit
     if ((r_currentRotations < 1) && limitBottomOnceTrue) {
       speed = Math.max(0, speed);
@@ -185,6 +202,10 @@ public class ElevatorSubsystem extends SubsystemBase{
     if ((r_currentRotations > r_topSwitchRotations) && limitTopOnceTrue){
       speed = Math.min(speed, 0);
     }
+    if ((r_currentRotations > r_slowSwitchRotations) && limitSlowOnceTrue){
+      speed = Math.min(speed, 0.1);
+    }
+
 
     // if((speed < 0) && r_currentRotations < 5)
     // {
@@ -210,6 +231,10 @@ public class ElevatorSubsystem extends SubsystemBase{
     if(limitTop)
     {
       speed = Math.min(speed, 0);
+    }
+    if(limitSlow)
+    {
+      speed = Math.min(speed, 60); // 60 rpm
     }
     if (r_currentRotations < 1) {
       speed = Math.max(0, speed);
