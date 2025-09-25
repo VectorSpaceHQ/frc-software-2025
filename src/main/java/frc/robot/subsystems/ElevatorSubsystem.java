@@ -196,7 +196,7 @@ public class ElevatorSubsystem extends SubsystemBase{
       speed = Math.min(speed, 0.1);
     }
     // software limit
-    if ((r_currentRotations < 1) && limitBottomOnceTrue) {
+    if ((r_currentRotations < 0) && limitBottomOnceTrue) {
       speed = Math.max(0, speed);
     }
     if ((r_currentRotations > r_topSwitchRotations) && limitTopOnceTrue){

@@ -28,6 +28,7 @@ public class AlgaeSubsystem extends SubsystemBase {
     private boolean limitSwitchRight = l_Right.get();
 
     private final Timer overheatTimer = new Timer();
+    private final Timer limitTimer = new Timer();
 
     public AlgaeSubsystem() {
         //config.follow(CANIDs.kAlgaeSubsystemLeft,true);
@@ -37,6 +38,9 @@ public class AlgaeSubsystem extends SubsystemBase {
 
         motor_right.configure(rightConfig, null, null);
         motor_left.configure(leftConfig, null, null);
+
+        overheatTimer.start();
+        limitTimer.start();
     }
 
     @Override
@@ -59,22 +63,25 @@ public class AlgaeSubsystem extends SubsystemBase {
       SmartDashboard.putNumber("claw motor_right Current", motor_right.getOutputCurrent());
       SmartDashboard.putBoolean("Algae Left Motor Limit", limitSwitchLeft);
       SmartDashboard.putBoolean("Algae Right Motor Limit", limitSwitchRight);
+      SmartDashboard.putNumber("Claw Overheat Timer", overheatTimer.get());
     }
 
     private void setSpeed(double speed){
-        // positive speed opens claws.
-        double left_speed = -speed;
-        double right_speed = -speed;
         //timer to stop motors if they have been running too long
         //if they run for 25s straight, it turns off for 5s
-        if(overheatTimer.get() >= 30.0){
+        if(overheatTimer.get() >= 15.0){
             overheatTimer.reset();
         }
         if(speed == 0){
             overheatTimer.reset();
-        } else if(overheatTimer.get() >= 25.0){
+        } else if(overheatTimer.get() >= 10.0){
             speed = 0;
         }
+        
+        // positive speed opens claws.
+        double left_speed = -speed;
+        double right_speed = -speed;
+
         // limit the opening speeds
         left_speed = Math.min(left_speed, 0.30);
         right_speed = Math.min(right_speed, 0.30);
@@ -89,12 +96,13 @@ public class AlgaeSubsystem extends SubsystemBase {
             right_speed = Math.max(right_speed, -0.50);
             }
         
-        if(limitSwitchLeft){
-            left_speed = Math.min(0, speed);
+        if(limitSwitchLeft || limitSwitchRight){
+            limitTimer.reset();
         }
-
-        if(limitSwitchRight){
-            right_speed = Math.min(0, speed);
+        
+        if(limitTimer.get() <= 1.0){
+            left_speed = Math.max(0, speed);
+            right_speed = Math.max(0, speed);
         }
 
         motor_left.set(left_speed);
@@ -108,7 +116,7 @@ public class AlgaeSubsystem extends SubsystemBase {
     public Command runClaws(CommandXboxController m_operatorcontroller) {
         return new FunctionalCommand(
             () -> {
-                overheatTimer.start();
+                
                 },
             () -> {
                 update();
