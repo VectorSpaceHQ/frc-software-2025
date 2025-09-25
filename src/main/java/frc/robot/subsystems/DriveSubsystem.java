@@ -18,11 +18,14 @@ import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.CANIDs;
 import frc.robot.Constants.DriveConstants;
 import edu.wpi.first.wpilibj.Timer;
-
+import edu.wpi.first.networktables.GenericEntry;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfigurator;
@@ -77,6 +80,17 @@ public class DriveSubsystem extends SubsystemBase {
   private MecanumDrivePoseEstimator m_poseEstimator = null;
   
   private MecanumDriveKinematics m_Kinematics = new MecanumDriveKinematics(new Translation2d(-.314, 0.292), new Translation2d(.314, 0.292), new Translation2d(-.314, -0.292), new Translation2d(.314, -0.292));
+
+  private final ShuffleboardTab driveTab = Shuffleboard.getTab("Drive");
+  private final ShuffleboardLayout currentsCol =
+      driveTab.getLayout("Currents", BuiltInLayouts.kList).withPosition(0, 0).withSize(2, 4);
+  private final ShuffleboardLayout commandCol =
+      driveTab.getLayout("Commanded", BuiltInLayouts.kList).withPosition(2, 0).withSize(2, 4);
+  private final GenericEntry frontLeftCurrentEntry = currentsCol.add("Front Left", 0.0).getEntry();
+  private final GenericEntry frontRightCurrentEntry = currentsCol.add("Front Right", 0.0).getEntry();
+  private final GenericEntry rearLeftCurrentEntry = currentsCol.add("Rear Left", 0.0).getEntry();
+  private final GenericEntry rearRightCurrentEntry = currentsCol.add("Rear Right", 0.0).getEntry();
+  private final GenericEntry commandedXSpeedEntry = commandCol.add("X Speed", 0.0).getEntry();
 
   /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
@@ -193,10 +207,10 @@ public class DriveSubsystem extends SubsystemBase {
       DataLogManager.log("Rear Right Stator Current Limit Hit");
     }
 
-    SmartDashboard.putNumber("front left drive current", m_frontLeft.getStatorCurrent().getValueAsDouble());
-    SmartDashboard.putNumber("front right drive current", m_frontRight.getStatorCurrent().getValueAsDouble());
-    SmartDashboard.putNumber("rear left drive current", m_rearLeft.getStatorCurrent().getValueAsDouble());
-    SmartDashboard.putNumber("rear right drive current", m_rearRight.getStatorCurrent().getValueAsDouble());
+    frontLeftCurrentEntry.setDouble(m_frontLeft.getStatorCurrent().getValueAsDouble());
+    frontRightCurrentEntry.setDouble(m_frontRight.getStatorCurrent().getValueAsDouble());
+    rearLeftCurrentEntry.setDouble(m_rearLeft.getStatorCurrent().getValueAsDouble());
+    rearRightCurrentEntry.setDouble(m_rearRight.getStatorCurrent().getValueAsDouble());
     
     RobotConfig config;
     try{
@@ -274,7 +288,7 @@ public class DriveSubsystem extends SubsystemBase {
    * @param fieldRelative Whether the provided x and y speeds are relative to the field.
    */
   public void drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative) {
-    SmartDashboard.putNumber("x speed", xSpeed);
+    commandedXSpeedEntry.setDouble(xSpeed);
     if (fieldRelative && m_gyro != null) {
       m_drive.driveCartesian(xSpeed, ySpeed, rot, m_poseEstimator.getEstimatedPosition().getRotation());
     } else {
@@ -409,3 +423,6 @@ public class DriveSubsystem extends SubsystemBase {
     m_rearRight.setVoltage(volts);
   }
 }
+
+
+

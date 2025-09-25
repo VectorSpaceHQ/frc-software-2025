@@ -9,7 +9,11 @@ import com.pathplanner.lib.path.PathPlannerPath;
 
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.networktables.GenericEntry;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.DynamicSlewRateLimiter;
 import frc.robot.subsystems.DriveSubsystem;
@@ -49,6 +53,27 @@ public class DriveTargetCommand extends Command {
   private DynamicSlewRateLimiter y_rate = new DynamicSlewRateLimiter(DriveConstants.kMaxAcceleration);
   private InterpolatingDoubleTreeMap table = new InterpolatingDoubleTreeMap();
   private double targetID = AprilTags.None.getId(); // Initialize targetID to None
+
+  private final ShuffleboardTab targetingTab = Shuffleboard.getTab("Targeting");
+  private final ShuffleboardLayout statusCol = targetingTab.getLayout("Status", BuiltInLayouts.kList).withPosition(0,0).withSize(1,3);
+  private final ShuffleboardLayout forwardCol = targetingTab.getLayout("Forward", BuiltInLayouts.kList).withPosition(1,0).withSize(2,5);
+  private final ShuffleboardLayout strafeCol = targetingTab.getLayout("Strafe", BuiltInLayouts.kList).withPosition(3,0).withSize(2,5);
+  private final GenericEntry aimingStatusEntry = statusCol.add("Aiming Status", "Idle").getEntry();
+  private final GenericEntry linearAccelerationLimitEntry = statusCol.add("Linear Accel Limit", 0.0).getEntry();
+  private final GenericEntry forwardEntry = forwardCol.add("Fwd Output", 0.0).getEntry();
+  private final GenericEntry forwardPwmEntry = forwardCol.add("Fwd PWM", 0.0).getEntry();
+  private final GenericEntry forwardVoltageEntry = forwardCol.add("Fwd Voltage", 0.0).getEntry();
+  private final GenericEntry forwardLinearSpeedEntry = forwardCol.add("Fwd Linear Speed", 0.0).getEntry();
+  private final GenericEntry forwardAdjustedLinearSpeedEntry = forwardCol.add("Fwd Adj Linear Speed", 0.0).getEntry();
+  private final GenericEntry forwardAdjustedVoltageEntry = forwardCol.add("Fwd Adj Voltage", 0.0).getEntry();
+  private final GenericEntry forwardAdjustedPwmEntry = forwardCol.add("Fwd Adj PWM", 0.0).getEntry();
+  private final GenericEntry strafeEntry = strafeCol.add("Strafe Output", 0.0).getEntry();
+  private final GenericEntry strafePwmEntry = strafeCol.add("Strafe PWM", 0.0).getEntry();
+  private final GenericEntry strafeVoltageEntry = strafeCol.add("Strafe Voltage", 0.0).getEntry();
+  private final GenericEntry strafeLinearSpeedEntry = strafeCol.add("Strafe Linear Speed", 0.0).getEntry();
+  private final GenericEntry strafeAdjustedLinearSpeedEntry = strafeCol.add("Strafe Adj Linear Speed", 0.0).getEntry();
+  private final GenericEntry strafeAdjustedVoltageEntry = strafeCol.add("Strafe Adj Voltage", 0.0).getEntry();
+  private final GenericEntry strafeAdjustedPwmEntry = strafeCol.add("Strafe Adj PWM", 0.0).getEntry();
 
   public void setTargetID(AprilTags tagId) {
     this.targetID = tagId.getId(); // Set targetID based on the provided AprilTags enum value
@@ -102,7 +127,7 @@ public class DriveTargetCommand extends Command {
   @Override
   public void end(boolean interrupted) {
     driveSubsystem.drive(0, 0, 0, true);
-    SmartDashboard.putString("Aiming Status", "Command Ended");
+    aimingStatusEntry.setString("Command Ended");
   }
 
   public void setSpeedScalar(double val){
@@ -110,20 +135,27 @@ public class DriveTargetCommand extends Command {
   }
 
   private void DriveTargetCommandLogger() {
-    SmartDashboard.putNumber("Linear Acceleration Limit", linearAccelerationLimit);
-    SmartDashboard.putNumber("Forward", forward);
-    SmartDashboard.putNumber("Forward PWM", forwardPWM);
-    SmartDashboard.putNumber("Forward Voltage", forwardVoltage);
-    SmartDashboard.putNumber("Forward Linear Speed", forwardLinearSpeed);
-    SmartDashboard.putNumber("Forward Adjusted Linear Speed", forwardAdjustedLinearSpeed);
-    SmartDashboard.putNumber("Forward Adjusted Voltage", forwardAdjustedVoltage);
-    SmartDashboard.putNumber("Forward Adjusted PWM", forwardAdjustedPWM);
-    SmartDashboard.putNumber("Strafe", strafe);
-    SmartDashboard.putNumber("Strafe PWM", strafePWM);
-    SmartDashboard.putNumber("Forward Voltage", strafeVoltage);
-    SmartDashboard.putNumber("strafe Linear Speed", strafeLinearSpeed);
-    SmartDashboard.putNumber("strafe Adjusted Linear Speed", strafeAdjustedLinearSpeed);
-    SmartDashboard.putNumber("strafe Adjusted Voltage", strafeAdjustedVoltage);
-    SmartDashboard.putNumber("strafe Adjusted PWM", strafeAdjustedPWM);
+    linearAccelerationLimitEntry.setDouble(linearAccelerationLimit);
+    forwardEntry.setDouble(forward);
+    forwardPwmEntry.setDouble(forwardPWM);
+    forwardVoltageEntry.setDouble(forwardVoltage);
+    forwardLinearSpeedEntry.setDouble(forwardLinearSpeed);
+    forwardAdjustedLinearSpeedEntry.setDouble(forwardAdjustedLinearSpeed);
+    forwardAdjustedVoltageEntry.setDouble(forwardAdjustedVoltage);
+    forwardAdjustedPwmEntry.setDouble(forwardAdjustedPWM);
+    strafeEntry.setDouble(strafe);
+    strafePwmEntry.setDouble(strafePWM);
+    strafeVoltageEntry.setDouble(strafeVoltage);
+    strafeLinearSpeedEntry.setDouble(strafeLinearSpeed);
+    strafeAdjustedLinearSpeedEntry.setDouble(strafeAdjustedLinearSpeed);
+    strafeAdjustedVoltageEntry.setDouble(strafeAdjustedVoltage);
+    strafeAdjustedPwmEntry.setDouble(strafeAdjustedPWM);
+    aimingStatusEntry.setString("Running");
   }
 }
+
+
+
+
+
+

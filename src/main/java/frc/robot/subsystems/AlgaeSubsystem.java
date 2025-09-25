@@ -4,17 +4,19 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
-
+import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.CANIDs;
 import frc.robot.Constants.DigitalInputPorts;
-
-import edu.wpi.first.wpilibj.Timer;
 
 public class AlgaeSubsystem extends SubsystemBase {
     private double speed = 0;
@@ -30,8 +32,17 @@ public class AlgaeSubsystem extends SubsystemBase {
     private final Timer overheatTimer = new Timer();
     private final Timer limitTimer = new Timer();
 
+    private final ShuffleboardTab algaeTab = Shuffleboard.getTab("Algae");
+    private final ShuffleboardLayout currentCol = algaeTab.getLayout("Currents", BuiltInLayouts.kList).withPosition(0,0).withSize(1,3);
+    private final ShuffleboardLayout limitCol = algaeTab.getLayout("Limits", BuiltInLayouts.kList).withPosition(1,0).withSize(1,3);
+    private final ShuffleboardLayout controlCol = algaeTab.getLayout("Control", BuiltInLayouts.kList).withPosition(2,0).withSize(1,2);
+    private final GenericEntry motorSpeedEntry = controlCol.add("Motor Speed", 0.0).getEntry();
+    private final GenericEntry leftMotorCurrentEntry = currentCol.add("Left Current", 0.0).getEntry();
+    private final GenericEntry rightMotorCurrentEntry = currentCol.add("Right Current", 0.0).getEntry();
+    private final GenericEntry leftLimitEntry = limitCol.add("Left Limit", false).getEntry();
+    private final GenericEntry rightLimitEntry = limitCol.add("Right Limit", false).getEntry();
+
     public AlgaeSubsystem() {
-        //config.follow(CANIDs.kAlgaeSubsystemLeft,true);
         leftConfig.smartCurrentLimit(30, 20);
         rightConfig.smartCurrentLimit(30, 20);
         rightConfig.inverted(true);
@@ -50,20 +61,15 @@ public class AlgaeSubsystem extends SubsystemBase {
     }
 
     private void update(){
-        // True when limit switch is pressed.
-        // limitSwitchLeft = !l_Left.get();
-        // limitSwitchRight = !l_Right.get();
+        // reserved for future logic
     }
 
     private void AlgaeLogger(){
-      SmartDashboard.putNumber("Algae motor speed", speed);
-      //SmartDashboard.putNumber("Algae Left Motor Current", motorspeed);
-      //SmartDashboard.putNumber("Algae Right Motor Current", motorspeed);
-      SmartDashboard.putNumber("claw motor_left Current", motor_left.getOutputCurrent());
-      SmartDashboard.putNumber("claw motor_right Current", motor_right.getOutputCurrent());
-      SmartDashboard.putBoolean("Algae Left Motor Limit", limitSwitchLeft);
-      SmartDashboard.putBoolean("Algae Right Motor Limit", limitSwitchRight);
-      SmartDashboard.putNumber("Claw Overheat Timer", overheatTimer.get());
+      motorSpeedEntry.setDouble(speed);
+      leftMotorCurrentEntry.setDouble(motor_left.getOutputCurrent());
+      rightMotorCurrentEntry.setDouble(motor_right.getOutputCurrent());
+      leftLimitEntry.setBoolean(limitSwitchLeft);
+      rightLimitEntry.setBoolean(limitSwitchRight);
     }
 
     private void setSpeed(double speed){
@@ -86,11 +92,9 @@ public class AlgaeSubsystem extends SubsystemBase {
         left_speed = Math.min(left_speed, 0.30);
         right_speed = Math.min(right_speed, 0.30);
 
-        //limit the closing speeds w/ time to prevent overheat
-        //scales at 10s and 20s
         if(overheatTimer.get() >= 10.0){
-        left_speed = Math.max(left_speed, -0.75);
-        right_speed = Math.max(right_speed, -0.75);
+            left_speed = Math.max(left_speed, -0.75);
+            right_speed = Math.max(right_speed, -0.75);
         } else if(overheatTimer.get() >= 20.0){
             left_speed = Math.max(left_speed, -0.50);
             right_speed = Math.max(right_speed, -0.50);
@@ -101,18 +105,14 @@ public class AlgaeSubsystem extends SubsystemBase {
         }
         
         if(limitTimer.get() <= 1.0){
-            left_speed = Math.max(0, speed);
-            right_speed = Math.max(0, speed);
+            left_speed = Math.min(0, -speed);
+            right_speed = Math.min(0, -speed);
         }
 
         motor_left.set(left_speed);
         motor_right.set(right_speed);
-        
-
     }
-    
-    // Sets both motors
-    // Stops on either limit switch pressed
+
     public Command runClaws(CommandXboxController m_operatorcontroller) {
         return new FunctionalCommand(
             () -> {
@@ -122,38 +122,31 @@ public class AlgaeSubsystem extends SubsystemBase {
                 update();
                 speed = m_operatorcontroller.getRightY();
                 speed = 0.3 * speed;
-                //motor_left.set(speed);
                 setSpeed(speed);
                 AlgaeLogger();
             },
             interrupted -> {
                 motor_left.stopMotor();
             },
-            //() -> ((limitSwitchLeft || limitSwitchRight) && (speed <= 0)),
-            //this);
-            () -> (false),  this);
+            () -> false,
+            this);
     }
 
     public Command runClaws(double speed) {
         return new FunctionalCommand(
-            () -> {                
-                },
+            () -> {},
             () -> {
                 update();
-                //motor_left.set(speed);
                 setSpeed(speed);
                 AlgaeLogger();
             },
             interrupted -> {
                 motor_left.stopMotor();
             },
-            //() -> ((limitSwitchLeft || limitSwitchRight) && (speed <= 0)),
-            //this);
-            () -> (false),  this);
+            () -> false,
+            this);
     }
 
-    // Homes claws then on finish sets right motor to inverted follower
-    // Returns both motors to their respective limit switches
     public Command homeClaws() {
         return new FunctionalCommand(
             () -> {},
@@ -161,17 +154,17 @@ public class AlgaeSubsystem extends SubsystemBase {
                 update();
                 if (!limitSwitchLeft) {
                     motor_left.set(0.1);
+                } else {
+                    motor_left.stopMotor();
                 }
-                else { motor_left.stopMotor();}
                 if (!limitSwitchRight) {
                     motor_right.set(-0.1);
-                }
-                else {
+                } else {
                     motor_right.stopMotor();
                 }
-            }, 
-            interrupted -> {}, 
-            () -> (limitSwitchLeft && limitSwitchRight), 
+            },
+            interrupted -> {},
+            () -> (limitSwitchLeft && limitSwitchRight),
             this);
     }
 }

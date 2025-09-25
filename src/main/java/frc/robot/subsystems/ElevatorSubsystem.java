@@ -15,7 +15,11 @@ import frc.robot.Constants.PIDTunings;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.networktables.GenericEntry;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -63,7 +67,6 @@ public class ElevatorSubsystem extends SubsystemBase{
   private boolean limitTop = l_top.get();
   private boolean limitBottom = l_bottom.get();
   private boolean limitSlow = l_slow.get();
-  private boolean prevLimitBottom;
 
   private double y_currentHeight = 0;
   private double y_targetHeight = 21.875;
@@ -79,6 +82,29 @@ public class ElevatorSubsystem extends SubsystemBase{
   private boolean limitBottomOnceTrue = false;
   private boolean limitSlowOnceTrue = false;
 
+  private final ShuffleboardTab elevatorTab = Shuffleboard.getTab("Elevator");
+  private final ShuffleboardLayout controlCol = elevatorTab.getLayout("Control", BuiltInLayouts.kList).withPosition(0,0).withSize(1,3);
+  private final ShuffleboardLayout limitsCol = elevatorTab.getLayout("Limits", BuiltInLayouts.kList).withPosition(1,0).withSize(1,4);
+  private final ShuffleboardLayout currentsCol = elevatorTab.getLayout("Currents", BuiltInLayouts.kList).withPosition(2,0).withSize(1,3);
+  private final ShuffleboardLayout stateCol = elevatorTab.getLayout("State", BuiltInLayouts.kList).withPosition(3,0).withSize(1,5);
+  private final ShuffleboardLayout controllerCol = elevatorTab.getLayout("Controller", BuiltInLayouts.kList).withPosition(4,0).withSize(1,5);
+
+  private final GenericEntry scissorSpeedEntry = controlCol.add("Lift Speed", 0.0).getEntry();
+  private final GenericEntry limitBottomEntry = limitsCol.add("Bottom", false).getEntry();
+  private final GenericEntry limitBottomInitializedEntry = limitsCol.add("Bottom Init", false).getEntry();
+  private final GenericEntry limitTopEntry = limitsCol.add("Top", false).getEntry();
+  private final GenericEntry limitSlowEntry = limitsCol.add("Slow", false).getEntry();
+  private final GenericEntry motor1CurrentEntry = currentsCol.add("Motor1 Current", 0.0).getEntry();
+  private final GenericEntry motor2CurrentEntry = currentsCol.add("Motor2 Current", 0.0).getEntry();
+  private final GenericEntry velocityEntry = currentsCol.add("Velocity", 0.0).getEntry();
+  private final GenericEntry targetHeightEntry = stateCol.add("Target Height", 0.0).getEntry();
+  private final GenericEntry currentHeightEntry = stateCol.add("Current Height", 0.0).getEntry();
+  private final GenericEntry stageHeightEntry = stateCol.add("Stage Height", 0.0).getEntry();
+  private final GenericEntry currentRotationsEntry = stateCol.add("Current Rotations", 0.0).getEntry();
+  private final GenericEntry targetRotationsEntry = stateCol.add("Target Rotations", 0.0).getEntry();
+  private final GenericEntry appliedVoltageEntry = stateCol.add("Applied Voltage", 0.0).getEntry();
+  private final GenericEntry pidFeedbackEntry = controllerCol.add("PID Feedback", 0.0).getEntry();
+  private final GenericEntry feedforwardEntry = controllerCol.add("Feedforward", 0.0).getEntry();
   public ElevatorSubsystem() {
     // Invert the SparkMax
     config.inverted(true);
@@ -97,15 +123,15 @@ public class ElevatorSubsystem extends SubsystemBase{
 
   @Override
   public void periodic() {
-    ElevatorLogger();
+    refreshLimitStates();
     //r_currentRotations = (encoder.getPosition() + encoder2.getPosition()) / 2;
     r_currentRotations = encoder.getPosition();
     calculateCurrentHeight();
+    ElevatorLogger();
   }
 
   // Internal Function for updating constants
-  private void update() {
-    prevLimitBottom = limitBottom;
+  private void refreshLimitStates() {
     limitTop = !l_top.get();
     limitBottom = !l_bottom.get();
     limitSlow = !l_slow.get();
@@ -138,23 +164,23 @@ public class ElevatorSubsystem extends SubsystemBase{
 
   }
 
-  private void ElevatorLogger(){
-    SmartDashboard.putNumber("Scissor Lift Speed", scissor_speed);
-    SmartDashboard.putBoolean("Scissor Bottom Limit", limitBottom);
-    SmartDashboard.putBoolean("Scissor Bottom Limit Initialized", limitBottomOnceTrue);
-    SmartDashboard.putBoolean("Scissor Top Limit", limitTop);
-    SmartDashboard.putBoolean("Scissor Slow Limit", limitSlow);
-    SmartDashboard.putNumber("Scissor Motor1 Current", motor1.getOutputCurrent());
-    SmartDashboard.putNumber("Scissor Motor2 Current", motor2.getOutputCurrent());
-    SmartDashboard.putNumber("Target Height", y_targetHeight);
-    SmartDashboard.putNumber("Current Height Estimate", y_currentHeight);
-    SmartDashboard.putNumber("Current Rotations", r_currentRotations);
-    SmartDashboard.putNumber("Target Rotations", r_targetRotations);
-    SmartDashboard.putNumber("PIDFeedback", PIDFeedback);
-    SmartDashboard.putNumber("Feedforward", v_feedforward);
-    SmartDashboard.putNumber("Stage Height", y_stageHeight);
-    SmartDashboard.putNumber("Velocity", encoder.getVelocity());
-    SmartDashboard.putNumber("Applied Voltage", motor1.getBusVoltage() * motor1.getAppliedOutput());
+  private void ElevatorLogger() {
+    scissorSpeedEntry.setDouble(scissor_speed);
+    limitBottomEntry.setBoolean(limitBottom);
+    limitBottomInitializedEntry.setBoolean(limitBottomOnceTrue);
+    limitTopEntry.setBoolean(limitTop);
+    limitSlowEntry.setBoolean(limitSlow);
+    motor1CurrentEntry.setDouble(motor1.getOutputCurrent());
+    motor2CurrentEntry.setDouble(motor2.getOutputCurrent());
+    targetHeightEntry.setDouble(y_targetHeight);
+    currentHeightEntry.setDouble(y_currentHeight);
+    currentRotationsEntry.setDouble(r_currentRotations);
+    targetRotationsEntry.setDouble(r_targetRotations);
+    pidFeedbackEntry.setDouble(PIDFeedback);
+    feedforwardEntry.setDouble(v_feedforward);
+    stageHeightEntry.setDouble(y_stageHeight);
+    velocityEntry.setDouble(encoder.getVelocity());
+    appliedVoltageEntry.setDouble(motor1.getBusVoltage() * motor1.getAppliedOutput());
   }
 
   // R is rotations
@@ -250,7 +276,7 @@ public class ElevatorSubsystem extends SubsystemBase{
   // public Command ElevatorLowerCommand() {
   //   return runEnd(
   //     () -> {
-  //       update();
+  //       refreshLimitStates();
   //       //this.manualAdjustment(-0.20);
   //       this.setSpeed(-0.25)
   //     },
@@ -264,7 +290,7 @@ public class ElevatorSubsystem extends SubsystemBase{
     return new FunctionalCommand(
       () -> {},
       () -> {
-        update();
+        refreshLimitStates();
         // RT Up
         double Raise = m_operatorController.getRightTriggerAxis();
         // DT Down
@@ -291,7 +317,7 @@ public class ElevatorSubsystem extends SubsystemBase{
       },
       // onExecute: Update our calculations and drive the motor
       () -> {
-        update();
+        refreshLimitStates();
         calculateTargetRotations(y_targetHeight);
         PIDFeedback = pid.calculate(r_currentRotations);//rps
         v_feedforward = pid.getSetpoint().velocity + 10;//rps
@@ -301,7 +327,6 @@ public class ElevatorSubsystem extends SubsystemBase{
       // onEnd: Stop the motor
       interrupted -> {
         motor1.stopMotor(); 
-        // SmartDashboard.putBoolean("Elevator GoTo Interrupt", interrupted);
       },
       // isFinished: End the command when the target is reached
       () ->(pid.atSetpoint()),
@@ -335,5 +360,18 @@ public double getMinHeight() {
   //     this);
   // }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
