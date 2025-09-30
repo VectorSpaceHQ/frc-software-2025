@@ -26,7 +26,11 @@ import java.util.Optional;
 import com.pathplanner.lib.path.PathPlannerPath;
 
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.networktables.GenericEntry;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 
 public class RobotContainer {
   // The robot's subsystems
@@ -49,6 +53,17 @@ public class RobotContainer {
 
   private DriveTargetCommand aimTarget;
   private final SendableChooser<Command> m_chooser = new SendableChooser<>();
+  private final ShuffleboardTab statusTab = Shuffleboard.getTab("Robot Status");
+  private final ShuffleboardTab autonomousTab = Shuffleboard.getTab("Autonomous");
+  private final ShuffleboardLayout sensorsCol = statusTab.getLayout("Sensors", BuiltInLayouts.kList).withPosition(0,0).withSize(1,4);
+  private final ShuffleboardLayout poseCol = statusTab.getLayout("Pose Estimator", BuiltInLayouts.kList).withPosition(1,0).withSize(1,4);
+  private final ShuffleboardLayout modeCol = statusTab.getLayout("Mode", BuiltInLayouts.kList).withPosition(2,0).withSize(1,3);
+  private final GenericEntry gyroConnectedEntry = sensorsCol.add("Gyro Connected", false).getEntry();
+  private final GenericEntry poseEstimatorActiveEntry = poseCol.add("Active", false).getEntry();
+  private final GenericEntry poseEstimatorErrorEntry = poseCol.add("Error", "idk").getEntry();
+  private final GenericEntry targetingModeEntry = modeCol.add("Targeting Mode", "Direct Vision Only").getEntry();
+  private final GenericEntry allianceIsRedEntry = modeCol.add("Is Red", false).getEntry();
+  private boolean autoChooserPublished = false;
 
   public RobotContainer() {
     // Initialize IMU because errors occur otherwise for some reason
@@ -65,9 +80,9 @@ public class RobotContainer {
       // Set the gyro on the drive subsystem if available
       if (m_IMU != null) {
         m_robotDrive.setGyro(m_IMU);
-        SmartDashboard.putBoolean("Gyro Connected to Drive", true);
+                gyroConnectedEntry.setBoolean(true);
       } else {
-        SmartDashboard.putBoolean("Gyro Connected to Drive", false);
+                gyroConnectedEntry.setBoolean(false);
       }
     }
 
@@ -94,17 +109,19 @@ public class RobotContainer {
     if (Constants.FeatureToggles.enablePoseEstimator) {
       try {
         m_poseEstimator = new RobotPoseEstimatorSubsystem(m_robotDrive, m_robotVision, m_IMU);
-        SmartDashboard.putBoolean("Pose Estimator Active", true);
+        poseEstimatorActiveEntry.setBoolean(true);
+        poseEstimatorErrorEntry.setString("");
 
       } catch (Exception e) {
         System.err.println("Error initializing pose estimator: " + e.getMessage());
 
-        SmartDashboard.putBoolean("Pose Estimator Active", false);
-        SmartDashboard.putString("Pose Estimator Error", e.getMessage());
+        poseEstimatorActiveEntry.setBoolean(false);
+        poseEstimatorErrorEntry.setString(e.getMessage());
       }
 
     } else {
-      SmartDashboard.putBoolean("Pose Estimator Active", false);
+      poseEstimatorActiveEntry.setBoolean(false);
+      poseEstimatorErrorEntry.setString("");
     }
 
     // Initialize FieldTagMap
@@ -134,9 +151,9 @@ public class RobotContainer {
       // Connect pose estimator
       if (m_poseEstimator != null) {
         aimTarget.setPoseEstimator(m_poseEstimator);
-        SmartDashboard.putString("Targeting Mode", "Using Pose Estimator");
+                targetingModeEntry.setString("Using Pose Estimator");
       } else {
-        SmartDashboard.putString("Targeting Mode", "Direct Vision Only");
+                targetingModeEntry.setString("Direct Vision Only");
       }
 
       m_robotDrive.setDefaultCommand(aimTarget);
@@ -151,35 +168,28 @@ public class RobotContainer {
       m_robotAlgae.setDefaultCommand(m_robotAlgae.runClaws(m_operatorController));
     }
   }
-
-  private void setupAutonomousCommands() {
-
-    if (m_robotDrive != null) {
-        m_chooser.setDefaultOption("Simple Auto", getSimpleAutonomousCommand());
-        m_chooser.addOption("Reef5", getReef5Command());
-        m_chooser.addOption("Complex Auto", getComplexReef5Command());
-        SmartDashboard.putData(m_chooser);
-    } else {
-        // Add a dummy command when drive isn't available
-        m_chooser.setDefaultOption("No Drive Available", new InstantCommand());
-        SmartDashboard.putData(m_chooser);
-    }
-}
-  // Determine the appropriate alliance
   private void determineAlliance() {
     // Default to red alliance
     fieldMap = fieldTagMap.getRedMap();
+  }
 
-    Optional<Alliance> ally = DriverStation.getAlliance();
-    if (ally.isPresent()) {
-        if (ally.get() == Alliance.Red) {
-            fieldMap = fieldTagMap.getRedMap();
-            SmartDashboard.putBoolean("IsRed", true);
-        }
-        if (ally.get() == Alliance.Blue) {
-            fieldMap = fieldTagMap.getBlueMap();
-            SmartDashboard.putBoolean("IsRed", false);
-        }
+  private void setupAutonomousCommands() {
+    if (m_robotDrive != null) {
+      m_chooser.setDefaultOption("Simple Auto", getSimpleAutonomousCommand());
+      m_chooser.addOption("Reef5", getReef5Command());
+      m_chooser.addOption("Complex Auto", getComplexReef5Command());
+    } else {
+      // Add a dummy command when drive isn't available
+      m_chooser.setDefaultOption("No Drive Available", new InstantCommand());
+    }
+
+    publishAutonomousChooser();
+  }
+
+  private void publishAutonomousChooser() {
+    if (!autoChooserPublished) {
+      autonomousTab.add("Autonomous Mode", m_chooser).withSize(2,1);
+      autoChooserPublished = true;
     }
   }
 
@@ -362,3 +372,20 @@ public class RobotContainer {
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
