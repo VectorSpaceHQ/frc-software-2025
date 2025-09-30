@@ -1,124 +1,198 @@
 package frc.robot;
 
-// import frc.robot.Gyro;
 import com.studica.frc.AHRS;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.networktables.GenericEntry;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 
 public class IMUImpl implements Gyro {
   // The gyro sensor
   private AHRS m_gyro = null;
 
-  public IMUImpl(){
-      m_gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
+  private final ShuffleboardTab imuTab = Shuffleboard.getTab("IMU");
+
+  // Column/group layouts
+  private final ShuffleboardLayout orientationCol =
+      imuTab.getLayout("Orientation", BuiltInLayouts.kList).withPosition(0, 0).withSize(1, 6);
+  private final ShuffleboardLayout headingsCol =
+      imuTab.getLayout("Headings", BuiltInLayouts.kList).withPosition(1, 0).withSize(1, 6);
+  private final ShuffleboardLayout quaternionCol =
+      imuTab.getLayout("Quaternion", BuiltInLayouts.kList).withPosition(2, 0).withSize(1, 6);
+  private final ShuffleboardLayout motionCol =
+      imuTab.getLayout("Motion", BuiltInLayouts.kList).withPosition(3, 0).withSize(1, 6);
+  private final ShuffleboardLayout rawGyroCol =
+      imuTab.getLayout("Raw Gyro", BuiltInLayouts.kList).withPosition(4, 0).withSize(1, 5);
+  private final ShuffleboardLayout rawAccelCol =
+      imuTab.getLayout("Raw Accel", BuiltInLayouts.kList).withPosition(5, 0).withSize(1, 5);
+  private final ShuffleboardLayout rawMagCol =
+      imuTab.getLayout("Raw Mag", BuiltInLayouts.kList).withPosition(6, 0).withSize(1, 5);
+  private final ShuffleboardLayout statusCol =
+      imuTab.getLayout("Status", BuiltInLayouts.kList).withPosition(7, 0).withSize(1, 6);
+
+  // Entries grouped under layouts
+  private final GenericEntry imuYawEntry = orientationCol.add("IMU Yaw", 0.0).getEntry();
+  private final GenericEntry imuPitchEntry = orientationCol.add("IMU Pitch", 0.0).getEntry();
+  private final GenericEntry imuRollEntry = orientationCol.add("IMU Roll", 0.0).getEntry();
+
+  private final GenericEntry imuCompassHeadingEntry = headingsCol.add("Compass Heading", 0.0).getEntry();
+  private final GenericEntry imuFusedHeadingEntry = headingsCol.add("Fused Heading", 0.0).getEntry();
+  private final GenericEntry imuTotalYawEntry = headingsCol.add("Total Yaw", 0.0).getEntry();
+  private final GenericEntry imuYawRateEntry = headingsCol.add("Yaw Rate DPS", 0.0).getEntry();
+
+  private final GenericEntry quaternionWEntry = quaternionCol.add("Quat W", 0.0).getEntry();
+  private final GenericEntry quaternionXEntry = quaternionCol.add("Quat X", 0.0).getEntry();
+  private final GenericEntry quaternionYEntry = quaternionCol.add("Quat Y", 0.0).getEntry();
+  private final GenericEntry quaternionZEntry = quaternionCol.add("Quat Z", 0.0).getEntry();
+
+  private final GenericEntry velocityXEntry = motionCol.add("Velocity X", 0.0).getEntry();
+  private final GenericEntry velocityYEntry = motionCol.add("Velocity Y", 0.0).getEntry();
+  private final GenericEntry imuAccelXEntry = motionCol.add("Linear Accel X", 0.0).getEntry();
+  private final GenericEntry imuAccelYEntry = motionCol.add("Linear Accel Y", 0.0).getEntry();
+  private final GenericEntry displacementXEntry = motionCol.add("Displacement X", 0.0).getEntry();
+  private final GenericEntry displacementYEntry = motionCol.add("Displacement Y", 0.0).getEntry();
+
+  private final GenericEntry rawGyroXEntry = rawGyroCol.add("X", 0.0).getEntry();
+  private final GenericEntry rawGyroYEntry = rawGyroCol.add("Y", 0.0).getEntry();
+  private final GenericEntry rawGyroZEntry = rawGyroCol.add("Z", 0.0).getEntry();
+
+  private final GenericEntry rawAccelXEntry = rawAccelCol.add("X", 0.0).getEntry();
+  private final GenericEntry rawAccelYEntry = rawAccelCol.add("Y", 0.0).getEntry();
+  private final GenericEntry rawAccelZEntry = rawAccelCol.add("Z", 0.0).getEntry();
+
+  private final GenericEntry rawMagXEntry = rawMagCol.add("X", 0.0).getEntry();
+  private final GenericEntry rawMagYEntry = rawMagCol.add("Y", 0.0).getEntry();
+  private final GenericEntry rawMagZEntry = rawMagCol.add("Z", 0.0).getEntry();
+
+  private final GenericEntry imuConnectedEntry = statusCol.add("Connected", false).getEntry();
+  private final GenericEntry imuIsCalibratingEntry = statusCol.add("Is Calibrating", false).getEntry();
+  private final GenericEntry imuIsMovingEntry = statusCol.add("Is Moving", false).getEntry();
+  private final GenericEntry imuIsRotatingEntry = statusCol.add("Is Rotating", false).getEntry();
+  private final GenericEntry imuTempEntry = statusCol.add("Temp C", 0.0).getEntry();
+  private final GenericEntry imuTimestampEntry = statusCol.add("Timestamp", 0.0).getEntry();
+  private final GenericEntry yawAxisDirectionEntry = statusCol.add("Yaw Axis Dir", "N/A").getEntry();
+  private final GenericEntry yawAxisEntry = statusCol.add("Yaw Axis", 0.0).getEntry();
+  private final GenericEntry firmwareVersionEntry = statusCol.add("Firmware", "N/A").getEntry();
+  private final GenericEntry imuByteCountEntry = statusCol.add("Byte Count", 0.0).getEntry();
+  private final GenericEntry imuUpdateCountEntry = statusCol.add("Update Count", 0.0).getEntry();
+  private final GenericEntry imuPresentEntry = statusCol.add("Present", false).getEntry();
+
+  public IMUImpl() {
+    m_gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
   }
 
   public void DisplayIMUData() {
-    if (m_gyro != null){
-      /* Display 6-axis Processed Angle Data */
-      SmartDashboard.putBoolean("IMU_Connected", m_gyro.isConnected());
-      SmartDashboard.putBoolean("IMU_IsCalibrating", m_gyro.isCalibrating());
-      SmartDashboard.putNumber("IMU_Yaw", m_gyro.getYaw());
-      SmartDashboard.putNumber("IMU_Pitch", m_gyro.getPitch());
-      SmartDashboard.putNumber("IMU_Roll", m_gyro.getRoll());
+    if (m_gyro != null) {
+      imuPresentEntry.setBoolean(true);
+      imuConnectedEntry.setBoolean(m_gyro.isConnected());
+      imuIsCalibratingEntry.setBoolean(m_gyro.isCalibrating());
+      imuYawEntry.setDouble(m_gyro.getYaw());
+      imuPitchEntry.setDouble(m_gyro.getPitch());
+      imuRollEntry.setDouble(m_gyro.getRoll());
+      imuCompassHeadingEntry.setDouble(m_gyro.getCompassHeading());
+      imuFusedHeadingEntry.setDouble(m_gyro.getFusedHeading());
+      imuTotalYawEntry.setDouble(m_gyro.getAngle());
+      imuYawRateEntry.setDouble(m_gyro.getRate());
+      imuAccelXEntry.setDouble(m_gyro.getWorldLinearAccelX());
+      imuAccelYEntry.setDouble(m_gyro.getWorldLinearAccelY());
+      imuIsMovingEntry.setBoolean(m_gyro.isMoving());
+      imuIsRotatingEntry.setBoolean(m_gyro.isRotating());
+      velocityXEntry.setDouble(m_gyro.getVelocityX());
+      velocityYEntry.setDouble(m_gyro.getVelocityY());
+      displacementXEntry.setDouble(m_gyro.getDisplacementX());
+      displacementYEntry.setDouble(m_gyro.getDisplacementY());
+      rawGyroXEntry.setDouble(m_gyro.getRawGyroX());
+      rawGyroYEntry.setDouble(m_gyro.getRawGyroY());
+      rawGyroZEntry.setDouble(m_gyro.getRawGyroZ());
+      rawAccelXEntry.setDouble(m_gyro.getRawAccelX());
+      rawAccelYEntry.setDouble(m_gyro.getRawAccelY());
+      rawAccelZEntry.setDouble(m_gyro.getRawAccelZ());
+      rawMagXEntry.setDouble(m_gyro.getRawMagX());
+      rawMagYEntry.setDouble(m_gyro.getRawMagY());
+      rawMagZEntry.setDouble(m_gyro.getRawMagZ());
+      imuTempEntry.setDouble(m_gyro.getTempC());
+      imuTimestampEntry.setDouble(m_gyro.getLastSensorTimestamp());
 
-      /* Display tilt-corrected, Magnetometer-based heading (requires */
-      /* magnetometer calibration to be useful) */
+      AHRS.BoardYawAxis yawAxis = m_gyro.getBoardYawAxis();
+      yawAxisDirectionEntry.setString(yawAxis.up ? "Up" : "Down");
+      yawAxisEntry.setDouble(yawAxis.board_axis.getValue());
+      firmwareVersionEntry.setString(m_gyro.getFirmwareVersion());
 
-      SmartDashboard.putNumber("IMU_CompassHeading", m_gyro.getCompassHeading());
+      quaternionWEntry.setDouble(m_gyro.getQuaternionW());
+      quaternionXEntry.setDouble(m_gyro.getQuaternionX());
+      quaternionYEntry.setDouble(m_gyro.getQuaternionY());
+      quaternionZEntry.setDouble(m_gyro.getQuaternionZ());
 
-      /* Display 9-axis Heading (requires magnetometer calibration to be useful) */
-      SmartDashboard.putNumber("IMU_FusedHeading", m_gyro.getFusedHeading());
-
-      /* These functions are compatible w/the WPI Gyro Class, providing a simple */
-      /* path for upgrading from the Kit-of-Parts gyro to the navx MXP */
-
-      SmartDashboard.putNumber("IMU_TotalYaw", m_gyro.getAngle());
-      SmartDashboard.putNumber("IMU_YawRateDPS", m_gyro.getRate());
-
-      /* Display Processed Acceleration Data (Linear Acceleration, Motion Detect) */
-
-      SmartDashboard.putNumber("IMU_Accel_X", m_gyro.getWorldLinearAccelX());
-      SmartDashboard.putNumber("IMU_Accel_Y", m_gyro.getWorldLinearAccelY());
-      SmartDashboard.putBoolean("IMU_IsMoving", m_gyro.isMoving());
-      SmartDashboard.putBoolean("IMU_IsRotating", m_gyro.isRotating());
-
-      /* Display estimates of velocity/displacement. Note that these values are */
-      /* not expected to be accurate enough for estimating robot position on a */
-      /* FIRST FRC Robotics Field, due to accelerometer noise and the compounding */
-      /* of these errors due to single (velocity) integration and especially */
-      /* double (displacement) integration. */
-
-      SmartDashboard.putNumber("Velocity_X", m_gyro.getVelocityX());
-      SmartDashboard.putNumber("Velocity_Y", m_gyro.getVelocityY());
-      SmartDashboard.putNumber("Displacement_X", m_gyro.getDisplacementX());
-      SmartDashboard.putNumber("Displacement_Y", m_gyro.getDisplacementY());
-
-      /* Display Raw Gyro/Accelerometer/Magnetometer Values */
-      /* NOTE: These values are not normally necessary, but are made available */
-      /* for advanced users. Before using this data, please consider whether */
-      /* the processed data (see above) will suit your needs. */
-
-      SmartDashboard.putNumber("RawGyro_X", m_gyro.getRawGyroX());
-      SmartDashboard.putNumber("RawGyro_Y", m_gyro.getRawGyroY());
-      SmartDashboard.putNumber("RawGyro_Z", m_gyro.getRawGyroZ());
-      SmartDashboard.putNumber("RawAccel_X", m_gyro.getRawAccelX());
-      SmartDashboard.putNumber("RawAccel_Y", m_gyro.getRawAccelY());
-      SmartDashboard.putNumber("RawAccel_Z", m_gyro.getRawAccelZ());
-      SmartDashboard.putNumber("RawMag_X", m_gyro.getRawMagX());
-      SmartDashboard.putNumber("RawMag_Y", m_gyro.getRawMagY());
-      SmartDashboard.putNumber("RawMag_Z", m_gyro.getRawMagZ());
-      SmartDashboard.putNumber("IMU_Temp_C", m_gyro.getTempC());
-      SmartDashboard.putNumber("IMU_Timestamp", m_gyro.getLastSensorTimestamp());
-
-      /* Omnimount Yaw Axis Information */
-      /* For more info, see http://navx-mxp.kauailabs.com/installation/omnimount */
-      AHRS.BoardYawAxis yaw_axis = m_gyro.getBoardYawAxis();
-      SmartDashboard.putString("YawAxisDirection", yaw_axis.up ? "Up" : "Down");
-      SmartDashboard.putNumber("YawAxis", yaw_axis.board_axis.getValue());
-
-      /* Sensor Board Information */
-      SmartDashboard.putString("FirmwareVersion", m_gyro.getFirmwareVersion());
-
-      /* Quaternion Data */
-      /* Quaternions are fascinating, and are the most compact representation of */
-      /* orientation data. All of the Yaw, Pitch and Roll Values can be derived */
-      /* from the Quaternions. If interested in motion processing, knowledge of */
-      /* Quaternions is highly recommended. */
-      SmartDashboard.putNumber("QuaternionW", m_gyro.getQuaternionW());
-      SmartDashboard.putNumber("QuaternionX", m_gyro.getQuaternionX());
-      SmartDashboard.putNumber("QuaternionY", m_gyro.getQuaternionY());
-      SmartDashboard.putNumber("QuaternionZ", m_gyro.getQuaternionZ());
-
-      /* Connectivity Debugging Support */
-      SmartDashboard.putNumber("IMU_Byte_Count", m_gyro.getByteCount());
-      SmartDashboard.putNumber("IMU_Update_Count", m_gyro.getUpdateCount());
-    }
-    else {
-      SmartDashboard.putBoolean("IMU DNE", true);
+      imuByteCountEntry.setDouble(m_gyro.getByteCount());
+      imuUpdateCountEntry.setDouble(m_gyro.getUpdateCount());
+    } else {
+      publishUnavailableState();
     }
   }
 
-  public Rotation2d getRotation2d(){
+  private void publishUnavailableState() {
+    imuPresentEntry.setBoolean(false);
+    imuConnectedEntry.setBoolean(false);
+    imuIsCalibratingEntry.setBoolean(false);
+    imuIsMovingEntry.setBoolean(false);
+    imuIsRotatingEntry.setBoolean(false);
+    imuYawEntry.setDouble(0.0);
+    imuPitchEntry.setDouble(0.0);
+    imuRollEntry.setDouble(0.0);
+    imuCompassHeadingEntry.setDouble(0.0);
+    imuFusedHeadingEntry.setDouble(0.0);
+    imuTotalYawEntry.setDouble(0.0);
+    imuYawRateEntry.setDouble(0.0);
+    imuAccelXEntry.setDouble(0.0);
+    imuAccelYEntry.setDouble(0.0);
+    velocityXEntry.setDouble(0.0);
+    velocityYEntry.setDouble(0.0);
+    displacementXEntry.setDouble(0.0);
+    displacementYEntry.setDouble(0.0);
+    rawGyroXEntry.setDouble(0.0);
+    rawGyroYEntry.setDouble(0.0);
+    rawGyroZEntry.setDouble(0.0);
+    rawAccelXEntry.setDouble(0.0);
+    rawAccelYEntry.setDouble(0.0);
+    rawAccelZEntry.setDouble(0.0);
+    rawMagXEntry.setDouble(0.0);
+    rawMagYEntry.setDouble(0.0);
+    rawMagZEntry.setDouble(0.0);
+    imuTempEntry.setDouble(0.0);
+    imuTimestampEntry.setDouble(0.0);
+    yawAxisDirectionEntry.setString("Unavailable");
+    yawAxisEntry.setDouble(0.0);
+    firmwareVersionEntry.setString("Unavailable");
+    quaternionWEntry.setDouble(0.0);
+    quaternionXEntry.setDouble(0.0);
+    quaternionYEntry.setDouble(0.0);
+    quaternionZEntry.setDouble(0.0);
+    imuByteCountEntry.setDouble(0.0);
+    imuUpdateCountEntry.setDouble(0.0);
+  }
+
+  public Rotation2d getRotation2d() {
     if (m_gyro != null) {
       return m_gyro.getRotation2d();
     }
-    else {
-      return new Rotation2d();
-    }
-  };
+    return new Rotation2d();
+  }
 
-  public void reset(){
+  public void reset() {
     if (m_gyro != null) {
-       m_gyro.reset();
+      m_gyro.reset();
     }
   }
 
-  public double getRate(){
+  public double getRate() {
     double rate = 0;
     if (m_gyro != null) {
       rate = m_gyro.getRate();
     }
     return rate;
-  };
+  }
 }
+
+

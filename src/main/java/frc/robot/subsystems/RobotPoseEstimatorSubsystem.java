@@ -8,10 +8,13 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants.DriveConstants;
 import frc.robot.Gyro;
 
 public class RobotPoseEstimatorSubsystem extends SubsystemBase {
@@ -19,15 +22,36 @@ public class RobotPoseEstimatorSubsystem extends SubsystemBase {
   private final VisionSubsystem visionSubsystem;
   private final Gyro gyro;
 
-  // The main pose estimator
   private final MecanumDrivePoseEstimator poseEstimator;
 
-  // Standard deviations
-  private Matrix<N3, N1> stateStdDevs = VecBuilder.fill(0.02, 0.02, 0.01); // For odometry (placeholder values)
-  private Matrix<N3, N1> visionStdDevs = VecBuilder.fill(0.45, 0.45, 0.45); // For vision (default values)
+  private Matrix<N3, N1> stateStdDevs = VecBuilder.fill(0.02, 0.02, 0.01);
+  private Matrix<N3, N1> visionStdDevs = VecBuilder.fill(0.45, 0.45, 0.45);
 
-  // Track vision update per cycle
   private boolean visionUpdateThisCycle = false;
+
+  private final ShuffleboardTab localizationTab = Shuffleboard.getTab("Localization");
+  private final ShuffleboardLayout initCol = localizationTab.getLayout("Init", BuiltInLayouts.kList).withPosition(0,0).withSize(1,4);
+  private final ShuffleboardLayout visionCol = localizationTab.getLayout("Vision", BuiltInLayouts.kList).withPosition(1,0).withSize(1,6);
+  private final ShuffleboardLayout poseCol = localizationTab.getLayout("Pose", BuiltInLayouts.kList).withPosition(2,0).withSize(1,5);
+  private final ShuffleboardLayout errorsCol = localizationTab.getLayout("Errors", BuiltInLayouts.kList).withPosition(3,0).withSize(1,6);
+
+  private final GenericEntry constructorSuccessEntry = initCol.add("Init Success", false).getEntry();
+  private final GenericEntry constructorErrorEntry = initCol.add("Init Error", "").getEntry();
+  private final GenericEntry poseResetStatusEntry = initCol.add("Pose Reset Status", "").getEntry();
+  private final GenericEntry poseResetErrorEntry = initCol.add("Pose Reset Error", "").getEntry();
+
+  private final GenericEntry lastVisionUpdateEntry = visionCol.add("Last Vision Update", 0.0).getEntry();
+  private final GenericEntry visionUpdateFlagEntry = visionCol.add("Vision Update This Cycle", false).getEntry();
+  private final GenericEntry poseSourceEntry = visionCol.add("Pose Source", "Odometry Only").getEntry();
+  private final GenericEntry timeSinceVisionUpdateEntry = visionCol.add("Time Since Vision Update", 0.0).getEntry();
+
+  private final GenericEntry robotPoseXEntry = poseCol.add("Robot Pose X", 0.0).getEntry();
+  private final GenericEntry robotPoseYEntry = poseCol.add("Robot Pose Y", 0.0).getEntry();
+  private final GenericEntry robotPoseHeadingEntry = poseCol.add("Robot Pose Heading", 0.0).getEntry();
+
+  private final GenericEntry periodicErrorEntry = errorsCol.add("Periodic Error", "").getEntry();
+  private final GenericEntry visionIntegrationErrorEntry = errorsCol.add("Vision Integration Error", "").getEntry();
+  private final GenericEntry poseErrorEntry = errorsCol.add("Get Pose Error", "").getEntry();
 
   public RobotPoseEstimatorSubsystem(DriveSubsystem driveSubsystem, VisionSubsystem visionSubsystem, Gyro gyro) {
 
@@ -43,11 +67,12 @@ public class RobotPoseEstimatorSubsystem extends SubsystemBase {
           new Pose2d(),
           stateStdDevs,
           visionStdDevs);
-      SmartDashboard.putBoolean("Pose Estimator Constructor Success", true);
+      constructorSuccessEntry.setBoolean(true);
+      constructorErrorEntry.setString("");
     } catch (Exception e) {
- 
-      SmartDashboard.putBoolean("Pose Estimator Constructor Success", false);
-      SmartDashboard.putString("Pose Estimator Init Error", e.getMessage());
+
+      constructorSuccessEntry.setBoolean(false);
+      constructorErrorEntry.setString(e.getMessage());
       throw e;
     }
   }
@@ -56,16 +81,15 @@ public class RobotPoseEstimatorSubsystem extends SubsystemBase {
   public void periodic() {
 
     try {
-      
-      // Update with odometry data
+
       poseEstimator.update(
           gyro.getRotation2d(),
           driveSubsystem.getCurrentWheelDistances());
 
-      // Reset vision update
       visionUpdateThisCycle = false;
+      visionUpdateFlagEntry.setBoolean(false);
+      visionIntegrationErrorEntry.setString("");
 
-      // Process vision data if available and fresh
       if (visionSubsystem.isCameraConnected() && visionSubsystem.isFreshPose()) {
         Optional<Pose2d> visionPose = visionSubsystem.getRobotPose();
         double timestamp = visionSubsystem.getTimestamp();
@@ -73,50 +97,48 @@ public class RobotPoseEstimatorSubsystem extends SubsystemBase {
         if (visionPose.isPresent() && timestamp > 0) {
 
           try {
-            // Add the vision measurement 
-            
             poseEstimator.addVisionMeasurement(visionPose.get(), timestamp);
-            visionUpdateThisCycle = true; 
-            SmartDashboard.putNumber("Last Vision Update", Timer.getFPGATimestamp());
-
+            visionUpdateThisCycle = true;
+            visionUpdateFlagEntry.setBoolean(true);
+            lastVisionUpdateEntry.setDouble(Timer.getFPGATimestamp());
           } catch (Exception e) {
-            // Log vision integration errors 
-            SmartDashboard.putString("Vision Integration Error", e.getMessage());
+            visionIntegrationErrorEntry.setString(e.getMessage());
           }
         }
       }
 
-      if (!visionUpdateThisCycle) {
-        SmartDashboard.putString("Pose Source", "Odometry Only");
+      if (visionUpdateThisCycle) {
+        poseSourceEntry.setString("Vision + Odometry");
+      } else {
+        poseSourceEntry.setString("Odometry Only");
       }
 
-      // Log estimated pose
       Pose2d currentPose = getPose();
-      SmartDashboard.putNumber("Robot Pose X", currentPose.getX());
-      SmartDashboard.putNumber("Robot Pose Y", currentPose.getY());
-      SmartDashboard.putNumber("Robot Pose Heading", currentPose.getRotation().getDegrees());
+      robotPoseXEntry.setDouble(currentPose.getX());
+      robotPoseYEntry.setDouble(currentPose.getY());
+      robotPoseHeadingEntry.setDouble(currentPose.getRotation().getDegrees());
 
       double timeSinceVisionUpdate = Timer.getFPGATimestamp() - visionSubsystem.getTimestamp();
-      SmartDashboard.putNumber("Time Since Vision Update", timeSinceVisionUpdate);
+      timeSinceVisionUpdateEntry.setDouble(timeSinceVisionUpdate);
+      periodicErrorEntry.setString("");
 
     } catch (Exception e) {
-      // Log any errors during periodic updates
-      SmartDashboard.putString("Pose Estimator Periodic Error", e.getMessage()); // To fix
+      periodicErrorEntry.setString(e.getMessage());
     }
   }
 
   public Pose2d getPose() {
 
     try {
+      poseErrorEntry.setString("");
       return poseEstimator.getEstimatedPosition();
 
     } catch (Exception e) {
-      SmartDashboard.putString("Get Pose Error", e.getMessage());
-      return new Pose2d(); // Return origin if error occurs
+      poseErrorEntry.setString(e.getMessage());
+      return new Pose2d();
     }
   }
 
-  // Resets pose
   public void resetPose(Pose2d pose) {
 
     try {
@@ -124,10 +146,12 @@ public class RobotPoseEstimatorSubsystem extends SubsystemBase {
           gyro.getRotation2d(),
           driveSubsystem.getCurrentWheelDistances(),
           pose);
-      SmartDashboard.putString("Pose Reset Status", "Success");
-      
+      poseResetStatusEntry.setString("Success");
+      poseResetErrorEntry.setString("");
+
     } catch (Exception e) {
-      SmartDashboard.putString("Pose Reset Error", e.getMessage());
+      poseResetStatusEntry.setString("Failed");
+      poseResetErrorEntry.setString(e.getMessage());
     }
   }
 

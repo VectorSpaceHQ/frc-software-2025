@@ -26,8 +26,9 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.networktables.GenericEntry;
@@ -79,6 +80,12 @@ public class VisionSubsystem extends SubsystemBase {
 
   // Shuffleboard entries
   private ShuffleboardTab visionTab;
+  private ShuffleboardLayout anglesCol;
+  private ShuffleboardLayout tagCol;
+  private ShuffleboardLayout transformCol;
+  private ShuffleboardLayout targetCalcCol;
+  private ShuffleboardLayout poseCol;
+
   private GenericEntry yawEntry;
   private GenericEntry pitchEntry;
   private GenericEntry skewEntry;
@@ -88,6 +95,15 @@ public class VisionSubsystem extends SubsystemBase {
   private GenericEntry xEntry;
   private GenericEntry yEntry;
   private GenericEntry zEntry;
+  private GenericEntry rawTargetYawEntry;
+  private GenericEntry yawStatusEntry;
+  private GenericEntry rawTargetRangeEntry;
+  private GenericEntry rangeStatusEntry;
+  private GenericEntry visionPoseXEntry;
+  private GenericEntry visionPoseYEntry;
+  private GenericEntry visionPoseHeadingEntry;
+  private GenericEntry hasValidPoseEntry;
+  private GenericEntry poseTimestampEntry;
 
   // Vision Subsystem constructor
   public VisionSubsystem() {
@@ -150,20 +166,43 @@ public class VisionSubsystem extends SubsystemBase {
   // Initializing the shuffleboard entries
   private void initializeShuffleboard() {
     visionTab = Shuffleboard.getTab("Vision Results");
-    yawEntry = visionTab.add("Yaw", 0.0).getEntry();
-    pitchEntry = visionTab.add("Pitch", 0.0).getEntry();
-    areaEntry = visionTab.add("Area", 0.0).getEntry();
-    skewEntry = visionTab.add("Skew", 0.0).getEntry();
-    idEntry = visionTab.add("ID", 0.0).getEntry();
-    ambiguityEntry = visionTab.add("Ambiguity", 0.0).getEntry();
-    xEntry = visionTab.add("X", 0.0).getEntry();
-    yEntry = visionTab.add("Y", 0.0).getEntry();
-    zEntry = visionTab.add("Z", 0.0).getEntry();
+
+    // Define column layouts across the tab
+    anglesCol = visionTab.getLayout("Angles", BuiltInLayouts.kList).withPosition(0, 0).withSize(1, 6);
+    tagCol = visionTab.getLayout("Tag", BuiltInLayouts.kList).withPosition(1, 0).withSize(1, 6);
+    transformCol = visionTab.getLayout("Transform", BuiltInLayouts.kList).withPosition(2, 0).withSize(1, 6);
+    targetCalcCol = visionTab.getLayout("Target Calc", BuiltInLayouts.kList).withPosition(3, 0).withSize(1, 6);
+    poseCol = visionTab.getLayout("Pose", BuiltInLayouts.kList).withPosition(4, 0).withSize(2, 6);
+
+    // Populate entries within the layouts
+    yawEntry = anglesCol.add("Yaw", 0.0).getEntry();
+    pitchEntry = anglesCol.add("Pitch", 0.0).getEntry();
+    areaEntry = anglesCol.add("Area", 0.0).getEntry();
+    skewEntry = anglesCol.add("Skew", 0.0).getEntry();
+
+    idEntry = tagCol.add("ID", 0.0).getEntry();
+    ambiguityEntry = tagCol.add("Ambiguity", 0.0).getEntry();
+
+    xEntry = transformCol.add("X", 0.0).getEntry();
+    yEntry = transformCol.add("Y", 0.0).getEntry();
+    zEntry = transformCol.add("Z", 0.0).getEntry();
+
+    rawTargetYawEntry = targetCalcCol.add("Raw Target Yaw", 0.0).getEntry();
+    yawStatusEntry = targetCalcCol.add("Yaw Status", "No Data").getEntry();
+    rawTargetRangeEntry = targetCalcCol.add("Raw Target Range", 0.0).getEntry();
+    rangeStatusEntry = targetCalcCol.add("Range Status", "No Data").getEntry();
+
+    visionPoseXEntry = poseCol.add("Vision Pose X", 0.0).getEntry();
+    visionPoseYEntry = poseCol.add("Vision Pose Y", 0.0).getEntry();
+    visionPoseHeadingEntry = poseCol.add("Vision Pose Heading", 0.0).getEntry();
+    hasValidPoseEntry = poseCol.add("Has Valid Pose", false).getEntry();
+    poseTimestampEntry = poseCol.add("Pose Timestamp", 0.0).getEntry();
   }
 
   // Gets the target yaw
   public double getTargetYaw(int id) {
     double yawValue = Double.NaN; // Default to NaN
+    yawStatusEntry.setString("No Data");
 
     var tagPose = layout.getTagPose(id);
     if (tagPose.isPresent()) {
@@ -173,7 +212,8 @@ public class VisionSubsystem extends SubsystemBase {
       if (robotPose.isPresent()) {
         Rotation2d returnYaw = PhotonUtils.getYawToPose(robotPose.get(), tagPose2d);
         yawValue = returnYaw.getDegrees();
-        SmartDashboard.putNumber("Raw Target Yaw", yawValue);
+        rawTargetYawEntry.setDouble(yawValue);
+        yawStatusEntry.setString("Current Measurement");
 
         // Store valid measurement
         if (!Double.isNaN(yawValue)) {
@@ -186,7 +226,7 @@ public class VisionSubsystem extends SubsystemBase {
     // If current calculation is NaN but we have a previous value, use that
     if (Double.isNaN(yawValue) && lastValidYaw.containsKey(id)) {
       yawValue = lastValidYaw.get(id);
-      SmartDashboard.putString("Yaw Status", "Using Last Valid");
+      yawStatusEntry.setString("Using Last Valid");
     }
     return yawValue;
   }
@@ -215,6 +255,7 @@ public class VisionSubsystem extends SubsystemBase {
   public double getTargetRange(int id) {
 
     double rangeValue = Double.NaN; // Default to NaN
+    rangeStatusEntry.setString("No Data");
     var tagPose = layout.getTagPose(id);
 
     if (tagPose.isPresent()) {
@@ -224,7 +265,8 @@ public class VisionSubsystem extends SubsystemBase {
         rangeValue = PhotonUtils.getDistanceToPose(
             robotPose.get(),
             tagPose.get().toPose2d());
-        SmartDashboard.putNumber("Raw Target Range", rangeValue);
+        rawTargetRangeEntry.setDouble(rangeValue);
+        rangeStatusEntry.setString("Current Measurement");
       }
       // Store valid measurement
       if (!Double.isNaN(rangeValue)) {
@@ -235,7 +277,7 @@ public class VisionSubsystem extends SubsystemBase {
     // If current calculation is NaN but we have a previous value, use that
     if (Double.isNaN(rangeValue) && lastValidRange.containsKey(id)) {
       rangeValue = lastValidRange.get(id);
-      SmartDashboard.putString("Range Status", "Using Last Valid");
+      rangeStatusEntry.setString("Using Last Valid");
     }
     return rangeValue;
   }
@@ -266,9 +308,9 @@ public class VisionSubsystem extends SubsystemBase {
             // Stores vision pose and logs
             storedEstimatedPose = estimatedVisionPose;
             Pose2d pose = estimatedVisionPose.get().estimatedPose.toPose2d();
-            SmartDashboard.putNumber("Vision Pose X", pose.getX());
-            SmartDashboard.putNumber("Vision Pose Y", pose.getY());
-            SmartDashboard.putNumber("Vision Pose Heading", pose.getRotation().getDegrees());
+            visionPoseXEntry.setDouble(pose.getX());
+            visionPoseYEntry.setDouble(pose.getY());
+            visionPoseHeadingEntry.setDouble(pose.getRotation().getDegrees());
           }
           break;
         }
@@ -319,8 +361,9 @@ public class VisionSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-
     // This method will be called once per scheduler run
+    hasValidPoseEntry.setBoolean(storedEstimatedPose.isPresent());
+    poseTimestampEntry.setDouble(getTimestamp());
     if (cameraConnected) {
       allUnreadResults = camera.getAllUnreadResults();
       // Update the robot pose estimate using the estimator
@@ -352,12 +395,21 @@ public class VisionSubsystem extends SubsystemBase {
           yEntry.setDouble(y);
           zEntry.setDouble(z);
 
-          // To lazy to make this shufflboard entries
-          SmartDashboard.putBoolean("Has Valid Pose", storedEstimatedPose.isPresent());
-          SmartDashboard.putNumber("Pose Timestamp", getTimestamp());
+          hasValidPoseEntry.setBoolean(storedEstimatedPose.isPresent());
+          poseTimestampEntry.setDouble(getTimestamp());
 
         }
       }
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
